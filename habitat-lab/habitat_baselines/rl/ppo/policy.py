@@ -37,14 +37,10 @@ class Policy(nn.Module, metaclass=abc.ABCMeta):
         if policy_config is None:
             self.action_distribution_type = "categorical"
         else:
-            self.action_distribution_type = (
-                policy_config.action_distribution_type
-            )
+            self.action_distribution_type = policy_config.action_distribution_type
 
         if self.action_distribution_type == "categorical":
-            self.action_distribution = CategoricalNet(
-                self.net.output_size, self.dim_actions
-            )
+            self.action_distribution = CategoricalNet(self.net.output_size, self.dim_actions)
         elif self.action_distribution_type == "gaussian":
             self.action_distribution = GaussianNet(
                 self.net.output_size,
@@ -52,10 +48,7 @@ class Policy(nn.Module, metaclass=abc.ABCMeta):
                 policy_config.ACTION_DIST,
             )
         else:
-            ValueError(
-                f"Action distribution {self.action_distribution_type}"
-                "not supported."
-            )
+            ValueError(f"Action distribution {self.action_distribution_type}" "not supported.")
 
         self.critic = CriticHead(self.net.output_size)
 
@@ -70,9 +63,7 @@ class Policy(nn.Module, metaclass=abc.ABCMeta):
         masks,
         deterministic=False,
     ):
-        features, rnn_hidden_states = self.net(
-            observations, rnn_hidden_states, prev_actions, masks
-        )
+        features, rnn_hidden_states = self.net(observations, rnn_hidden_states, prev_actions, masks)
         distribution = self.action_distribution(features)
         value = self.critic(features)
 
@@ -89,17 +80,11 @@ class Policy(nn.Module, metaclass=abc.ABCMeta):
         return value, action, action_log_probs, rnn_hidden_states
 
     def get_value(self, observations, rnn_hidden_states, prev_actions, masks):
-        features, _ = self.net(
-            observations, rnn_hidden_states, prev_actions, masks
-        )
+        features, _ = self.net(observations, rnn_hidden_states, prev_actions, masks)
         return self.critic(features)
 
-    def evaluate_actions(
-        self, observations, rnn_hidden_states, prev_actions, masks, action
-    ):
-        features, rnn_hidden_states = self.net(
-            observations, rnn_hidden_states, prev_actions, masks
-        )
+    def evaluate_actions(self, observations, rnn_hidden_states, prev_actions, masks, action):
+        features, rnn_hidden_states = self.net(observations, rnn_hidden_states, prev_actions, masks)
         distribution = self.action_distribution(features)
         value = self.critic(features)
 
@@ -144,9 +129,7 @@ class PointNavBaselinePolicy(Policy):
         )
 
     @classmethod
-    def from_config(
-        cls, config: Config, observation_space: spaces.Dict, action_space
-    ):
+    def from_config(cls, config: Config, observation_space: spaces.Dict, action_space):
         return cls(
             observation_space=observation_space,
             action_space=action_space,
@@ -187,24 +170,13 @@ class PointNavBaselineNet(Net):
     ):
         super().__init__()
 
-        if (
-            IntegratedPointGoalGPSAndCompassSensor.cls_uuid
-            in observation_space.spaces
-        ):
-            self._n_input_goal = observation_space.spaces[
-                IntegratedPointGoalGPSAndCompassSensor.cls_uuid
-            ].shape[0]
+        if IntegratedPointGoalGPSAndCompassSensor.cls_uuid in observation_space.spaces:
+            self._n_input_goal = observation_space.spaces[IntegratedPointGoalGPSAndCompassSensor.cls_uuid].shape[0]
         elif PointGoalSensor.cls_uuid in observation_space.spaces:
-            self._n_input_goal = observation_space.spaces[
-                PointGoalSensor.cls_uuid
-            ].shape[0]
+            self._n_input_goal = observation_space.spaces[PointGoalSensor.cls_uuid].shape[0]
         elif ImageGoalSensor.cls_uuid in observation_space.spaces:
-            goal_observation_space = spaces.Dict(
-                {"rgb": observation_space.spaces[ImageGoalSensor.cls_uuid]}
-            )
-            self.goal_visual_encoder = SimpleCNN(
-                goal_observation_space, hidden_size
-            )
+            goal_observation_space = spaces.Dict({"rgb": observation_space.spaces[ImageGoalSensor.cls_uuid]})
+            self.goal_visual_encoder = SimpleCNN(goal_observation_space, hidden_size)
             self._n_input_goal = hidden_size
 
         self._hidden_size = hidden_size
@@ -232,9 +204,7 @@ class PointNavBaselineNet(Net):
 
     def forward(self, observations, rnn_hidden_states, prev_actions, masks):
         if IntegratedPointGoalGPSAndCompassSensor.cls_uuid in observations:
-            target_encoding = observations[
-                IntegratedPointGoalGPSAndCompassSensor.cls_uuid
-            ]
+            target_encoding = observations[IntegratedPointGoalGPSAndCompassSensor.cls_uuid]
 
         elif PointGoalSensor.cls_uuid in observations:
             target_encoding = observations[PointGoalSensor.cls_uuid]
@@ -249,8 +219,6 @@ class PointNavBaselineNet(Net):
             x = [perception_embed] + x
 
         x_out = torch.cat(x, dim=1)
-        x_out, rnn_hidden_states = self.state_encoder(
-            x_out, rnn_hidden_states, masks
-        )
+        x_out, rnn_hidden_states = self.state_encoder(x_out, rnn_hidden_states, masks)
 
         return x_out, rnn_hidden_states

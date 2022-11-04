@@ -226,9 +226,7 @@ class MiniHack(NetHackStaircase):
         # Enter Wizard mode - turned off by default
         kwargs["wizard"] = kwargs.pop("wizard", False)
         # Allowing one-letter menu questions
-        kwargs["allow_all_yn_questions"] = kwargs.pop(
-            "allow_all_yn_questions", True
-        )
+        kwargs["allow_all_yn_questions"] = kwargs.pop("allow_all_yn_questions", True)
         # Episode limit
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
         # Not saving NLE data by detauls
@@ -242,10 +240,7 @@ class MiniHack(NetHackStaircase):
         if any("pixel" in key for key in self._minihack_obs_keys):
             self._glyph_mapper = GlyphMapper()
             # Make sure glyphs_crop is there
-            if (
-                "pixel_crop" in self._minihack_obs_keys
-                and "glyphs_crop" not in self._minihack_obs_keys
-            ):
+            if "pixel_crop" in self._minihack_obs_keys and "glyphs_crop" not in self._minihack_obs_keys:
                 self._minihack_obs_keys.append("glyphs_crop")
 
         self.reward_manager = reward_manager
@@ -269,12 +264,8 @@ class MiniHack(NetHackStaircase):
         self.reward_win = reward_win
         self.reward_lose = reward_lose
 
-        self._scr_descr_index = self._observation_keys.index(
-            "screen_descriptions"
-        )
-        self.observation_space = gym.spaces.Dict(
-            self._get_obs_space_dict(dict(NLE_SPACE_ITEMS))
-        )
+        self._scr_descr_index = self._observation_keys.index("screen_descriptions")
+        self.observation_space = gym.spaces.Dict(self._get_obs_space_dict(dict(NLE_SPACE_ITEMS)))
 
         self.use_wiki = use_wiki
         if self.use_wiki:
@@ -287,9 +278,7 @@ class MiniHack(NetHackStaircase):
                 obs_space_dict[key] = space_dict[key]
             elif key in MINIHACK_SPACE_FUNCS.keys():
                 space_func = MINIHACK_SPACE_FUNCS[key]
-                obs_space_dict[key] = space_func(
-                    self.obs_crop_h, self.obs_crop_w
-                )
+                obs_space_dict[key] = space_func(self.obs_crop_h, self.obs_crop_w)
             else:
                 if "pixel" in self._minihack_obs_keys:
                     d_shape = OBSERVATION_DESC["glyphs"]["shape"]
@@ -305,9 +294,7 @@ class MiniHack(NetHackStaircase):
                         dtype=np.uint8,
                     )
                 else:
-                    raise ValueError(
-                        f'Observation key "{key}" is not supported'
-                    )
+                    raise ValueError(f'Observation key "{key}" is not supported')
 
         return obs_space_dict
 
@@ -410,19 +397,13 @@ class MiniHack(NetHackStaircase):
                     loc = observation["tty_cursor"][::-1]
                 else:
                     loc = observation["blstats"][:2]
-                obs_dict[key] = self._crop_observation(
-                    observation[orig_key], loc
-                )
+                obs_dict[key] = self._crop_observation(observation[orig_key], loc)
 
         if "pixel" in self._minihack_obs_keys:
-            obs_dict["pixel"] = self._glyph_mapper.to_rgb(
-                observation["glyphs"]
-            )
+            obs_dict["pixel"] = self._glyph_mapper.to_rgb(observation["glyphs"])
 
         if "pixel_crop" in self._minihack_obs_keys:
-            obs_dict["pixel_crop"] = self._glyph_mapper.to_rgb(
-                obs_dict["glyphs_crop"]
-            )
+            obs_dict["pixel_crop"] = self._glyph_mapper.to_rgb(obs_dict["glyphs_crop"])
 
         return obs_dict
 
@@ -517,9 +498,7 @@ class MiniHack(NetHackStaircase):
         x, y = blstats[:2]
 
         neighbors = [
-            self.get_screen_description(i, j, observation)
-            for j in range(y - 1, y + 2)
-            for i in range(x - 1, x + 2)
+            self.get_screen_description(i, j, observation) for j in range(y - 1, y + 2) for i in range(x - 1, x + 2)
         ]
         return neighbors
 
@@ -529,14 +508,10 @@ class MiniHack(NetHackStaircase):
         """
         if not self.use_wiki:
             raise NotImplementedError(
-                "use_wiki is set to false - initialise your environment with"
-                "use_wiki=True to use the wiki"
+                "use_wiki is set to false - initialise your environment with" "use_wiki=True to use the wiki"
             )
         neighbors_descriptions = self.get_neighbor_descriptions(observation)
-        neighbor_pages = [
-            self.wiki.get_page_text(description)
-            for description in neighbors_descriptions
-        ]
+        neighbor_pages = [self.wiki.get_page_text(description) for description in neighbors_descriptions]
         return neighbor_pages
 
     def get_screen_description(self, x, y, observation=None):
@@ -553,8 +528,7 @@ class MiniHack(NetHackStaircase):
         """Returns the wiki page matching the object on (x,y) coordinates."""
         if not self.use_wiki:
             raise NotImplementedError(
-                "use_wiki is set to false - initialise your environment with"
-                "use_wiki=True to use the wiki"
+                "use_wiki is set to false - initialise your environment with" "use_wiki=True to use the wiki"
             )
         description = self.get_screen_description(x, y, observation)
         return self.wiki.get_page_text(description)

@@ -53,12 +53,8 @@ class PointNavResNetPolicy(Policy):
         **kwargs
     ):
         if policy_config is not None:
-            discrete_actions = (
-                policy_config.action_distribution_type == "categorical"
-            )
-            self.action_distribution_type = (
-                policy_config.action_distribution_type
-            )
+            discrete_actions = policy_config.action_distribution_type == "categorical"
+            self.action_distribution_type = policy_config.action_distribution_type
         else:
             discrete_actions = True
             self.action_distribution_type = "categorical"
@@ -80,9 +76,7 @@ class PointNavResNetPolicy(Policy):
         )
 
     @classmethod
-    def from_config(
-        cls, config: Config, observation_space: spaces.Dict, action_space
-    ):
+    def from_config(cls, config: Config, observation_space: spaces.Dict, action_space):
         return cls(
             observation_space=observation_space,
             action_space=action_space,
@@ -121,9 +115,7 @@ class ResNetEncoder(nn.Module):
             self._n_input_depth = 0
 
         if normalize_visual_inputs:
-            self.running_mean_and_var: nn.Module = RunningMeanAndVar(
-                self._n_input_depth + self._n_input_rgb
-            )
+            self.running_mean_and_var: nn.Module = RunningMeanAndVar(self._n_input_depth + self._n_input_rgb)
         else:
             self.running_mean_and_var = nn.Sequential()
 
@@ -131,13 +123,9 @@ class ResNetEncoder(nn.Module):
             input_channels = self._n_input_depth + self._n_input_rgb
             self.backbone = make_backbone(input_channels, baseplanes, ngroups)
 
-            final_spatial = int(
-                spatial_size * self.backbone.final_spatial_compress
-            )
+            final_spatial = int(spatial_size * self.backbone.final_spatial_compress)
             after_compression_flat_size = 2048
-            num_compression_channels = int(
-                round(after_compression_flat_size / (final_spatial**2))
-            )
+            num_compression_channels = int(round(after_compression_flat_size / (final_spatial**2)))
             self.compression = nn.Sequential(
                 nn.Conv2d(
                     self.backbone.final_channels,
@@ -163,9 +151,7 @@ class ResNetEncoder(nn.Module):
     def layer_init(self):
         for layer in self.modules():
             if isinstance(layer, (nn.Conv2d, nn.Linear)):
-                nn.init.kaiming_normal_(
-                    layer.weight, nn.init.calculate_gain("relu")
-                )
+                nn.init.kaiming_normal_(layer.weight, nn.init.calculate_gain("relu"))
                 if layer.bias is not None:
                     nn.init.constant_(layer.bias, val=0)
 
@@ -178,9 +164,7 @@ class ResNetEncoder(nn.Module):
             rgb_observations = observations["rgb"]
             # permute tensor to dimension [BATCH x CHANNEL x HEIGHT X WIDTH]
             rgb_observations = rgb_observations.permute(0, 3, 1, 2)
-            rgb_observations = (
-                rgb_observations.float() / 255.0
-            )  # normalize RGB
+            rgb_observations = rgb_observations.float() / 255.0  # normalize RGB
             cnn_input.append(rgb_observations)
 
         if self._n_input_depth > 0:
@@ -209,21 +193,19 @@ def init(module, weight_init, bias_init, gain=1):
 class InverseDynamicsNet(nn.Module):
     def __init__(self, num_actions, emb_size=512, p_dropout=0.0):
         super(InverseDynamicsNet, self).__init__()
-        self.num_actions = num_actions 
-        
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
-        self.inverse_dynamics = nn.Sequential(
-            init_(nn.Linear(2 * emb_size, 256)), 
-            nn.ReLU(),
-            nn.Dropout(p=p_dropout)
-        )
+        self.num_actions = num_actions
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, 
-            lambda x: nn.init.constant_(x, 0))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
+        self.inverse_dynamics = nn.Sequential(init_(nn.Linear(2 * emb_size, 256)), nn.ReLU(), nn.Dropout(p=p_dropout))
+
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
         self.id_out = init_(nn.Linear(256, self.num_actions))
 
-        
     def forward(self, state_embedding, next_state_embedding):
         inputs = torch.cat((state_embedding, next_state_embedding), dim=1)
         action_logits = self.id_out(self.inverse_dynamics(inputs))
@@ -233,18 +215,21 @@ class InverseDynamicsNet(nn.Module):
 class ForwardDynamicsNet(nn.Module):
     def __init__(self, num_actions, hidden_dim=1024):
         super(ForwardDynamicsNet, self).__init__()
-        self.num_actions = num_actions 
+        self.num_actions = num_actions
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
-    
-        self.forward_dynamics = nn.Sequential(
-            init_(nn.Linear(hidden_dim + self.num_actions, hidden_dim)), 
-            nn.ReLU(), 
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
         )
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, 
-            lambda x: nn.init.constant_(x, 0))
+        self.forward_dynamics = nn.Sequential(
+            init_(nn.Linear(hidden_dim + self.num_actions, hidden_dim)),
+            nn.ReLU(),
+        )
+
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
 
         self.fd_out = init_(nn.Linear(hidden_dim, hidden_dim))
 
@@ -254,11 +239,8 @@ class ForwardDynamicsNet(nn.Module):
         inputs = torch.cat((state_embedding, action_one_hot), dim=1)
         next_state_emb = self.fd_out(self.forward_dynamics(inputs))
         return next_state_emb
-    
-    
-    
 
-    
+
 class PointNavResNetNet(Net):
     """Network which passes the input image through CNN and concatenates
     goal vector with CNN's output and passes that through RNN.
@@ -282,7 +264,7 @@ class PointNavResNetNet(Net):
         super().__init__()
         self.prev_action_embedding: nn.Module
         self.discrete_actions = discrete_actions
-        if rnn_type != 'none':
+        if rnn_type != "none":
             if discrete_actions:
                 self.prev_action_embedding = nn.Embedding(action_space.n + 1, 32)
             else:
@@ -293,72 +275,46 @@ class PointNavResNetNet(Net):
         rnn_input_size = self._n_prev_action
         fc_input_size = hidden_size
 
-        if (
-            IntegratedPointGoalGPSAndCompassSensor.cls_uuid
-            in observation_space.spaces
-        ):
-            n_input_goal = (
-                observation_space.spaces[
-                    IntegratedPointGoalGPSAndCompassSensor.cls_uuid
-                ].shape[0]
-                + 1
-            )
+        if IntegratedPointGoalGPSAndCompassSensor.cls_uuid in observation_space.spaces:
+            n_input_goal = observation_space.spaces[IntegratedPointGoalGPSAndCompassSensor.cls_uuid].shape[0] + 1
             self.tgt_embeding = nn.Linear(n_input_goal, 32)
             rnn_input_size += 32
             fc_input_size += 32
 
         if ObjectGoalSensor.cls_uuid in observation_space.spaces:
-            self._n_object_categories = (
-                int(
-                    observation_space.spaces[ObjectGoalSensor.cls_uuid].high[0]
-                )
-                + 1
-            )
-            self.obj_categories_embedding = nn.Embedding(
-                self._n_object_categories, 32
-            )
+            self._n_object_categories = int(observation_space.spaces[ObjectGoalSensor.cls_uuid].high[0]) + 1
+            self.obj_categories_embedding = nn.Embedding(self._n_object_categories, 32)
             rnn_input_size += 32
             fc_input_size += 32
 
         if EpisodicGPSSensor.cls_uuid in observation_space.spaces:
-            input_gps_dim = observation_space.spaces[
-                EpisodicGPSSensor.cls_uuid
-            ].shape[0]
+            input_gps_dim = observation_space.spaces[EpisodicGPSSensor.cls_uuid].shape[0]
             self.gps_embedding = nn.Linear(input_gps_dim, 32)
             rnn_input_size += 32
             fc_input_size += 32
 
         if PointGoalSensor.cls_uuid in observation_space.spaces:
-            input_pointgoal_dim = observation_space.spaces[
-                PointGoalSensor.cls_uuid
-            ].shape[0]
+            input_pointgoal_dim = observation_space.spaces[PointGoalSensor.cls_uuid].shape[0]
             self.pointgoal_embedding = nn.Linear(input_pointgoal_dim, 32)
             rnn_input_size += 32
             fc_input_size += 32
 
         if HeadingSensor.cls_uuid in observation_space.spaces:
-            input_heading_dim = (
-                observation_space.spaces[HeadingSensor.cls_uuid].shape[0] + 1
-            )
+            input_heading_dim = observation_space.spaces[HeadingSensor.cls_uuid].shape[0] + 1
             assert input_heading_dim == 2, "Expected heading with 2D rotation."
             self.heading_embedding = nn.Linear(input_heading_dim, 32)
             rnn_input_size += 32
             fc_input_size += 32
 
         if ProximitySensor.cls_uuid in observation_space.spaces:
-            input_proximity_dim = observation_space.spaces[
-                ProximitySensor.cls_uuid
-            ].shape[0]
+            input_proximity_dim = observation_space.spaces[ProximitySensor.cls_uuid].shape[0]
             self.proximity_embedding = nn.Linear(input_proximity_dim, 32)
             rnn_input_size += 32
             fc_input_size += 32
 
         if EpisodicCompassSensor.cls_uuid in observation_space.spaces:
             assert (
-                observation_space.spaces[EpisodicCompassSensor.cls_uuid].shape[
-                    0
-                ]
-                == 1
+                observation_space.spaces[EpisodicCompassSensor.cls_uuid].shape[0] == 1
             ), "Expected compass with 2D rotation."
             input_compass_dim = 2  # cos and sin of the angle
             self.compass_embedding = nn.Linear(input_compass_dim, 32)
@@ -366,9 +322,7 @@ class PointNavResNetNet(Net):
             fc_input_size += 32
 
         if ImageGoalSensor.cls_uuid in observation_space.spaces:
-            goal_observation_space = spaces.Dict(
-                {"rgb": observation_space.spaces[ImageGoalSensor.cls_uuid]}
-            )
+            goal_observation_space = spaces.Dict({"rgb": observation_space.spaces[ImageGoalSensor.cls_uuid]})
             self.goal_visual_encoder = ResNetEncoder(
                 goal_observation_space,
                 baseplanes=resnet_baseplanes,
@@ -379,9 +333,7 @@ class PointNavResNetNet(Net):
 
             self.goal_visual_fc = nn.Sequential(
                 nn.Flatten(),
-                nn.Linear(
-                    np.prod(self.goal_visual_encoder.output_shape), hidden_size
-                ),
+                nn.Linear(np.prod(self.goal_visual_encoder.output_shape), hidden_size),
                 nn.ReLU(True),
             )
 
@@ -400,21 +352,19 @@ class PointNavResNetNet(Net):
         if not self.visual_encoder.is_blind:
             self.visual_fc = nn.Sequential(
                 nn.Flatten(),
-                nn.Linear(
-                    np.prod(self.visual_encoder.output_shape), hidden_size
-                ),
+                nn.Linear(np.prod(self.visual_encoder.output_shape), hidden_size),
                 nn.ReLU(True),
             )
 
-        if self._rnn_type == 'none':
+        if self._rnn_type == "none":
             # use FC encoder
             self.state_encoder = nn.Sequential(
                 nn.Linear(fc_input_size, self._hidden_size),
                 nn.ReLU(inplace=True),
-                nn.Linear(self._hidden_size, self._hidden_size), 
+                nn.Linear(self._hidden_size, self._hidden_size),
                 nn.ReLU(inplace=True),
-                nn.Linear(self._hidden_size, self._hidden_size)
-                )
+                nn.Linear(self._hidden_size, self._hidden_size),
+            )
         else:
             self.state_encoder = build_rnn_state_encoder(
                 (0 if self.is_blind else self._hidden_size) + rnn_input_size,
@@ -446,16 +396,12 @@ class PointNavResNetNet(Net):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         x = []
         if not self.is_blind:
-            visual_feats = observations.get(
-                "visual_features", self.visual_encoder(observations)
-            )
+            visual_feats = observations.get("visual_features", self.visual_encoder(observations))
             visual_feats = self.visual_fc(visual_feats)
             x.append(visual_feats)
 
         if IntegratedPointGoalGPSAndCompassSensor.cls_uuid in observations:
-            goal_observations = observations[
-                IntegratedPointGoalGPSAndCompassSensor.cls_uuid
-            ]
+            goal_observations = observations[IntegratedPointGoalGPSAndCompassSensor.cls_uuid]
             if goal_observations.shape[1] == 2:
                 # Polar Dimensionality 2
                 # 2D polar transform
@@ -468,19 +414,15 @@ class PointNavResNetNet(Net):
                     -1,
                 )
             else:
-                assert (
-                    goal_observations.shape[1] == 3
-                ), "Unsupported dimensionality"
+                assert goal_observations.shape[1] == 3, "Unsupported dimensionality"
                 vertical_angle_sin = torch.sin(goal_observations[:, 2])
                 # Polar Dimensionality 3
                 # 3D Polar transformation
                 goal_observations = torch.stack(
                     [
                         goal_observations[:, 0],
-                        torch.cos(-goal_observations[:, 1])
-                        * vertical_angle_sin,
-                        torch.sin(-goal_observations[:, 1])
-                        * vertical_angle_sin,
+                        torch.cos(-goal_observations[:, 1]) * vertical_angle_sin,
+                        torch.sin(-goal_observations[:, 1]) * vertical_angle_sin,
                         torch.cos(goal_observations[:, 2]),
                     ],
                     -1,
@@ -519,21 +461,17 @@ class PointNavResNetNet(Net):
                 ],
                 -1,
             )
-            x.append(
-                self.compass_embedding(compass_observations.squeeze(dim=1))
-            )
+            x.append(self.compass_embedding(compass_observations.squeeze(dim=1)))
 
         if EpisodicGPSSensor.cls_uuid in observations:
-            x.append(
-                self.gps_embedding(observations[EpisodicGPSSensor.cls_uuid])
-            )
+            x.append(self.gps_embedding(observations[EpisodicGPSSensor.cls_uuid]))
 
         if ImageGoalSensor.cls_uuid in observations:
             goal_image = observations[ImageGoalSensor.cls_uuid]
             goal_output = self.goal_visual_encoder({"rgb": goal_image})
             x.append(self.goal_visual_fc(goal_output))
 
-        if self._rnn_type == 'none':
+        if self._rnn_type == "none":
             out = torch.cat(x, dim=1)
             out = self.state_encoder(out)
             return out, None
@@ -541,38 +479,12 @@ class PointNavResNetNet(Net):
             if self.discrete_actions:
                 prev_actions = prev_actions.squeeze(-1)
                 start_token = torch.zeros_like(prev_actions)
-                prev_actions = self.prev_action_embedding(
-                    torch.where(masks.view(-1), prev_actions + 1, start_token)
-                )
+                prev_actions = self.prev_action_embedding(torch.where(masks.view(-1), prev_actions + 1, start_token))
             else:
-                prev_actions = self.prev_action_embedding(
-                    masks * prev_actions.float()
-                )
+                prev_actions = self.prev_action_embedding(masks * prev_actions.float())
 
             x.append(prev_actions)
 
             out = torch.cat(x, dim=1)
-            out, rnn_hidden_states = self.state_encoder(
-                out, rnn_hidden_states, masks
-            )
+            out, rnn_hidden_states = self.state_encoder(out, rnn_hidden_states, masks)
             return out, rnn_hidden_states
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    

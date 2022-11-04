@@ -21,9 +21,7 @@ except ImportError:
 
 @pytest.mark.skipif(torch is None, reason="Test requires pytorch")
 def test_tensor_dict_constructor():
-    dict_tree = dict(
-        a=torch.randn(2, 2), b=dict(c=dict(d=np.random.randn(3, 3)))
-    )
+    dict_tree = dict(a=torch.randn(2, 2), b=dict(c=dict(d=np.random.randn(3, 3))))
     tensor_dict = TensorDict.from_tree(dict_tree)
 
     assert torch.is_tensor(tensor_dict["a"])

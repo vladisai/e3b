@@ -26,13 +26,9 @@ class LearnedPositionalEncoder(nn.Module):
 
         self.enc = torch.randn(height, width, k)
 
-        self.enc = self.enc.div(
-            torch.norm(self.enc, p=2, dim=2)[:, :, None].expand_as(self.enc)
-        )
+        self.enc = self.enc.div(torch.norm(self.enc, p=2, dim=2)[:, :, None].expand_as(self.enc))
 
-        self.mlp = nn.Sequential(
-            nn.Linear(2 * k, k), nn.ReLU(), nn.Linear(k, k), nn.ReLU()
-        )
+        self.mlp = nn.Sequential(nn.Linear(2 * k, k), nn.ReLU(), nn.Linear(k, k), nn.ReLU())
 
         self.enc = nn.Parameter(self.enc, requires_grad=True)[None, :, :, :]
 
@@ -51,9 +47,7 @@ class TransformerEncoder(nn.Module):
         self.N = N
         self.pe = LearnedPositionalEncoder(d_model, height, width, device)
         self.layers = transformer._get_clones(
-            transformer.TransformerEncoderLayer(
-                d_model, heads, dim_feedforward=d_model
-            ),
+            transformer.TransformerEncoderLayer(d_model, heads, dim_feedforward=d_model),
             N,
         )
 

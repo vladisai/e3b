@@ -69,10 +69,7 @@ parser.add_argument('--state_counter', default="none", choices=['none', 'coordin
 # yapf: enable
 
 logging.basicConfig(
-    format=(
-        "[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] "
-        "%(message)s"
-    ),
+    format=("[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] " "%(message)s"),
     level=0,
 )
 
@@ -100,9 +97,7 @@ def main(flags):
     create_folders(flags)
 
     if not flags.pipes_basename.startswith("unix:"):
-        raise Exception(
-            "--pipes_basename has to be of the form unix:/some/path."
-        )
+        raise Exception("--pipes_basename has to be of the form unix:/some/path.")
 
     processes = []
     for i in range(flags.num_servers):

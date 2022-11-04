@@ -14,9 +14,7 @@ class MiniHackEat(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_eat_event("apple")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackEatFixed(MiniHackSkill):
@@ -31,9 +29,7 @@ class MiniHackEatFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_eat_event("apple")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackEatDistr(MiniHackSkill):
@@ -49,9 +45,7 @@ class MiniHackEatDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_eat_event("apple")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackWield(MiniHackSkill):
@@ -65,9 +59,7 @@ class MiniHackWield(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_wield_event("dagger")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackWieldFixed(MiniHackSkill):
@@ -82,9 +74,7 @@ class MiniHackWieldFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_wield_event("dagger")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackWieldDistr(MiniHackSkill):
@@ -100,9 +90,7 @@ class MiniHackWieldDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_wield_event("dagger")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackWear(MiniHackSkill):
@@ -116,9 +104,7 @@ class MiniHackWear(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_wear_event("robe")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackWearFixed(MiniHackSkill):
@@ -133,9 +119,7 @@ class MiniHackWearFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_wear_event("robe")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackWearDistr(MiniHackSkill):
@@ -151,9 +135,7 @@ class MiniHackWearDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_wear_event("robe")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackPutOn(MiniHackSkill):
@@ -167,9 +149,7 @@ class MiniHackPutOn(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_amulet_event()
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackPutOnFixed(MiniHackSkill):
@@ -184,9 +164,7 @@ class MiniHackPutOnFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_amulet_event()
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackPutOnDistr(MiniHackSkill):
@@ -202,9 +180,7 @@ class MiniHackPutOnDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_amulet_event()
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackZap(MiniHackSkill):
@@ -218,9 +194,7 @@ class MiniHackZap(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_message_event(["The feeling subsides."])
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackZapFixed(MiniHackSkill):
@@ -235,9 +209,7 @@ class MiniHackZapFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_message_event(["The feeling subsides."])
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackZapDistr(MiniHackSkill):
@@ -253,9 +225,7 @@ class MiniHackZapDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_message_event(["The feeling subsides."])
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackRead(MiniHackSkill):
@@ -269,9 +239,7 @@ class MiniHackRead(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_message_event(["This scroll seems to be blank."])
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackReadFixed(MiniHackSkill):
@@ -286,9 +254,7 @@ class MiniHackReadFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_message_event(["This scroll seems to be blank."])
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackReadDistr(MiniHackSkill):
@@ -304,9 +270,7 @@ class MiniHackReadDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_message_event(["This scroll seems to be blank."])
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackPray(MiniHackSkill):
@@ -320,9 +284,7 @@ class MiniHackPray(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_positional_event("altar", "pray")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackPrayFixed(MiniHackSkill):
@@ -337,9 +299,7 @@ class MiniHackPrayFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_positional_event("altar", "pray")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackPrayDistr(MiniHackSkill):
@@ -355,9 +315,7 @@ class MiniHackPrayDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_positional_event("altar", "pray")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackSink(MiniHackSkill):
@@ -371,9 +329,7 @@ class MiniHackSink(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_positional_event("sink", "quaff")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackSinkFixed(MiniHackSkill):
@@ -388,9 +344,7 @@ class MiniHackSinkFixed(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_positional_event("sink", "quaff")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackSinkDistr(MiniHackSkill):
@@ -406,9 +360,7 @@ class MiniHackSinkDistr(MiniHackSkill):
         reward_manager = RewardManager()
         reward_manager.add_positional_event("sink", "quaff")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackClosedDoor(MiniHackSkill):

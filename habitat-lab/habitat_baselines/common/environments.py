@@ -74,10 +74,7 @@ class RearrangeRLEnv(habitat.RLEnv):
         done = False
         if self._env.episode_over:
             done = True
-        if (
-            self._rl_config.get("END_ON_SUCCESS", True)
-            and self._episode_success()
-        ):
+        if self._rl_config.get("END_ON_SUCCESS", True) and self._episode_success():
             done = True
         return done
 
@@ -100,9 +97,7 @@ class NavRLEnv(habitat.RLEnv):
     def reset(self):
         self._previous_action = None
         observations = super().reset()
-        self._previous_measure = self._env.get_metrics()[
-            self._reward_measure_name
-        ]
+        self._previous_measure = self._env.get_metrics()[self._reward_measure_name]
         return observations
 
     def step(self, *args, **kwargs):

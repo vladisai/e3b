@@ -69,11 +69,7 @@ class CollisionDetails:
 
     @property
     def total_collisions(self):
-        return (
-            self.obj_scene_colls
-            + self.robot_obj_colls
-            + self.robot_scene_colls
-        )
+        return self.obj_scene_colls + self.robot_obj_colls + self.robot_scene_colls
 
     def __add__(self, other):
         return CollisionDetails(
@@ -107,10 +103,7 @@ def rearrange_collision(
                 return False
 
         if ignore_names is not None:
-            should_ignore = any(
-                coll_name_matches(x, ignore_name)
-                for ignore_name in ignore_names
-            )
+            should_ignore = any(coll_name_matches(x, ignore_name) for ignore_name in ignore_names)
             if should_ignore:
                 return False
         return True
@@ -124,9 +117,7 @@ def rearrange_collision(
     robot_scene_colls = 0
     robot_scene_matches = [c for c in colls if coll_name_matches(c, robot_id)]
     for match in robot_scene_matches:
-        reg_obj_coll = any(
-            [coll_name_matches(match, obj_id) for obj_id in added_objs]
-        )
+        reg_obj_coll = any([coll_name_matches(match, obj_id) for obj_id in added_objs])
         if reg_obj_coll:
             robot_obj_colls += 1
         else:
@@ -185,15 +176,9 @@ def convert_legacy_cfg(obj_list):
         if ".urdf" in fname:
             obj_dat[0] = osp.join("data/replica_cad/urdf", fname)
         else:
-            obj_dat[0] = obj_dat[0].replace(
-                "data/objects/", "data/objects/ycb/"
-            )
+            obj_dat[0] = obj_dat[0].replace("data/objects/", "data/objects/ycb/")
 
-        if (
-            len(obj_dat) == 2
-            and len(obj_dat[1]) == 4
-            and np.array(obj_dat[1]).shape == (4, 4)
-        ):
+        if len(obj_dat) == 2 and len(obj_dat[1]) == 4 and np.array(obj_dat[1]).shape == (4, 4):
             # Specifies the full transformation, no object type
             return (obj_dat[0], (obj_dat[1], int(MotionType.DYNAMIC)))
         elif len(obj_dat) == 2 and len(obj_dat[1]) == 3:
@@ -214,9 +199,7 @@ def get_aabb(obj_id, sim, transformed=False):
     obj_node = obj.root_scene_node
     obj_bb = obj_node.cumulative_bb
     if transformed:
-        obj_bb = habitat_sim.geo.get_transformed_bb(
-            obj_node.cumulative_bb, obj_node.transformation
-        )
+        obj_bb = habitat_sim.geo.get_transformed_bb(obj_node.cumulative_bb, obj_node.transformation)
     return obj_bb
 
 
@@ -236,9 +219,7 @@ CACHE_PATH = "./data/cache"
 
 
 class CacheHelper:
-    def __init__(
-        self, cache_name, lookup_val, def_val=None, verbose=False, rel_dir=""
-    ):
+    def __init__(self, cache_name, lookup_val, def_val=None, verbose=False, rel_dir=""):
         self.use_cache_path = osp.join(CACHE_PATH, rel_dir)
         os.makedirs(self.use_cache_path, exist_ok=True)
         sec_hash = hashlib.md5(str(lookup_val).encode("utf-8")).hexdigest()
@@ -359,9 +340,7 @@ class IkHelper:
         lower = []
         upper = []
         for joint_i in range(self._arm_len):
-            ret = p.getJointInfo(
-                self.robo_id, joint_i, physicsClientId=self.pc_id
-            )
+            ret = p.getJointInfo(self.robo_id, joint_i, physicsClientId=self.pc_id)
             lower.append(ret[8])
             if ret[9] == -1:
                 upper.append(2 * np.pi)
@@ -373,7 +352,5 @@ class IkHelper:
         """
         :param targ_ee: 3D target position in the ROBOT BASE coordinate frame
         """
-        js = p.calculateInverseKinematics(
-            self.robo_id, self.pb_link_idx, targ_ee, physicsClientId=self.pc_id
-        )
+        js = p.calculateInverseKinematics(self.robo_id, self.pb_link_idx, targ_ee, physicsClientId=self.pc_id)
         return js[: self._arm_len]

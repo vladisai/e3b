@@ -29,9 +29,7 @@ class RunningMeanAndVar(nn.Module):
             # will make those faster.  Further, it makes things more numerically stable
             # for fp16 since it is done in a single reduction call instead of
             # multiple
-            x_channels_first = (
-                x.transpose(1, 0).contiguous().view(x.size(1), -1)
-            )
+            x_channels_first = x.transpose(1, 0).contiguous().view(x.size(1), -1)
             new_mean = x_channels_first.mean(-1, keepdim=True)
             new_count = torch.full_like(self._count, n)
 
@@ -40,9 +38,7 @@ class RunningMeanAndVar(nn.Module):
                 distrib.all_reduce(new_count)
                 new_mean /= distrib.get_world_size()
 
-            new_var = (
-                (x_channels_first - new_mean).pow(2).mean(dim=-1, keepdim=True)
-            )
+            new_var = (x_channels_first - new_mean).pow(2).mean(dim=-1, keepdim=True)
 
             if distrib.is_initialized():
                 distrib.all_reduce(new_var)
@@ -53,25 +49,14 @@ class RunningMeanAndVar(nn.Module):
 
             m_a = self._var * (self._count)
             m_b = new_var * (new_count)
-            M2 = (
-                m_a
-                + m_b
-                + (new_mean - self._mean).pow(2)
-                * self._count
-                * new_count
-                / (self._count + new_count)
-            )
+            M2 = m_a + m_b + (new_mean - self._mean).pow(2) * self._count * new_count / (self._count + new_count)
 
             self._var = M2 / (self._count + new_count)
-            self._mean = (self._count * self._mean + new_count * new_mean) / (
-                self._count + new_count
-            )
+            self._mean = (self._count * self._mean + new_count * new_mean) / (self._count + new_count)
 
             self._count += new_count
 
-        inv_stdev = torch.rsqrt(
-            torch.max(self._var, torch.full_like(self._var, 1e-2))
-        )
+        inv_stdev = torch.rsqrt(torch.max(self._var, torch.full_like(self._var, 1e-2)))
         # This is the same as
         # (x - self._mean) * inv_stdev but is faster since it can
         # make use of addcmul and is more numerically stable in fp16

@@ -97,10 +97,7 @@ def rank0_only(fn: Optional[Callable] = None) -> Union[Callable, bool]:
         whether or not this process is rank 0
     """
     if fn is None:
-        return (
-            not torch.distributed.is_initialized()
-            or torch.distributed.get_rank() == 0
-        )
+        return not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0
 
     @functools.wraps(fn)
     def _wrapper(*args, **kwargs):
@@ -241,9 +238,7 @@ def init_distrib_slurm(
     :returns: Tuple of the local_rank (aka which GPU to use for this process)
         and the TCPStore used for the rendezvous
     """
-    assert (
-        torch.distributed.is_available()
-    ), "torch.distributed must be available"
+    assert torch.distributed.is_available(), "torch.distributed must be available"
 
     if "GLOO_SOCKET_IFNAME" not in os.environ:
         os.environ["GLOO_SOCKET_IFNAME"] = get_ifname()
@@ -255,16 +250,10 @@ def init_distrib_slurm(
 
     main_port = int(os.environ.get("MAIN_PORT", DEFAULT_PORT))
     if SLURM_JOBID is not None:
-        main_port += int(SLURM_JOBID) % int(
-            os.environ.get("MAIN_PORT_RANGE", DEFAULT_PORT_RANGE)
-        )
+        main_port += int(SLURM_JOBID) % int(os.environ.get("MAIN_PORT_RANGE", DEFAULT_PORT_RANGE))
     main_addr = os.environ.get("MAIN_ADDR", DEFAULT_MAIN_ADDR)
 
-    tcp_store = distrib.TCPStore(  # type: ignore
-        main_addr, main_port, world_size, world_rank == 0
-    )
-    distrib.init_process_group(
-        backend, store=tcp_store, rank=world_rank, world_size=world_size
-    )
+    tcp_store = distrib.TCPStore(main_addr, main_port, world_size, world_rank == 0)  # type: ignore
+    distrib.init_process_group(backend, store=tcp_store, rank=world_rank, world_size=world_size)
 
     return local_rank, tcp_store

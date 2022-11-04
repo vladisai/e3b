@@ -138,9 +138,7 @@ class LocActionEvent(Event):
 
     def check(self, env, previous_observation, action, observation) -> float:
         del previous_observation, observation
-        if env._actions[action] == self.action and _standing_on_top(
-            env, self.loc
-        ):
+        if env._actions[action] == self.action and _standing_on_top(env, self.loc):
             self.status = True
         elif env._actions[action] == Y_cmd and self.status:
             return self._set_achieved()
@@ -235,11 +233,7 @@ class MessageEvent(Event):
 
     def check(self, env, previous_observation, action, observation) -> float:
         del previous_observation, action
-        curr_msg = (
-            observation[env._original_observation_keys.index("message")]
-            .tobytes()
-            .decode("utf-8")
-        )
+        curr_msg = observation[env._original_observation_keys.index("message")].tobytes().decode("utf-8")
         for msg in self.messages:
             if msg in curr_msg:
                 return self._set_achieved()
@@ -266,9 +260,7 @@ class AbstractRewardManager(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def check_episode_end_call(
-        self, env, previous_observation, action, observation
-    ) -> bool:
+    def check_episode_end_call(self, env, previous_observation, action, observation) -> bool:
         """Check if the task has ended, and accumulate any reward from the
         transition in ``self._reward``.
 
@@ -321,18 +313,14 @@ class RewardManager(AbstractRewardManager):
 
     def __init__(self):
         self.events: List[Event] = []
-        self.custom_reward_functions: List[
-            Callable[[MiniHack, Any, int, Any], float]
-        ] = []
+        self.custom_reward_functions: List[Callable[[MiniHack, Any, int, Any], float]] = []
         self._reward = 0.0
 
         # Only used for GroupedRewardManager
         self.terminal_sufficient = None
         self.terminal_required = None
 
-    def add_custom_reward_fn(
-        self, reward_fn: Callable[[MiniHack, Any, int, Any], float]
-    ) -> None:
+    def add_custom_reward_fn(self, reward_fn: Callable[[MiniHack, Any, int, Any], float]) -> None:
         """Add a custom reward function which is called every after step to
         calculate reward.
 
@@ -356,9 +344,7 @@ class RewardManager(AbstractRewardManager):
         """
         self.events.append(event)
 
-    def _add_message_event(
-        self, msgs, reward, repeatable, terminal_required, terminal_sufficient
-    ):
+    def _add_message_event(self, msgs, reward, repeatable, terminal_required, terminal_sufficient):
         self.add_event(
             MessageEvent(
                 reward,
@@ -381,9 +367,7 @@ class RewardManager(AbstractRewardManager):
         try:
             action = Command[action.upper()]
         except KeyError:
-            raise KeyError(
-                "Action {} is not in the action space.".format(action.upper())
-            )
+            raise KeyError("Action {} is not in the action space.".format(action.upper()))
 
         self.add_event(
             LocActionEvent(
@@ -432,9 +416,7 @@ class RewardManager(AbstractRewardManager):
         if name == "pear":
             msgs.append("Core dumped.")
 
-        self._add_message_event(
-            msgs, reward, repeatable, terminal_required, terminal_sufficient
-        )
+        self._add_message_event(msgs, reward, repeatable, terminal_required, terminal_sufficient)
 
     def add_wield_event(
         self,
@@ -465,9 +447,7 @@ class RewardManager(AbstractRewardManager):
             f"{name} wields itself to your hand!",
             f"{name} (weapon in hand)",
         ]
-        self._add_message_event(
-            msgs, reward, repeatable, terminal_required, terminal_sufficient
-        )
+        self._add_message_event(msgs, reward, repeatable, terminal_required, terminal_sufficient)
 
     def add_wear_event(
         self,
@@ -495,9 +475,7 @@ class RewardManager(AbstractRewardManager):
                 False.
         """
         msgs = [f"You are now wearing a {name}"]
-        self._add_message_event(
-            msgs, reward, repeatable, terminal_required, terminal_sufficient
-        )
+        self._add_message_event(msgs, reward, repeatable, terminal_required, terminal_sufficient)
 
     def add_amulet_event(
         self,
@@ -587,9 +565,7 @@ class RewardManager(AbstractRewardManager):
                 Whether this event is sufficient for termination. Defaults to
                 False.
         """
-        self._add_message_event(
-            msgs, reward, repeatable, terminal_required, terminal_sufficient
-        )
+        self._add_message_event(msgs, reward, repeatable, terminal_required, terminal_sufficient)
 
     def add_positional_event(
         self,
@@ -721,21 +697,15 @@ class RewardManager(AbstractRewardManager):
         """
         return not env.screen_contains(name)
 
-    def check_episode_end_call(
-        self, env, previous_observation, action, observation
-    ) -> bool:
+    def check_episode_end_call(self, env, previous_observation, action, observation) -> bool:
         reward = 0.0
         for event in self.events:
             if event.achieved:
                 continue
-            reward += event.check(
-                env, previous_observation, action, observation
-            )
+            reward += event.check(env, previous_observation, action, observation)
 
         for custom_reward_function in self.custom_reward_functions:
-            reward += custom_reward_function(
-                env, previous_observation, action, observation
-            )
+            reward += custom_reward_function(env, previous_observation, action, observation)
         self._reward += reward
         return self._check_complete()
 
@@ -777,9 +747,7 @@ class SequentialRewardManager(RewardManager):
         self.current_event_idx = 0
         super().__init__()
 
-    def check_episode_end_call(
-        self, env, previous_observation, action, observation
-    ):
+    def check_episode_end_call(self, env, previous_observation, action, observation):
         event = self.events[self.current_event_idx]
         reward = event.check(env, previous_observation, action, observation)
         if event.achieved:
@@ -806,13 +774,9 @@ class GroupedRewardManager(AbstractRewardManager):
     def __init__(self):
         self.reward_managers: List[AbstractRewardManager] = []
 
-    def check_episode_end_call(
-        self, env, previous_observation, action, observation
-    ) -> bool:
+    def check_episode_end_call(self, env, previous_observation, action, observation) -> bool:
         for reward_manager in self.reward_managers:
-            result = reward_manager.check_episode_end_call(
-                env, previous_observation, action, observation
-            )
+            result = reward_manager.check_episode_end_call(env, previous_observation, action, observation)
             # This reward manager has completed and it's sufficient so we're
             # done
             if reward_manager.terminal_sufficient and result:

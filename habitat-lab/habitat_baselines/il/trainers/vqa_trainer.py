@@ -35,9 +35,7 @@ class VQATrainer(BaseILTrainer):
         super().__init__(config)
 
         self.device = (
-            torch.device("cuda", self.config.TORCH_GPU_ID)
-            if torch.cuda.is_available()
-            else torch.device("cpu")
+            torch.device("cuda", self.config.TORCH_GPU_ID) if torch.cuda.is_available() else torch.device("cpu")
         )
 
         if config is not None:
@@ -91,17 +89,11 @@ class VQATrainer(BaseILTrainer):
         logger.info("Predicted answer: {}".format(pred_answer))
         logger.info("Ground-truth answer: {}".format(gt_answer))
 
-        result_path = self.config.RESULTS_DIR.format(
-            split=self.config.TASK_CONFIG.DATASET.SPLIT
-        )
+        result_path = self.config.RESULTS_DIR.format(split=self.config.TASK_CONFIG.DATASET.SPLIT)
 
-        result_path = os.path.join(
-            result_path, "ckpt_{}_{}_image.jpg".format(ckpt_idx, episode_id)
-        )
+        result_path = os.path.join(result_path, "ckpt_{}_{}_image.jpg".format(ckpt_idx, episode_id))
 
-        save_vqa_image_results(
-            images, q_string, pred_answer, gt_answer, result_path
-        )
+        save_vqa_image_results(images, q_string, pred_answer, gt_answer, result_path)
 
     def train(self) -> None:
         r"""Main method for training VQA (Answering) model of EQA.
@@ -129,9 +121,7 @@ class VQATrainer(BaseILTrainer):
             .map(img_bytes_2_np_array)
         )
 
-        train_loader = DataLoader(
-            vqa_dataset, batch_size=config.IL.VQA.batch_size
-        )
+        train_loader = DataLoader(vqa_dataset, batch_size=config.IL.VQA.batch_size)
 
         logger.info("train_loader has {} samples".format(len(vqa_dataset)))
 
@@ -177,9 +167,7 @@ class VQATrainer(BaseILTrainer):
         if config.IL.VQA.freeze_encoder:
             model.cnn.eval()
 
-        with TensorboardWriter(
-            config.TENSORBOARD_DIR, flush_secs=self.flush_secs
-        ) as writer:
+        with TensorboardWriter(config.TENSORBOARD_DIR, flush_secs=self.flush_secs) as writer:
             while epoch <= config.IL.VQA.max_epochs:
                 start_time = time.time()
                 for batch in train_loader:
@@ -195,9 +183,7 @@ class VQATrainer(BaseILTrainer):
                     loss = lossFn(scores, answers)
 
                     # update metrics
-                    accuracy, ranks = metrics.compute_ranks(
-                        scores.data.cpu(), answers
-                    )
+                    accuracy, ranks = metrics.compute_ranks(scores.data.cpu(), answers)
                     metrics.update([loss.item(), accuracy, ranks, 1.0 / ranks])
 
                     loss.backward()
@@ -222,17 +208,13 @@ class VQATrainer(BaseILTrainer):
                         writer.add_scalar("loss", metrics_loss, t)
                         writer.add_scalar("accuracy", accuracy, t)
                         writer.add_scalar("mean_rank", mean_rank, t)
-                        writer.add_scalar(
-                            "mean_reciprocal_rank", mean_reciprocal_rank, t
-                        )
+                        writer.add_scalar("mean_reciprocal_rank", mean_reciprocal_rank, t)
 
                         metrics.dump_log()
 
                 # Dataloader length for IterableDataset doesn't take into
                 # account batch size for Pytorch v < 1.6.0
-                num_batches = math.ceil(
-                    len(vqa_dataset) / config.IL.VQA.batch_size
-                )
+                num_batches = math.ceil(len(vqa_dataset) / config.IL.VQA.batch_size)
 
                 avg_loss /= num_batches
                 avg_accuracy /= num_batches
@@ -242,26 +224,16 @@ class VQATrainer(BaseILTrainer):
                 end_time = time.time()
                 time_taken = "{:.1f}".format((end_time - start_time) / 60)
 
-                logger.info(
-                    "Epoch {} completed. Time taken: {} minutes.".format(
-                        epoch, time_taken
-                    )
-                )
+                logger.info("Epoch {} completed. Time taken: {} minutes.".format(epoch, time_taken))
 
                 logger.info("Average loss: {:.2f}".format(avg_loss))
                 logger.info("Average accuracy: {:.2f}".format(avg_accuracy))
                 logger.info("Average mean rank: {:.2f}".format(avg_mean_rank))
-                logger.info(
-                    "Average mean reciprocal rank: {:.2f}".format(
-                        avg_mean_reciprocal_rank
-                    )
-                )
+                logger.info("Average mean reciprocal rank: {:.2f}".format(avg_mean_reciprocal_rank))
 
                 print("-----------------------------------------")
 
-                self.save_checkpoint(
-                    model.state_dict(), "epoch_{}.ckpt".format(epoch)
-                )
+                self.save_checkpoint(model.state_dict(), "epoch_{}.ckpt".format(epoch))
 
                 epoch += 1
 
@@ -303,9 +275,7 @@ class VQATrainer(BaseILTrainer):
             .map(img_bytes_2_np_array)
         )
 
-        eval_loader = DataLoader(
-            vqa_dataset, batch_size=config.IL.VQA.batch_size
-        )
+        eval_loader = DataLoader(vqa_dataset, batch_size=config.IL.VQA.batch_size)
 
         logger.info("eval_loader has {} samples".format(len(vqa_dataset)))
 
@@ -318,9 +288,7 @@ class VQATrainer(BaseILTrainer):
         }
         model = VqaLstmCnnAttentionModel(**model_kwargs)
 
-        state_dict = torch.load(
-            checkpoint_path, map_location={"cuda:0": "cpu"}
-        )
+        state_dict = torch.load(checkpoint_path, map_location={"cuda:0": "cpu"})
         model.load_state_dict(state_dict)
 
         lossFn = torch.nn.CrossEntropyLoss()
@@ -358,9 +326,7 @@ class VQATrainer(BaseILTrainer):
 
                 loss = lossFn(scores, answers)
 
-                accuracy, ranks = metrics.compute_ranks(
-                    scores.data.cpu(), answers
-                )
+                accuracy, ranks = metrics.compute_ranks(scores.data.cpu(), answers)
                 metrics.update([loss.item(), accuracy, ranks, 1.0 / ranks])
 
                 (
@@ -379,10 +345,7 @@ class VQATrainer(BaseILTrainer):
                     logger.info(metrics.get_stat_string(mode=0))
                     metrics.dump_log()
 
-                if (
-                    config.EVAL_SAVE_RESULTS
-                    and t % config.EVAL_SAVE_RESULTS_INTERVAL == 0
-                ):
+                if config.EVAL_SAVE_RESULTS and t % config.EVAL_SAVE_RESULTS_INTERVAL == 0:
 
                     self._save_vqa_results(
                         checkpoint_index,
@@ -414,8 +377,4 @@ class VQATrainer(BaseILTrainer):
         logger.info("Average loss: {:.2f}".format(avg_loss))
         logger.info("Average accuracy: {:.2f}".format(avg_accuracy))
         logger.info("Average mean rank: {:.2f}".format(avg_mean_rank))
-        logger.info(
-            "Average mean reciprocal rank: {:.2f}".format(
-                avg_mean_reciprocal_rank
-            )
-        )
+        logger.info("Average mean reciprocal rank: {:.2f}".format(avg_mean_reciprocal_rank))

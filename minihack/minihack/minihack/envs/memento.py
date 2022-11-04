@@ -21,9 +21,7 @@ class MiniHackMemento(MiniHackNavigation):
             terminal_sufficient=True,
             terminal_required=True,
         )
-        super().__init__(
-            *args, des_file=des_file, reward_manager=reward_manager, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=reward_manager, **kwargs)
 
 
 class MiniHackMementoShortF2(MiniHackMemento):

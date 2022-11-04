@@ -24,9 +24,7 @@ class Agent:
         r"""Called before starting a new episode in environment."""
         raise NotImplementedError
 
-    def act(
-        self, observations: "Observations"
-    ) -> Union[int, str, Dict[str, Any]]:
+    def act(self, observations: "Observations") -> Union[int, str, Dict[str, Any]]:
         r"""Called to produce an action to perform in an environment.
 
         :param observations: observations coming in from environment to be

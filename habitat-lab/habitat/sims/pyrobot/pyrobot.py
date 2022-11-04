@@ -54,9 +54,7 @@ def _resize_observation(obs, observation_space, config):
             obs = center_crop(obs, observation_space)
 
         else:
-            obs = cv2.resize(
-                obs, (observation_space.shape[1], observation_space.shape[0])
-            )
+            obs = cv2.resize(obs, (observation_space.shape[1], observation_space.shape[0]))
     return obs
 
 
@@ -85,9 +83,7 @@ class PyRobotRGBSensor(RGBSensor):
     def get_observation(self, robot_obs, *args: Any, **kwargs: Any):
         obs = robot_obs.get(self.uuid, None)
 
-        assert obs is not None, "Invalid observation for {} sensor".format(
-            self.uuid
-        )
+        assert obs is not None, "Invalid observation for {} sensor".format(self.uuid)
 
         obs = _resize_observation(obs, self.observation_space, self.config)
 
@@ -120,9 +116,7 @@ class PyRobotDepthSensor(DepthSensor):
     def get_observation(self, robot_obs, *args: Any, **kwargs: Any):
         obs = robot_obs.get(self.uuid, None)
 
-        assert obs is not None, "Invalid observation for {} sensor".format(
-            self.uuid
-        )
+        assert obs is not None, "Invalid observation for {} sensor".format(self.uuid)
 
         obs = _resize_observation(obs, self.observation_space, self.config)
 
@@ -131,9 +125,7 @@ class PyRobotDepthSensor(DepthSensor):
         obs = np.clip(obs, self.config.MIN_DEPTH, self.config.MAX_DEPTH)
         if self.config.NORMALIZE_DEPTH:
             # normalize depth observations to [0, 1]
-            obs = (obs - self.config.MIN_DEPTH) / (
-                self.config.MAX_DEPTH - self.config.MIN_DEPTH
-            )
+            obs = (obs - self.config.MIN_DEPTH) / (self.config.MAX_DEPTH - self.config.MIN_DEPTH)
 
         obs = np.expand_dims(obs, axis=2)  # make depth observations a 3D array
 
@@ -176,9 +168,7 @@ class PyRobot(Simulator):
             sensor_cfg = getattr(self._config, sensor_name)
             sensor_type = registry.get_sensor(sensor_cfg.TYPE)
 
-            assert sensor_type is not None, "invalid sensor type {}".format(
-                sensor_cfg.TYPE
-            )
+            assert sensor_type is not None, "invalid sensor type {}".format(sensor_cfg.TYPE)
             robot_sensors.append(sensor_type(sensor_cfg))
         self._sensor_suite = SensorSuite(robot_sensors)
 
@@ -187,18 +177,12 @@ class PyRobot(Simulator):
             "base_planner": self._config.BASE_PLANNER,
         }
 
-        assert (
-            self._config.ROBOT in self._config.ROBOTS
-        ), "Invalid robot type {}".format(self._config.ROBOT)
+        assert self._config.ROBOT in self._config.ROBOTS, "Invalid robot type {}".format(self._config.ROBOT)
         self._robot_config = getattr(self._config, self._config.ROBOT.upper())
 
-        self._action_space = self._robot_action_space(
-            self._config.ROBOT, self._robot_config
-        )
+        self._action_space = self._robot_action_space(self._config.ROBOT, self._robot_config)
 
-        self._robot = pyrobot.Robot(
-            self._config.ROBOT, base_config=config_pyrobot
-        )
+        self._robot = pyrobot.Robot(self._config.ROBOT, base_config=config_pyrobot)
 
     def get_robot_observations(self):
         return {
@@ -222,9 +206,7 @@ class PyRobot(Simulator):
     def _robot_action_space(self, robot_type, robot_config):
         action_spaces_dict = {}
         for action in robot_config.ACTIONS:
-            action_spaces_dict[action] = ACTION_SPACES[robot_type.upper()][
-                action
-            ]
+            action_spaces_dict[action] = ACTION_SPACES[robot_type.upper()][action]
         return spaces.Dict(action_spaces_dict)
 
     @property
@@ -234,9 +216,7 @@ class PyRobot(Simulator):
     def reset(self):
         self._robot.camera.reset()
 
-        observations = self._sensor_suite.get_observations(
-            robot_obs=self.get_robot_observations()
-        )
+        observations = self._sensor_suite.get_observations(robot_obs=self.get_robot_observations())
         return observations
 
     def step(self, action, action_params):
@@ -254,28 +234,20 @@ class PyRobot(Simulator):
         else:
             raise ValueError("Invalid action {}".format(action))
 
-        observations = self._sensor_suite.get_observations(
-            robot_obs=self.get_robot_observations()
-        )
+        observations = self._sensor_suite.get_observations(robot_obs=self.get_robot_observations())
 
         return observations
 
     def render(self, mode: str = "rgb") -> Any:
-        observations = self._sensor_suite.get_observations(
-            robot_obs=self.get_robot_observations()
-        )
+        observations = self._sensor_suite.get_observations(robot_obs=self.get_robot_observations())
 
         output = observations.get(mode)
         assert output is not None, "mode {} sensor is not active".format(mode)
 
         return output
 
-    def get_agent_state(
-        self, agent_id: int = 0, base_state_type: str = "odom"
-    ):
-        assert agent_id == 0, "No support of multi agent in {} yet.".format(
-            self.__class__.__name__
-        )
+    def get_agent_state(self, agent_id: int = 0, base_state_type: str = "odom"):
+        assert agent_id == 0, "No support of multi agent in {} yet.".format(self.__class__.__name__)
         state = {
             "base": self._robot.base.get_state(base_state_type),
             "camera": self._robot.camera.get_state(),

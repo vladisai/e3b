@@ -38,9 +38,7 @@ class EQACNNPretrainTrainer(BaseILTrainer):
         super().__init__(config)
 
         self.device = (
-            torch.device("cuda", self.config.TORCH_GPU_ID)
-            if torch.cuda.is_available()
-            else torch.device("cpu")
+            torch.device("cuda", self.config.TORCH_GPU_ID) if torch.cuda.is_available() else torch.device("cpu")
         )
 
         if config is not None:
@@ -95,11 +93,7 @@ class EQACNNPretrainTrainer(BaseILTrainer):
             shuffle=True,
         )
 
-        logger.info(
-            "[ train_loader has {} samples ]".format(
-                len(eqa_cnn_pretrain_dataset)
-            )
-        )
+        logger.info("[ train_loader has {} samples ]".format(len(eqa_cnn_pretrain_dataset)))
 
         model = MultitaskCNN()
         model.train().to(self.device)
@@ -114,9 +108,7 @@ class EQACNNPretrainTrainer(BaseILTrainer):
         seg_loss = torch.nn.CrossEntropyLoss()
 
         epoch, t = 1, 0
-        with TensorboardWriter(
-            config.TENSORBOARD_DIR, flush_secs=self.flush_secs
-        ) as writer:
+        with TensorboardWriter(config.TENSORBOARD_DIR, flush_secs=self.flush_secs) as writer:
             while epoch <= config.IL.EQACNNPretrain.max_epochs:
                 start_time = time.time()
                 avg_loss = 0.0
@@ -143,11 +135,7 @@ class EQACNNPretrainTrainer(BaseILTrainer):
                     avg_loss += loss.item()
 
                     if t % config.LOG_INTERVAL == 0:
-                        logger.info(
-                            "[ Epoch: {}; iter: {}; loss: {:.3f} ]".format(
-                                epoch, t, loss.item()
-                            )
-                        )
+                        logger.info("[ Epoch: {}; iter: {}; loss: {:.3f} ]".format(epoch, t, loss.item()))
 
                         writer.add_scalar("loss/total_loss", loss, t)
                         writer.add_scalar("loss/seg_loss", l1, t)
@@ -161,18 +149,12 @@ class EQACNNPretrainTrainer(BaseILTrainer):
                 time_taken = "{:.1f}".format((end_time - start_time) / 60)
                 avg_loss = avg_loss / len(train_loader)
 
-                logger.info(
-                    "[ Epoch {} completed. Time taken: {} minutes. ]".format(
-                        epoch, time_taken
-                    )
-                )
+                logger.info("[ Epoch {} completed. Time taken: {} minutes. ]".format(epoch, time_taken))
                 logger.info("[ Average loss: {:.3f} ]".format(avg_loss))
 
                 print("-----------------------------------------")
 
-                self.save_checkpoint(
-                    model.state_dict(), "epoch_{}.ckpt".format(epoch)
-                )
+                self.save_checkpoint(model.state_dict(), "epoch_{}.ckpt".format(epoch))
 
                 epoch += 1
 
@@ -206,11 +188,7 @@ class EQACNNPretrainTrainer(BaseILTrainer):
             shuffle=False,
         )
 
-        logger.info(
-            "[ eval_loader has {} samples ]".format(
-                len(eqa_cnn_pretrain_dataset)
-            )
-        )
+        logger.info("[ eval_loader has {} samples ]".format(len(eqa_cnn_pretrain_dataset)))
 
         model = MultitaskCNN()
 
@@ -255,17 +233,10 @@ class EQACNNPretrainTrainer(BaseILTrainer):
                         "[ Iter: {}; loss: {:.3f} ]".format(t, loss.item()),
                     )
 
-                if (
-                    config.EVAL_SAVE_RESULTS
-                    and t % config.EVAL_SAVE_RESULTS_INTERVAL == 0
-                ):
+                if config.EVAL_SAVE_RESULTS and t % config.EVAL_SAVE_RESULTS_INTERVAL == 0:
 
-                    result_id = "ckpt_{}_{}".format(
-                        checkpoint_index, idx[0].item()
-                    )
-                    result_path = os.path.join(
-                        self.config.RESULTS_DIR, result_id
-                    )
+                    result_id = "ckpt_{}_{}".format(checkpoint_index, idx[0].item())
+                    result_path = os.path.join(self.config.RESULTS_DIR, result_id)
 
                     self._save_results(
                         gt_rgb,
@@ -282,9 +253,7 @@ class EQACNNPretrainTrainer(BaseILTrainer):
         avg_l2 /= len(eval_loader)
         avg_l3 /= len(eval_loader)
 
-        writer.add_scalar(
-            "avg_val_loss/total_loss", avg_loss, checkpoint_index
-        )
+        writer.add_scalar("avg_val_loss/total_loss", avg_loss, checkpoint_index)
         writer.add_scalar("avg_val_loss/seg_loss", avg_l1, checkpoint_index)
         writer.add_scalar("avg_val_loss/ae_loss", avg_l2, checkpoint_index)
         writer.add_scalar("avg_val_loss/depth_loss", avg_l3, checkpoint_index)

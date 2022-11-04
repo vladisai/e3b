@@ -53,15 +53,11 @@ def download(url, filename):
         else:
             downloaded = 0
             total = int(total)
-            for data in response.iter_content(
-                chunk_size=max(int(total / 1000), 1024 * 1024)
-            ):
+            for data in response.iter_content(chunk_size=max(int(total / 1000), 1024 * 1024)):
                 downloaded += len(data)
                 f.write(data)
                 done = int(50 * downloaded / total)
-                sys.stdout.write(
-                    "\r[{}{}]".format("█" * done, "." * (50 - done))
-                )
+                sys.stdout.write("\r[{}{}]".format("█" * done, "." * (50 - done)))
                 sys.stdout.flush()
     sys.stdout.write("\n")
 
@@ -77,18 +73,10 @@ def make_good_config_for_orbslam2(config):
     config.SIMULATOR.RGB_SENSOR.HEIGHT = 256
     config.SIMULATOR.DEPTH_SENSOR.WIDTH = 256
     config.SIMULATOR.DEPTH_SENSOR.HEIGHT = 256
-    config.TRAINER.ORBSLAM2.CAMERA_HEIGHT = (
-        config.SIMULATOR.DEPTH_SENSOR.POSITION[1]
-    )
-    config.TRAINER.ORBSLAM2.H_OBSTACLE_MIN = (
-        0.3 * config.TRAINER.ORBSLAM2.CAMERA_HEIGHT
-    )
-    config.TRAINER.ORBSLAM2.H_OBSTACLE_MAX = (
-        1.0 * config.TRAINER.ORBSLAM2.CAMERA_HEIGHT
-    )
-    config.TRAINER.ORBSLAM2.MIN_PTS_IN_OBSTACLE = (
-        config.SIMULATOR.DEPTH_SENSOR.WIDTH / 2.0
-    )
+    config.TRAINER.ORBSLAM2.CAMERA_HEIGHT = config.SIMULATOR.DEPTH_SENSOR.POSITION[1]
+    config.TRAINER.ORBSLAM2.H_OBSTACLE_MIN = 0.3 * config.TRAINER.ORBSLAM2.CAMERA_HEIGHT
+    config.TRAINER.ORBSLAM2.H_OBSTACLE_MAX = 1.0 * config.TRAINER.ORBSLAM2.CAMERA_HEIGHT
+    config.TRAINER.ORBSLAM2.MIN_PTS_IN_OBSTACLE = config.SIMULATOR.DEPTH_SENSOR.WIDTH / 2.0
     return
 
 
@@ -147,9 +135,7 @@ class BlindAgent(RandomAgent):
         else:
             if (angle_to_goal > 0) and (angle_to_goal < pi):
                 command = HabitatSimActions.TURN_LEFT
-            elif (angle_to_goal > pi) or (
-                angle_to_goal < 0 and angle_to_goal > -pi
-            ):
+            elif (angle_to_goal > pi) or (angle_to_goal < 0 and angle_to_goal > -pi):
                 command = HabitatSimActions.TURN_RIGHT
             else:
                 command = HabitatSimActions.TURN_LEFT
@@ -180,9 +166,7 @@ class ORBSLAM2Agent(RandomAgent):
         assert os.path.isfile(self.slam_vocab_path)
         self.slam_settings_path = config.SLAM_SETTINGS_PATH
         assert os.path.isfile(self.slam_settings_path)
-        self.slam = orbslam2.System(
-            self.slam_vocab_path, self.slam_settings_path, orbslam2.Sensor.RGBD
-        )
+        self.slam = orbslam2.System(self.slam_vocab_path, self.slam_settings_path, orbslam2.Sensor.RGBD)
         self.slam.set_use_viewer(False)
         self.slam.initialize()
         self.device = device
@@ -226,9 +210,7 @@ class ORBSLAM2Agent(RandomAgent):
         self.planned_waypoints = []
         self.map2DObstacles = self.init_map2d()
         n, ch, height, width = self.map2DObstacles.size()
-        self.coordinatesGrid = generate_2dgrid(height, width, False).to(
-            self.device
-        )
+        self.coordinatesGrid = generate_2dgrid(height, width, False).to(self.device)
         self.pose6D = self.init_pose6d()
         self.action_history = []
         self.pose6D_history = []
@@ -261,30 +243,20 @@ class ORBSLAM2Agent(RandomAgent):
         self.set_offset_to_goal(habitat_observation)
         if self.tracking_is_OK:
             trajectory_history = np.array(self.slam.get_trajectory_points())
-            self.pose6D = homogenize_p(
-                torch.from_numpy(trajectory_history[-1])[1:]
-                .view(3, 4)
-                .to(self.device)
-            ).view(1, 4, 4)
+            self.pose6D = homogenize_p(torch.from_numpy(trajectory_history[-1])[1:].view(3, 4).to(self.device)).view(
+                1, 4, 4
+            )
             self.trajectory_history = trajectory_history
             if len(self.position_history) > 1:
                 previous_step = get_distance(
                     self.pose6D.view(4, 4),
-                    torch.from_numpy(self.position_history[-1])
-                    .view(4, 4)
-                    .to(self.device),
+                    torch.from_numpy(self.position_history[-1]).view(4, 4).to(self.device),
                 )
                 if self.action_history[-1] == HabitatSimActions.MOVE_FORWARD:
-                    self.unseen_obstacle = (
-                        previous_step.item() <= 0.001
-                    )  # hardcoded threshold for not moving
-        current_obstacles = self.mapper(
-            torch.from_numpy(depth).to(self.device).squeeze(), self.pose6D
-        ).to(self.device)
+                    self.unseen_obstacle = previous_step.item() <= 0.001  # hardcoded threshold for not moving
+        current_obstacles = self.mapper(torch.from_numpy(depth).to(self.device).squeeze(), self.pose6D).to(self.device)
         self.current_obstacles = current_obstacles
-        self.map2DObstacles = torch.max(
-            self.map2DObstacles, current_obstacles.unsqueeze(0).unsqueeze(0)
-        )
+        self.map2DObstacles = torch.max(self.map2DObstacles, current_obstacles.unsqueeze(0).unsqueeze(0))
         if self.timing:
             print(time.time() - t, "Mapping")
         return True
@@ -296,13 +268,7 @@ class ORBSLAM2Agent(RandomAgent):
         return int(self.map_size_meters / self.map_cell_size)
 
     def init_map2d(self):
-        return (
-            torch.zeros(
-                1, 1, self.map_size_in_cells(), self.map_size_in_cells()
-            )
-            .float()
-            .to(self.device)
-        )
+        return torch.zeros(1, 1, self.map_size_in_cells(), self.map_size_in_cells()).float().to(self.device)
 
     def get_orientation_on_map(self):
         self.pose6D = self.pose6D.view(1, 4, 4)
@@ -333,9 +299,7 @@ class ORBSLAM2Agent(RandomAgent):
                 break
         if self.timing:
             print(time.time() - t, " s, update internal state")
-        self.position_history.append(
-            self.pose6D.detach().cpu().numpy().reshape(1, 4, 4)
-        )
+        self.position_history.append(self.pose6D.detach().cpu().numpy().reshape(1, 4, 4))
         success = self.is_goal_reached()
         if success:
             action = HabitatSimActions.STOP
@@ -350,10 +314,7 @@ class ORBSLAM2Agent(RandomAgent):
         # Act
         if self.waypointPose6D is None:
             self.waypointPose6D = self.get_valid_waypoint_pose6d()
-        if (
-            self.is_waypoint_reached(self.waypointPose6D)
-            or not self.tracking_is_OK
-        ):
+        if self.is_waypoint_reached(self.waypointPose6D) or not self.tracking_is_OK:
             self.waypointPose6D = self.get_valid_waypoint_pose6d()
             self.waypoint_id += 1
         action = self.decide_what_to_do()
@@ -380,12 +341,8 @@ class ORBSLAM2Agent(RandomAgent):
         return reached.item()
 
     def get_waypoint_dist_dir(self):
-        angle = get_direction(
-            self.pose6D.squeeze(), self.waypointPose6D.squeeze(), 0, 0
-        )
-        dist = get_distance(
-            self.pose6D.squeeze(), self.waypointPose6D.squeeze()
-        )
+        angle = get_direction(self.pose6D.squeeze(), self.waypointPose6D.squeeze(), 0, 0)
+        dist = get_distance(self.pose6D.squeeze(), self.waypointPose6D.squeeze())
         return torch.cat(
             [
                 dist.view(1, 1),
@@ -407,11 +364,7 @@ class ORBSLAM2Agent(RandomAgent):
         return p_next
 
     def set_offset_to_goal(self, observation):
-        self.offset_to_goal = (
-            torch.from_numpy(observation[GOAL_SENSOR_UUID])
-            .float()
-            .to(self.device)
-        )
+        self.offset_to_goal = torch.from_numpy(observation[GOAL_SENSOR_UUID]).float().to(self.device)
         self.estimatedGoalPos2D = habitat_goalpos_to_mapgoal_pos(
             self.offset_to_goal,
             self.pose6D.squeeze(),
@@ -438,34 +391,22 @@ class ORBSLAM2Agent(RandomAgent):
             return True
         pp = torch.cat(self.planned2Dpath).detach().cpu().view(-1, 2)
         binary_map = self.map2DObstacles.squeeze().detach() >= self.obstacle_th
-        obstacles_on_path = (
-            binary_map[pp[:, 0].long(), pp[:, 1].long()]
-        ).long().sum().item() > 0
+        obstacles_on_path = (binary_map[pp[:, 0].long(), pp[:, 1].long()]).long().sum().item() > 0
         return obstacles_on_path  # obstacles_nearby or  obstacles_on_path
 
     def rawmap2_planner_ready(self, rawmap, start_map, goal_map):
         map1 = (rawmap / float(self.obstacle_th)) ** 2
-        map1 = (
-            torch.clamp(map1, min=0, max=1.0)
-            - start_map
-            - F.max_pool2d(goal_map, 3, stride=1, padding=1)
-        )
+        map1 = torch.clamp(map1, min=0, max=1.0) - start_map - F.max_pool2d(goal_map, 3, stride=1, padding=1)
         return torch.relu(map1)
 
     def plan_path(self, overwrite=False):
         t = time.time()
-        if (
-            (not self.prev_plan_is_not_valid())
-            and (not overwrite)
-            and (len(self.planned_waypoints) > 0)
-        ):
+        if (not self.prev_plan_is_not_valid()) and (not overwrite) and (len(self.planned_waypoints) > 0):
             return self.planned2Dpath, self.planned_waypoints
         self.waypointPose6D = None
         current_pos = self.get_position_on_map()
         start_map = torch.zeros_like(self.map2DObstacles).to(self.device)
-        start_map[
-            0, 0, current_pos[0, 0].long(), current_pos[0, 1].long()
-        ] = 1.0
+        start_map[0, 0, current_pos[0, 0].long(), current_pos[0, 1].long()] = 1.0
         goal_map = torch.zeros_like(self.map2DObstacles).to(self.device)
         goal_map[
             0,
@@ -474,9 +415,7 @@ class ORBSLAM2Agent(RandomAgent):
             self.estimatedGoalPos2D[0, 1].long(),
         ] = 1.0
         path, cost = self.planner(
-            self.rawmap2_planner_ready(
-                self.map2DObstacles, start_map, goal_map
-            ).to(self.device),
+            self.rawmap2_planner_ready(self.map2DObstacles, start_map, goal_map).to(self.device),
             self.coordinatesGrid.to(self.device),
             goal_map.to(self.device),
             start_map.to(self.device),
@@ -486,9 +425,7 @@ class ORBSLAM2Agent(RandomAgent):
         if self.timing:
             print(time.time() - t, " s, Planning")
         t = time.time()
-        planned_waypoints = planned_path2tps(
-            path, self.map_cell_size, self.map_size_meters, 1.0, False
-        ).to(self.device)
+        planned_waypoints = planned_path2tps(path, self.map_cell_size, self.map_size_meters, 1.0, False).to(self.device)
         return path, planned_waypoints
 
     def planner_prediction_to_command(self, p_next):
@@ -498,9 +435,7 @@ class ORBSLAM2Agent(RandomAgent):
         pos_th = self.pos_th
         if get_distance(p_init, p_next) <= pos_th:
             return command
-        d_angle = norm_ang(
-            get_direction(p_init, p_next, ang_th=d_angle_rot_th, pos_th=pos_th)
-        )
+        d_angle = norm_ang(get_direction(p_init, p_next, ang_th=d_angle_rot_th, pos_th=pos_th))
         if abs(d_angle) < d_angle_rot_th:
             command = HabitatSimActions.MOVE_FORWARD
         else:
@@ -539,9 +474,7 @@ class ORBSLAM2MonodepthAgent(ORBSLAM2Agent):
         assert os.path.isfile(self.slam_vocab_path)
         self.slam_settings_path = config.SLAM_SETTINGS_PATH
         assert os.path.isfile(self.slam_settings_path)
-        self.slam = orbslam2.System(
-            self.slam_vocab_path, self.slam_settings_path, orbslam2.Sensor.RGBD
-        )
+        self.slam = orbslam2.System(self.slam_vocab_path, self.slam_settings_path, orbslam2.Sensor.RGBD)
         self.slam.set_use_viewer(False)
         self.slam.initialize()
         self.device = device
@@ -587,9 +520,7 @@ class ORBSLAM2MonodepthAgent(ORBSLAM2Agent):
     def rgb_d_from_observation(self, habitat_observation):
         rgb = habitat_observation["rgb"]
         depth = ResizePIL2(
-            self.monodepth.compute_depth(
-                PIL.Image.fromarray(rgb).resize((320, 320))
-            ),
+            self.monodepth.compute_depth(PIL.Image.fromarray(rgb).resize((320, 320))),
             256,
         )  # /1.75
         depth[depth > 3.0] = 0
@@ -604,9 +535,7 @@ def main():
         default="orbslam2-rgbd",
         choices=["blind", "orbslam2-rgbd", "orbslam2-rgb-monod"],
     )
-    parser.add_argument(
-        "--task-config", type=str, default="tasks/pointnav_rgbd.yaml"
-    )
+    parser.add_argument("--task-config", type=str, default="tasks/pointnav_rgbd.yaml")
     args = parser.parse_args()
 
     config = get_config()

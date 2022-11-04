@@ -59,16 +59,12 @@ class MiniHackExploreMazeHard(MiniHackExploreMaze):
 
 class MiniHackExploreMazeEasyMapped(MiniHackExploreMaze):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, des_file="exploremazeeasy_premapped.des", **kwargs
-        )
+        super().__init__(*args, des_file="exploremazeeasy_premapped.des", **kwargs)
 
 
 class MiniHackExploreMazeHardMapped(MiniHackExploreMaze):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, des_file="exploremazehard_premapped.des", **kwargs
-        )
+        super().__init__(*args, des_file="exploremazehard_premapped.des", **kwargs)
 
 
 register(

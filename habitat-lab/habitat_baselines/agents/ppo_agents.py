@@ -67,9 +67,7 @@ class PPOAgent(Agent):
         action_spaces = Discrete(4)
 
         self.device = (
-            torch.device("cuda:{}".format(config.PTH_GPU_ID))
-            if torch.cuda.is_available()
-            else torch.device("cpu")
+            torch.device("cuda:{}".format(config.PTH_GPU_ID)) if torch.cuda.is_available() else torch.device("cpu")
         )
         self.hidden_size = config.HIDDEN_SIZE
 
@@ -91,16 +89,12 @@ class PPOAgent(Agent):
             #  Filter only actor_critic weights
             self.actor_critic.load_state_dict(
                 {  # type: ignore
-                    k[len("actor_critic.") :]: v
-                    for k, v in ckpt["state_dict"].items()
-                    if "actor_critic" in k
+                    k[len("actor_critic.") :]: v for k, v in ckpt["state_dict"].items() if "actor_critic" in k
                 }
             )
 
         else:
-            habitat.logger.error(
-                "Model checkpoint wasn't loaded, evaluating " "a random model."
-            )
+            habitat.logger.error("Model checkpoint wasn't loaded, evaluating " "a random model.")
 
         self.test_recurrent_hidden_states: Optional[torch.Tensor] = None
         self.not_done_masks: Optional[torch.Tensor] = None
@@ -113,22 +107,13 @@ class PPOAgent(Agent):
             self.hidden_size,
             device=self.device,
         )
-        self.not_done_masks = torch.zeros(
-            1, 1, device=self.device, dtype=torch.bool
-        )
-        self.prev_actions = torch.zeros(
-            1, 1, dtype=torch.long, device=self.device
-        )
+        self.not_done_masks = torch.zeros(1, 1, device=self.device, dtype=torch.bool)
+        self.prev_actions = torch.zeros(1, 1, dtype=torch.long, device=self.device)
 
     def act(self, observations: Observations) -> Dict[str, int]:
         batch = batch_obs([observations], device=self.device)
         with torch.no_grad():
-            (
-                _,
-                actions,
-                _,
-                self.test_recurrent_hidden_states,
-            ) = self.actor_critic.act(
+            (_, actions, _, self.test_recurrent_hidden_states,) = self.actor_critic.act(
                 batch,
                 self.test_recurrent_hidden_states,
                 self.prev_actions,
@@ -150,9 +135,7 @@ def main():
         choices=["blind", "rgb", "depth", "rgbd"],
     )
     parser.add_argument("--model-path", type=str, default=None)
-    parser.add_argument(
-        "--task-config", type=str, default="configs/tasks/pointnav.yaml"
-    )
+    parser.add_argument("--task-config", type=str, default="configs/tasks/pointnav.yaml")
     args = parser.parse_args()
 
     agent_config = get_default_config()

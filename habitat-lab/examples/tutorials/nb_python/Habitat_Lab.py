@@ -74,9 +74,7 @@ from habitat_baselines.config.default import get_config as get_baselines_config
 
 
 # Change to do something like this maybe: https://stackoverflow.com/a/41432704
-def display_sample(
-    rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([])
-):  # noqa: B006
+def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([])):  # noqa: B006
     from habitat_sim.utils.common import d3_40_colors_rgb
 
     rgb_img = Image.fromarray(rgb_obs, mode="RGB")
@@ -84,9 +82,7 @@ def display_sample(
     arr = [rgb_img]
     titles = ["rgb"]
     if semantic_obs.size != 0:
-        semantic_img = Image.new(
-            "P", (semantic_obs.shape[1], semantic_obs.shape[0])
-        )
+        semantic_img = Image.new("P", (semantic_obs.shape[1], semantic_obs.shape[0]))
         semantic_img.putpalette(d3_40_colors_rgb.flatten())
         semantic_img.putdata((semantic_obs.flatten() % 40).astype(np.uint8))
         semantic_img = semantic_img.convert("RGBA")
@@ -94,9 +90,7 @@ def display_sample(
         titles.append("semantic")
 
     if depth_obs.size != 0:
-        depth_img = Image.fromarray(
-            (depth_obs / 10 * 255).astype(np.uint8), mode="L"
-        )
+        depth_img = Image.fromarray((depth_obs / 10 * 255).astype(np.uint8), mode="L")
         arr.append(depth_img)
         titles.append("depth")
 
@@ -117,9 +111,7 @@ def display_sample(
 
 # %%
 if __name__ == "__main__":
-    config = habitat.get_config(
-        config_paths="./configs/test/habitat_all_sensors_test.yaml"
-    )
+    config = habitat.get_config(config_paths="./configs/test/habitat_all_sensors_test.yaml")
 
     try:
         env.close()
@@ -134,25 +126,11 @@ if __name__ == "__main__":
     interactive_control = False  # @param {type:"boolean"}
     while action != "STOP":
         display_sample(obs["rgb"])
-        print(
-            "distance to goal: {:.2f}".format(
-                obs["pointgoal_with_gps_compass"][0]
-            )
-        )
-        print(
-            "angle to goal (radians): {:.2f}".format(
-                obs["pointgoal_with_gps_compass"][1]
-            )
-        )
+        print("distance to goal: {:.2f}".format(obs["pointgoal_with_gps_compass"][0]))
+        print("angle to goal (radians): {:.2f}".format(obs["pointgoal_with_gps_compass"][1]))
         if interactive_control:
-            action = input(
-                "enter action out of {}:\n".format(", ".join(valid_actions))
-            )
-            assert (
-                action in valid_actions
-            ), "invalid action {} entered, choose one amongst " + ",".join(
-                valid_actions
-            )
+            action = input("enter action out of {}:\n".format(", ".join(valid_actions)))
+            assert action in valid_actions, "invalid action {} entered, choose one amongst " + ",".join(valid_actions)
         else:
             action = valid_actions.pop()
         obs = env.step(
@@ -171,9 +149,7 @@ if __name__ == "__main__":
 
 # %%
 if __name__ == "__main__":
-    config = get_baselines_config(
-        "./habitat_baselines/config/pointnav/ppo_pointnav_example.yaml"
-    )
+    config = get_baselines_config("./habitat_baselines/config/pointnav/ppo_pointnav_example.yaml")
 
 # %%
 # set random seeds
@@ -246,9 +222,7 @@ except ImportError:
 
 # %%
 if __name__ == "__main__":
-    config = habitat.get_config(
-        config_paths="./configs/test/habitat_all_sensors_test.yaml"
-    )
+    config = habitat.get_config(config_paths="./configs/test/habitat_all_sensors_test.yaml")
 
 
 @registry.register_task(name="TestNav-v0")
@@ -258,9 +232,7 @@ class NewNavigationTask(NavigationTask):
         super().__init__(config=config, sim=sim, dataset=dataset)
 
     def _check_episode_is_active(self, *args, **kwargs):
-        logger.info(
-            "Current agent position: {}".format(self._sim.get_agent_state())
-        )
+        logger.info("Current agent position: {}".format(self._sim.get_agent_state()))
         collision = self._sim.previous_step_collided
         stop_called = not getattr(self, "is_stop_called", False)
         return collision or stop_called
@@ -285,14 +257,8 @@ if __name__ == "__main__":
     while env.episode_over is not True:
         display_sample(obs["rgb"])
         if interactive_control:
-            action = input(
-                "enter action out of {}:\n".format(", ".join(valid_actions))
-            )
-            assert (
-                action in valid_actions
-            ), "invalid action {} entered, choose one amongst " + ",".join(
-                valid_actions
-            )
+            action = input("enter action out of {}:\n".format(", ".join(valid_actions)))
+            assert action in valid_actions, "invalid action {} entered, choose one amongst " + ",".join(valid_actions)
         else:
             action = valid_actions.pop()
         obs = env.step(
@@ -340,9 +306,7 @@ class AgentPositionSensor(habitat.Sensor):
 
 # %%
 if __name__ == "__main__":
-    config = habitat.get_config(
-        config_paths="./configs/test/habitat_all_sensors_test.yaml"
-    )
+    config = habitat.get_config(config_paths="./configs/test/habitat_all_sensors_test.yaml")
 
     config.defrost()
     # Now define the config for the sensor

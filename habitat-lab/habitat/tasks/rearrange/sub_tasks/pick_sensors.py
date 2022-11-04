@@ -44,29 +44,13 @@ class RearrangePickReward(RearrangeReward):
         self.cur_dist = -1.0
         self._prev_picked = self._sim.grasp_mgr.snap_idx is not None
 
-        super().reset_metric(
-            *args,
-            episode=episode,
-            task=task,
-            observations=observations,
-            **kwargs
-        )
+        super().reset_metric(*args, episode=episode, task=task, observations=observations, **kwargs)
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
-        super().update_metric(
-            *args,
-            episode=episode,
-            task=task,
-            observations=observations,
-            **kwargs
-        )
+        super().update_metric(*args, episode=episode, task=task, observations=observations, **kwargs)
         reward = self._metric
-        ee_to_object_distance = task.measurements.measures[
-            EndEffectorToObjectDistance.cls_uuid
-        ].get_metric()
-        ee_to_rest_distance = task.measurements.measures[
-            EndEffectorToRestDistance.cls_uuid
-        ].get_metric()
+        ee_to_object_distance = task.measurements.measures[EndEffectorToObjectDistance.cls_uuid].get_metric()
+        ee_to_rest_distance = task.measurements.measures[EndEffectorToRestDistance.cls_uuid].get_metric()
 
         snapped_id = self._sim.grasp_mgr.snap_idx
         cur_picked = snapped_id is not None
@@ -148,22 +132,12 @@ class RearrangePickSuccess(Measure):
         return RearrangePickSuccess.cls_uuid
 
     def reset_metric(self, *args, episode, task, observations, **kwargs):
-        task.measurements.check_measure_dependencies(
-            self.uuid, [EndEffectorToObjectDistance.cls_uuid]
-        )
+        task.measurements.check_measure_dependencies(self.uuid, [EndEffectorToObjectDistance.cls_uuid])
         self._prev_ee_pos = observations["ee_pos"]
-        self.update_metric(
-            *args,
-            episode=episode,
-            task=task,
-            observations=observations,
-            **kwargs
-        )
+        self.update_metric(*args, episode=episode, task=task, observations=observations, **kwargs)
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
-        ee_to_rest_distance = task.measurements.measures[
-            EndEffectorToRestDistance.cls_uuid
-        ].get_metric()
+        ee_to_rest_distance = task.measurements.measures[EndEffectorToRestDistance.cls_uuid].get_metric()
 
         # Is the agent holding the object and it's at the start?
         abs_targ_obj_idx = self._sim.scene_obj_ids[task.abs_targ_idx]

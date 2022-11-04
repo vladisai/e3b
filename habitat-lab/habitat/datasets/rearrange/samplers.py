@@ -71,18 +71,14 @@ class ObjectSampler:
     def __init__(
         self,
         object_set: List[str],
-        receptacle_sets: List[
-            Tuple[List[str], List[str], List[str], List[str]]
-        ],
+        receptacle_sets: List[Tuple[List[str], List[str], List[str], List[str]]],
         num_objects: Tuple[int, int] = (1, 1),
         orientation_sample: Optional[str] = None,
         sample_region_ratio: float = 1.0,
     ) -> None:
         self.object_set = object_set
         self.receptacle_sets = receptacle_sets
-        self.receptacle_instances: Optional[
-            List[Receptacle]
-        ] = None  # all receptacles in the scene
+        self.receptacle_instances: Optional[List[Receptacle]] = None  # all receptacles in the scene
         self.receptacle_candidates: Optional[
             List[Receptacle]
         ] = None  # the specific receptacle instances relevant to this sampler
@@ -92,9 +88,7 @@ class ObjectSampler:
         self.max_placement_attempts = 50  # number of times to attempt a single object|receptacle placement pairing
         self.num_objects = num_objects  # tuple of [min,max] objects to sample
         assert self.num_objects[1] >= self.num_objects[0]
-        self.orientation_sample = (
-            orientation_sample  # None, "up" (1D), "all" (rand quat)
-        )
+        self.orientation_sample = orientation_sample  # None, "up" (1D), "all" (rand quat)
         self.sample_region_ratio = sample_region_ratio
         # More possible parameters of note:
         # - surface vs volume
@@ -129,9 +123,7 @@ class ObjectSampler:
                     # r_set_tuple = (included_obj_substrs, excluded_obj_substrs, included_receptacle_substrs, excluded_receptacle_substrs)
                     culled = False
                     # first try to cull by exclusion
-                    for ex_object_substr in (
-                        r_set_tuple[1] and receptacle.parent_object_handle
-                    ):
+                    for ex_object_substr in r_set_tuple[1] and receptacle.parent_object_handle:
                         if ex_object_substr in receptacle.parent_object_handle:
                             culled = True
                             break
@@ -169,19 +161,11 @@ class ObjectSampler:
                 if found_match:
                     # substring match was found, check orientation constraint
                     if cull_tilted_receptacles:
-                        obj_down = (
-                            receptacle.get_global_transform(sim)
-                            .transform_vector(-receptacle.up)
-                            .normalized()
-                        )
-                        gravity_alignment = mn.math.dot(
-                            obj_down, sim.get_gravity().normalized()
-                        )
+                        obj_down = receptacle.get_global_transform(sim).transform_vector(-receptacle.up).normalized()
+                        gravity_alignment = mn.math.dot(obj_down, sim.get_gravity().normalized())
                         if gravity_alignment < tilt_tolerance:
                             culled = True
-                            logger.info(
-                                f"Culled by tilt: '{receptacle.name}', {gravity_alignment}"
-                            )
+                            logger.info(f"Culled by tilt: '{receptacle.name}', {gravity_alignment}")
                     if not culled:
                         # found a valid receptacle
                         self.receptacle_candidates.append(receptacle)
@@ -189,9 +173,7 @@ class ObjectSampler:
         assert (
             len(self.receptacle_candidates) > 0
         ), f"No receptacle instances found matching this sampler's requirements. Likely a sampler config constraint is not feasible for all scenes in the dataset. Cull this scene from your dataset? Scene='{sim.config.sim_cfg.scene_id}'. Receptacle constraints ='{self.receptacle_sets}'"
-        target_receptacle = self.receptacle_candidates[
-            random.randrange(0, len(self.receptacle_candidates))
-        ]
+        target_receptacle = self.receptacle_candidates[random.randrange(0, len(self.receptacle_candidates))]
         return target_receptacle
 
     def sample_object(self) -> str:
@@ -217,18 +199,14 @@ class ObjectSampler:
             num_placement_tries += 1
 
             # sample the object location
-            target_object_position = receptacle.sample_uniform_global(
-                sim, self.sample_region_ratio
-            )
+            target_object_position = receptacle.sample_uniform_global(sim, self.sample_region_ratio)
 
             # instance the new potential object from the handle
             if new_object == None:
                 assert sim.get_object_template_manager().get_library_has_handle(
                     object_handle
                 ), f"Found no object in the SceneDataset with handle '{object_handle}'."
-                new_object = sim.get_rigid_object_manager().add_object_by_template_handle(
-                    object_handle
-                )
+                new_object = sim.get_rigid_object_manager().add_object_by_template_handle(object_handle)
 
             # try to place the object
             new_object.translation = target_object_position
@@ -236,14 +214,10 @@ class ObjectSampler:
                 if self.orientation_sample == "up":
                     # rotate the object around the gravity direction
                     rot = random.uniform(0, math.pi * 2.0)
-                    new_object.rotation = mn.Quaternion.rotation(
-                        mn.Rad(rot), mn.Vector3.y_axis()
-                    )
+                    new_object.rotation = mn.Quaternion.rotation(mn.Rad(rot), mn.Vector3.y_axis())
                 elif self.orientation_sample == "all":
                     # set the object's orientation to a random quaternion
-                    new_object.rotation = (
-                        habitat_sim.utils.common.random_quaternion()
-                    )
+                    new_object.rotation = habitat_sim.utils.common.random_quaternion()
             if snap_down:
                 support_object_ids = [-1]
                 # add support object ids for non-stage receptacles
@@ -263,9 +237,7 @@ class ObjectSampler:
                             break
                 elif receptacle.parent_object_handle is not None:
                     support_object_ids = [
-                        sim.get_rigid_object_manager()
-                        .get_object_by_handle(receptacle.parent_object_handle)
-                        .object_id
+                        sim.get_rigid_object_manager().get_object_by_handle(receptacle.parent_object_handle).object_id
                     ]
                 snap_success = sutils.snap_down(
                     sim,
@@ -274,24 +246,16 @@ class ObjectSampler:
                     vdb=vdb,
                 )
                 if snap_success:
-                    logger.info(
-                        f"Successfully sampled (snapped) object placement in {num_placement_tries} tries."
-                    )
+                    logger.info(f"Successfully sampled (snapped) object placement in {num_placement_tries} tries.")
                     return new_object
 
             elif not new_object.contact_test():
-                logger.info(
-                    f"Successfully sampled object placement in {num_placement_tries} tries."
-                )
+                logger.info(f"Successfully sampled object placement in {num_placement_tries} tries.")
                 return new_object
 
         # if num_placement_tries > self.max_placement_attempts:
-        sim.get_rigid_object_manager().remove_object_by_handle(
-            new_object.handle
-        )
-        logger.info(
-            f"Failed to sample object placement in {self.max_placement_attempts} tries."
-        )
+        sim.get_rigid_object_manager().remove_object_by_handle(new_object.handle)
+        logger.info(f"Failed to sample object placement in {self.max_placement_attempts} tries.")
         return None
 
     def single_sample(
@@ -303,13 +267,9 @@ class ObjectSampler:
         # draw a new pairing
         object_handle = self.sample_object()
         target_receptacle = self.sample_receptacle(sim)
-        logger.info(
-            f"Sampling '{object_handle}' from '{target_receptacle.name}'"
-        )
+        logger.info(f"Sampling '{object_handle}' from '{target_receptacle.name}'")
 
-        new_object = self.sample_placement(
-            sim, object_handle, target_receptacle, snap_down, vdb
-        )
+        new_object = self.sample_placement(sim, object_handle, target_receptacle, snap_down, vdb)
 
         return new_object
 
@@ -331,14 +291,9 @@ class ObjectSampler:
             if self.num_objects[1] > self.num_objects[0]
             else self.num_objects[0]
         )
-        logger.info(
-            f"    Trying to sample {target_objects_number} from range {self.num_objects}"
-        )
+        logger.info(f"    Trying to sample {target_objects_number} from range {self.num_objects}")
 
-        while (
-            len(new_objects) < target_objects_number
-            and num_pairing_tries < self.max_sample_attempts
-        ):
+        while len(new_objects) < target_objects_number and num_pairing_tries < self.max_sample_attempts:
             num_pairing_tries += 1
             new_object = self.single_sample(sim, snap_down, vdb)
             if new_object is not None:
@@ -348,17 +303,11 @@ class ObjectSampler:
             return new_objects
 
         # we didn't find the minimum number of placements, so remove all new objects and return
-        logger.info(
-            f"Failed to sample the minimum number of placements in {self.max_sample_attempts} tries."
-        )
-        logger.info(
-            f"    Only able to sample {len(new_objects)} out of {self.num_objects}..."
-        )
+        logger.info(f"Failed to sample the minimum number of placements in {self.max_sample_attempts} tries.")
+        logger.info(f"    Only able to sample {len(new_objects)} out of {self.num_objects}...")
         # cleanup
         for new_object in new_objects:
-            sim.get_rigid_object_manager().remove_object_by_handle(
-                new_object.handle
-            )
+            sim.get_rigid_object_manager().remove_object_by_handle(new_object.handle)
         return []
 
 
@@ -370,9 +319,7 @@ class ObjectTargetSampler(ObjectSampler):
     def __init__(
         self,
         object_instance_set: List[habitat_sim.physics.ManagedRigidObject],
-        receptacle_sets: List[
-            Tuple[List[str], List[str], List[str], List[str]]
-        ],
+        receptacle_sets: List[Tuple[List[str], List[str], List[str], List[str]]],
         num_targets: Tuple[int, int] = (1, 1),
         orientation_sample: Optional[str] = None,
     ) -> None:
@@ -380,12 +327,8 @@ class ObjectTargetSampler(ObjectSampler):
         Initialize a standard ObjectSampler but construct the object_set to correspond with specific object instances provided.
         """
         self.object_instance_set = object_instance_set
-        object_set = [
-            x.creation_attributes.handle for x in self.object_instance_set
-        ]
-        super().__init__(
-            object_set, receptacle_sets, num_targets, orientation_sample
-        )
+        object_set = [x.creation_attributes.handle for x in self.object_instance_set]
+        super().__init__(object_set, receptacle_sets, num_targets, orientation_sample)
 
     def sample(
         self,
@@ -408,15 +351,10 @@ class ObjectTargetSampler(ObjectSampler):
             else self.num_objects[0]
         )
         target_number = min(target_number, len(self.object_instance_set))
-        logger.info(
-            f"    Trying to sample {target_number} targets from range {self.num_objects}"
-        )
+        logger.info(f"    Trying to sample {target_number} targets from range {self.num_objects}")
 
         num_pairing_tries = 0
-        while (
-            targets_found < target_number
-            and num_pairing_tries < self.max_sample_attempts
-        ):
+        while targets_found < target_number and num_pairing_tries < self.max_sample_attempts:
             num_pairing_tries += 1
             new_object = self.single_sample(sim, snap_down, vdb)
             if new_object is not None:
@@ -424,16 +362,13 @@ class ObjectTargetSampler(ObjectSampler):
                 found_match = False
                 for object_instance in self.object_instance_set:
                     if (
-                        object_instance.creation_attributes.handle
-                        == new_object.creation_attributes.handle
+                        object_instance.creation_attributes.handle == new_object.creation_attributes.handle
                         and object_instance.handle not in new_target_objects
                     ):
                         new_target_objects[object_instance.handle] = new_object
                         found_match = True
                         # remove this object instance match from future pairings
-                        self.object_set.remove(
-                            new_object.creation_attributes.handle
-                        )
+                        self.object_set.remove(new_object.creation_attributes.handle)
                         break
                 assert (
                     found_match is True
@@ -443,24 +378,18 @@ class ObjectTargetSampler(ObjectSampler):
             return new_target_objects
 
         # we didn't find all placements, so remove all new objects and return
-        logger.info(
-            f"Failed to sample all target placements in {self.max_sample_attempts} tries."
-        )
+        logger.info(f"Failed to sample all target placements in {self.max_sample_attempts} tries.")
         logger.info(
             f"    Only able to sample {len(new_target_objects)} targets out of {len(self.object_instance_set)}..."
         )
         # cleanup
         for new_object in new_target_objects.values():
-            sim.get_rigid_object_manager().remove_object_by_handle(
-                new_object.handle
-            )
+            sim.get_rigid_object_manager().remove_object_by_handle(new_object.handle)
         return None
 
 
 class ArticulatedObjectStateSampler:
-    def __init__(
-        self, ao_handle: str, link_name: str, state_range: Tuple[float, float]
-    ) -> None:
+    def __init__(self, ao_handle: str, link_name: str, state_range: Tuple[float, float]) -> None:
         self.ao_handle = ao_handle
         self.link_name = link_name
         self.state_range = state_range
@@ -468,35 +397,25 @@ class ArticulatedObjectStateSampler:
 
     def sample(
         self, sim: habitat_sim.Simulator
-    ) -> Optional[
-        Dict[habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]]
-    ]:
+    ) -> Optional[Dict[habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]]]:
         """
         For all matching AOs in the scene, sample and apply the joint state for this sampler.
         Return a list of tuples (instance_handle, link_name, state)
         """
-        ao_states: Dict[
-            habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]
-        ] = {}
+        ao_states: Dict[habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]] = {}
         # TODO: handle sampled invalid states (e.g. fridge open into wall in some scenes)
         aom = sim.get_articulated_object_manager()
         # get all AOs in the scene with the configured handle as a substring
-        matching_ao_instances = aom.get_objects_by_handle_substring(
-            self.ao_handle
-        ).values()
+        matching_ao_instances = aom.get_objects_by_handle_substring(self.ao_handle).values()
         for ao_instance in matching_ao_instances.values():
             # now find a matching link
             for link_ix in range(ao_instance.num_links):
                 if ao_instance.get_link_name(link_ix) == self.link_name:
                     # found a matching link, sample the state
-                    joint_state = random.uniform(
-                        self.state_range[0], self.state_range[1]
-                    )
+                    joint_state = random.uniform(self.state_range[0], self.state_range[1])
                     # set the joint state
                     pose = ao_instance.joint_positions
-                    pose[
-                        ao_instance.get_link_joint_pos_offset(link_ix)
-                    ] = joint_state
+                    pose[ao_instance.get_link_joint_pos_offset(link_ix)] = joint_state
                     ao_instance.joint_positions = pose
                     if ao_instance not in ao_states:
                         ao_states[ao_instance] = {}
@@ -510,9 +429,7 @@ class CompositeArticulatedObjectStateSampler(ArticulatedObjectStateSampler):
     Samples multiple articulated states simultaneously with rejection of invalid configurations.
     """
 
-    def __init__(
-        self, ao_sampler_params: Dict[str, Dict[str, Tuple[float, float]]]
-    ) -> None:
+    def __init__(self, ao_sampler_params: Dict[str, Dict[str, Tuple[float, float]]]) -> None:
         """
         ao_sampler_params : {ao_handle -> {link_name -> (min, max)}}
         """
@@ -521,16 +438,11 @@ class CompositeArticulatedObjectStateSampler(ArticulatedObjectStateSampler):
         # validate the ranges
         for ao_handle in ao_sampler_params:
             for link_name in ao_sampler_params[ao_handle]:
-                assert (
-                    ao_sampler_params[ao_handle][link_name][1]
-                    >= ao_sampler_params[ao_handle][link_name][0]
-                )
+                assert ao_sampler_params[ao_handle][link_name][1] >= ao_sampler_params[ao_handle][link_name][0]
 
     def sample(
         self, sim: habitat_sim.Simulator
-    ) -> Optional[
-        Dict[habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]]
-    ]:
+    ) -> Optional[Dict[habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]]]:
         """
         Iterative rejection sampling of all joint states specified in parameters.
         Return a list of tuples (instance_handle, link_name, state)
@@ -541,13 +453,9 @@ class CompositeArticulatedObjectStateSampler(ArticulatedObjectStateSampler):
         logger.info(ids_to_names)
         # first collect all instances associated with requested samplers
         aom = sim.get_articulated_object_manager()
-        matching_ao_instances: Dict[
-            str, List[habitat_sim.physics.ManagedArticulatedObject]
-        ] = {}
+        matching_ao_instances: Dict[str, List[habitat_sim.physics.ManagedArticulatedObject]] = {}
         for ao_handle in self.ao_sampler_params:
-            matching_ao_instances[
-                ao_handle
-            ] = aom.get_objects_by_handle_substring(ao_handle).values()
+            matching_ao_instances[ao_handle] = aom.get_objects_by_handle_substring(ao_handle).values()
 
         # construct an efficiently iterable structure for reject sampling of link states
         link_sample_params: Dict[
@@ -564,26 +472,18 @@ class CompositeArticulatedObjectStateSampler(ArticulatedObjectStateSampler):
                         assert (
                             link_ix not in link_sample_params[ao_instance]
                         ), f"Joint sampler configuration creating duplicate sampler requests for object '{ao_handle}', instance '{ao_instance.handle}', link {link_name}."
-                        link_sample_params[ao_instance][
-                            link_ix
-                        ] = self.ao_sampler_params[ao_handle][link_name]
+                        link_sample_params[ao_instance][link_ix] = self.ao_sampler_params[ao_handle][link_name]
 
         for _iteration in range(self.max_iterations):
-            ao_states: Dict[
-                habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]
-            ] = {}
+            ao_states: Dict[habitat_sim.physics.ManagedArticulatedObject, Dict[int, float]] = {}
             # sample a composite joint configuration
             for ao_instance, link_ranges in link_sample_params.items():
                 ao_states[ao_instance] = {}
                 # NOTE: only query and set pose once per instance for efficiency
                 pose = ao_instance.joint_positions
                 for link_ix, joint_range in link_ranges.items():
-                    joint_state = random.uniform(
-                        joint_range[0], joint_range[1]
-                    )
-                    pose[
-                        ao_instance.get_link_joint_pos_offset(link_ix)
-                    ] = joint_state
+                    joint_state = random.uniform(joint_range[0], joint_range[1])
+                    pose[ao_instance.get_link_joint_pos_offset(link_ix)] = joint_state
                     ao_states[ao_instance][link_ix] = joint_state
                 ao_instance.joint_positions = pose
 
@@ -592,18 +492,14 @@ class CompositeArticulatedObjectStateSampler(ArticulatedObjectStateSampler):
             for ao_handle in matching_ao_instances:
                 for ao_instance in matching_ao_instances[ao_handle]:
                     if ao_instance.contact_test():
-                        logger.info(
-                            f"ao_handle = {ao_handle} failed contact test."
-                        )
+                        logger.info(f"ao_handle = {ao_handle} failed contact test.")
                         sim.perform_discrete_collision_detection()
                         cps = sim.get_physics_contact_points()
                         logger.info(ao_instance.handle)
                         for cp in cps:
                             if (
-                                ao_instance.handle
-                                in ids_to_names[cp.object_id_a]
-                                or ao_instance.handle
-                                in ids_to_names[cp.object_id_b]
+                                ao_instance.handle in ids_to_names[cp.object_id_a]
+                                or ao_instance.handle in ids_to_names[cp.object_id_b]
                             ):
                                 logger.info(
                                     f" contact between ({cp.object_id_a})'{ids_to_names[cp.object_id_a]}' and ({cp.object_id_b})'{ids_to_names[cp.object_id_b]}'"

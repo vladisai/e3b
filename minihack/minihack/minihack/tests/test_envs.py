@@ -138,11 +138,7 @@ class TestGymEnv:
 
 @pytest.mark.parametrize(
     "env_name",
-    [
-        e
-        for e in get_minihack_env_ids()
-        if "MazeWalk" in e or "WoD" in e or "Room" in e or "Eat" in e
-    ],
+    [e for e in get_minihack_env_ids() if "MazeWalk" in e or "WoD" in e or "Room" in e or "Eat" in e],
 )
 @pytest.mark.parametrize("rollout_len", [500])
 class TestGymEnvRollout:
@@ -159,9 +155,7 @@ class TestGymEnvRollout:
             rollout_env(env, rollout_len)
             env.close()
 
-            assert os.path.exists(
-                os.path.join(savedir, "nle.%i.0.ttyrec.bz2" % os.getpid())
-            )
+            assert os.path.exists(os.path.join(savedir, "nle.%i.0.ttyrec.bz2" % os.getpid()))
 
     def test_rollout_no_archive(self, env_name, rollout_len):
         """Tests rollout_len steps (or until termination) of random policy."""
@@ -254,9 +248,7 @@ class TestGymEnvRollout:
                 env.reset()
             output = env.render(mode="ansi")
             assert isinstance(output, str)
-            assert len(output.replace("\n", "")) == np.prod(
-                nle.env.DUNGEON_SHAPE
-            )
+            assert len(output.replace("\n", "")) == np.prod(nle.env.DUNGEON_SHAPE)
 
 
 class TestRoomReward:

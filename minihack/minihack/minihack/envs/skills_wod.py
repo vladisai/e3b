@@ -19,9 +19,7 @@ class MiniHackWoDEasy(MiniHackSkill):
         kwargs["autopickup"] = kwargs.pop("autopickup", True)
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 50)
 
-        lvl_gen.add_object(
-            name="death", symbol="/", cursestate="blessed", place=((1, 1))
-        )
+        lvl_gen.add_object(name="death", symbol="/", cursestate="blessed", place=((1, 1)))
         lvl_gen.add_monster("minotaur", args=("asleep",), place=(9, 1))
 
         des_file = lvl_gen.get_des()
@@ -29,9 +27,7 @@ class MiniHackWoDEasy(MiniHackSkill):
         rwrd_mngr = RewardManager()
         rwrd_mngr.add_kill_event("minotaur")
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=rwrd_mngr, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=rwrd_mngr, **kwargs)
 
 
 class MiniHackWoDMedium(MiniHackSkill):
@@ -46,9 +42,7 @@ class MiniHackWoDMedium(MiniHackSkill):
         lvl_gen.set_start_pos((1, 1))
         lvl_gen.add_goal_pos((27, 1))
 
-        lvl_gen.add_object(
-            name="death", symbol="/", cursestate="blessed", place=((2, 1))
-        )
+        lvl_gen.add_object(name="death", symbol="/", cursestate="blessed", place=((2, 1)))
         lvl_gen.add_monster("minotaur", args=("asleep",), place=(26, 1))
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 150)
 
@@ -68,23 +62,19 @@ class MiniHackWoDMediumRestrictedActions(MiniHackSkill):
         lvl_gen.set_start_pos((1, 1))
         lvl_gen.add_goal_pos((27, 1))
 
-        lvl_gen.add_object(
-            name="death", symbol="/", cursestate="blessed", place=((2, 1))
-        )
+        lvl_gen.add_object(name="death", symbol="/", cursestate="blessed", place=((2, 1)))
         lvl_gen.add_monster("minotaur", args=("asleep",), place=(26, 1))
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 150)
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.ZAP, \
-                                                     nethack.Command.FIRE)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.ZAP,
+            nethack.Command.FIRE,
+        )
         kwargs["actions"] = ACTIONS
-        
-        
 
         des_file = lvl_gen.get_des()
         super().__init__(*args, des_file=des_file, **kwargs)
-
-        
 
 
 class MiniHackWoDHard(MiniHackSkill):
@@ -103,16 +93,12 @@ class MiniHackWoDHard(MiniHackSkill):
         lvl_gen.add_goal_pos((27, 1))
 
         lvl_gen.set_area_variable("$safe_room", "fillrect", 1, 1, 5, 5)
-        lvl_gen.add_object_area(
-            "$safe_room", name="death", symbol="/", cursestate="blessed"
-        )
+        lvl_gen.add_object_area("$safe_room", name="death", symbol="/", cursestate="blessed")
         lvl_gen.add_monster("minotaur", place=(26, 1))
         des_file = lvl_gen.get_des()
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 400)
 
         super().__init__(*args, des_file=des_file, **kwargs)
-
-
 
 
 class MiniHackWoDHardRestrictedActions(MiniHackSkill):
@@ -131,21 +117,19 @@ class MiniHackWoDHardRestrictedActions(MiniHackSkill):
         lvl_gen.add_goal_pos((27, 1))
 
         lvl_gen.set_area_variable("$safe_room", "fillrect", 1, 1, 5, 5)
-        lvl_gen.add_object_area(
-            "$safe_room", name="death", symbol="/", cursestate="blessed"
-        )
+        lvl_gen.add_object_area("$safe_room", name="death", symbol="/", cursestate="blessed")
         lvl_gen.add_monster("minotaur", place=(26, 1))
         des_file = lvl_gen.get_des()
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 400)
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.ZAP, \
-                                                     nethack.Command.FIRE)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.ZAP,
+            nethack.Command.FIRE,
+        )
         kwargs["actions"] = ACTIONS
-        
 
         super().__init__(*args, des_file=des_file, **kwargs)
-        
 
 
 class MiniHackWoDPro(MiniHackSkill):

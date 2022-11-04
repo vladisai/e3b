@@ -46,9 +46,7 @@ class SoftArgMin(nn.Module):
         if coords2d is None:
             coords2d = generate_2dgrid(x.size(2), x.size(3), False)
         coords2d_flat = coords2d.view(2, -1)
-        return (bx_sm.expand_as(coords2d_flat) * coords2d_flat).sum(
-            dim=1
-        ) / bx_sm.sum(dim=1)
+        return (bx_sm.expand_as(coords2d_flat) * coords2d_flat).sum(dim=1) / bx_sm.sum(dim=1)
 
 
 class HardArgMin(nn.Module):
@@ -87,13 +85,9 @@ class DifferentiableStarPlanner(nn.Module):
         # self.argmin = SoftArgMin(beta)
         self.argmin = HardArgMin()
         self.neights2channels = nn.Conv2d(1, 9, kernel_size=(3, 3), bias=False)
-        self.neights2channels.weight.data = torch.from_numpy(
-            init_neights_to_channels(3)
-        )
+        self.neights2channels.weight.data = torch.from_numpy(init_neights_to_channels(3))
         self.neights2channels.to(device)
-        self.preprocessNet = nn.Conv2d(
-            1, 1, kernel_size=(3, 3), padding=1, bias=False
-        )
+        self.preprocessNet = nn.Conv2d(1, 1, kernel_size=(3, 3), padding=1, bias=False)
         self.preprocessNet.weight.data = torch.from_numpy(
             np.array(
                 [
@@ -111,27 +105,19 @@ class DifferentiableStarPlanner(nn.Module):
         self.preprocessNet.to(device)
         if connectivity == "eight":
             self.gx_to_right = nn.Conv2d(1, 1, kernel_size=(1, 3), bias=False)
-            self.gx_to_right.weight.data = torch.from_numpy(
-                np.array([[[[0, 1, -1]]]], dtype=np.float32)
-            )
+            self.gx_to_right.weight.data = torch.from_numpy(np.array([[[[0, 1, -1]]]], dtype=np.float32))
             self.gx_to_right.to(device)
 
             self.gx_to_left = nn.Conv2d(1, 1, kernel_size=(1, 3), bias=False)
-            self.gx_to_left.weight.data = torch.from_numpy(
-                np.array([[[[-1, 1, 0]]]], dtype=np.float32)
-            )
+            self.gx_to_left.weight.data = torch.from_numpy(np.array([[[[-1, 1, 0]]]], dtype=np.float32))
             self.gx_to_left.to(device)
 
             self.gy_to_up = nn.Conv2d(1, 1, kernel_size=(3, 1), bias=False)
-            self.gy_to_up.weight.data = torch.from_numpy(
-                np.array([[[[0], [1], [-1]]]], dtype=np.float32)
-            )
+            self.gy_to_up.weight.data = torch.from_numpy(np.array([[[[0], [1], [-1]]]], dtype=np.float32))
             self.gy_to_up.to(device)
 
             self.gy_to_down = nn.Conv2d(1, 1, kernel_size=(3, 1), bias=False)
-            self.gy_to_down.weight.data = torch.from_numpy(
-                np.array([[[[-1], [1], [0]]]], dtype=np.float32)
-            )
+            self.gy_to_down.weight.data = torch.from_numpy(np.array([[[[-1], [1], [0]]]], dtype=np.float32))
             self.gy_to_down.to(device)
         else:
             raise ValueError('Only "eight" connectivity now supported')
@@ -143,9 +129,7 @@ class DifferentiableStarPlanner(nn.Module):
         return obstacle_map
 
     def coords2grid(self, node_coords, h, w):
-        grid = node_coords.squeeze() - torch.FloatTensor(
-            (h / 2.0, w / 2.0)
-        ).to(self.device)
+        grid = node_coords.squeeze() - torch.FloatTensor((h / 2.0, w / 2.0)).to(self.device)
         grid = grid / torch.FloatTensor((h / 2.0, w / 2.0)).to(self.device)
         return grid.view(1, 1, 1, 2).flip(3)
 
@@ -157,8 +141,7 @@ class DifferentiableStarPlanner(nn.Module):
 
     def init_g_map(self):
         return torch.clamp(
-            self.inf
-            * (torch.ones_like(self.start_map) - self.start_map.clone()),
+            self.inf * (torch.ones_like(self.start_map) - self.start_map.clone()),
             min=0,
             max=self.inf,
         )
@@ -187,13 +170,9 @@ class DifferentiableStarPlanner(nn.Module):
         self.conv_time = 0
         self.close_time = 0
 
-        self.obstacles = self.preprocess_obstacle_map(
-            obstacles.to(self.device)
-        )
+        self.obstacles = self.preprocess_obstacle_map(obstacles.to(self.device))
         self.start_map = start_map.to(self.device)
-        self.been_there = torch.zeros_like(self.start_map).to(
-            torch.device("cpu")
-        )
+        self.been_there = torch.zeros_like(self.start_map).to(torch.device("cpu"))
         self.coords = coords.to(self.device)
         self.goal_map = goal_map.to(self.device)
         self.been_there = torch.zeros_like(self.goal_map).to(self.device)
@@ -219,24 +198,10 @@ class DifferentiableStarPlanner(nn.Module):
             self.g_map.view(-1)[goal_idx].item() >= 0.9 * self.ob_cost
         )
         rad = 1
-        self.start_coords = (
-            (self.coords * self.start_map.expand_as(self.coords))
-            .sum(dim=2)
-            .sum(dim=2)
-            .squeeze()
-        )
+        self.start_coords = (self.coords * self.start_map.expand_as(self.coords)).sum(dim=2).sum(dim=2).squeeze()
         node_coords = self.start_coords
-        self.goal_coords = (
-            (self.coords * self.goal_map.expand_as(self.coords))
-            .sum(dim=2)
-            .sum(dim=2)
-            .squeeze()
-        )
-        self.max_steps = 4 * int(
-            torch.sqrt(
-                ((self.start_coords - self.goal_coords) ** 2).sum() + 1e-6
-            ).item()
-        )
+        self.goal_coords = (self.coords * self.goal_map.expand_as(self.coords)).sum(dim=2).sum(dim=2).squeeze()
+        self.max_steps = 4 * int(torch.sqrt(((self.start_coords - self.goal_coords) ** 2).sum() + 1e-6).item())
         while not_done:
             ymin, ymax, xmin, xmax = self.safe_roi_2d(
                 node_coords[0] - rad,
@@ -244,20 +209,11 @@ class DifferentiableStarPlanner(nn.Module):
                 node_coords[1] - rad,
                 node_coords[1] + rad + 1,
             )
-            if (
-                (ymin - 1 > 0)
-                and (xmin - 1 > 0)
-                and (ymax + 1 < self.height)
-                and (xmax + 1 < self.width)
-            ):
-                n2c = self.neights2channels(
-                    self.g_map[:, :, ymin - 1 : ymax + 1, xmin - 1 : xmax + 1]
-                )
+            if (ymin - 1 > 0) and (xmin - 1 > 0) and (ymax + 1 < self.height) and (xmax + 1 < self.width):
+                n2c = self.neights2channels(self.g_map[:, :, ymin - 1 : ymax + 1, xmin - 1 : xmax + 1])
                 self.g_map[:, :, ymin:ymax, xmin:xmax] = torch.min(
                     self.g_map[:, :, ymin:ymax, xmin:xmax].clone(),
-                    (n2c + c_map[:, :, ymin:ymax, xmin:xmax]).min(
-                        dim=1, keepdim=True
-                    )[0],
+                    (n2c + c_map[:, :, ymin:ymax, xmin:xmax]).min(dim=1, keepdim=True)[0],
                 )
                 self.close_list_map[:, :, ymin:ymax, xmin:xmax] = torch.max(
                     self.close_list_map[:, :, ymin:ymax, xmin:xmax],
@@ -265,9 +221,7 @@ class DifferentiableStarPlanner(nn.Module):
                 )
                 self.open_list_map[:, :, ymin:ymax, xmin:xmax] = F.relu(
                     F.max_pool2d(
-                        self.open_list_map[
-                            :, :, ymin - 1 : ymax + 1, xmin - 1 : xmax + 1
-                        ],
+                        self.open_list_map[:, :, ymin - 1 : ymax + 1, xmin - 1 : xmax + 1],
                         3,
                         stride=1,
                         padding=0,
@@ -278,48 +232,34 @@ class DifferentiableStarPlanner(nn.Module):
             else:
                 self.g_map = torch.min(
                     self.g_map,
-                    (
-                        self.neights2channels(
-                            F.pad(self.g_map, (1, 1, 1, 1), "replicate")
-                        )
-                        + c_map
-                    ).min(dim=1, keepdim=True)[0],
+                    (self.neights2channels(F.pad(self.g_map, (1, 1, 1, 1), "replicate")) + c_map).min(
+                        dim=1, keepdim=True
+                    )[0],
                 )
-                self.close_list_map = torch.max(
-                    self.close_list_map, self.open_list_map
-                )
+                self.close_list_map = torch.max(self.close_list_map, self.open_list_map)
                 self.open_list_map = F.relu(
-                    F.max_pool2d(self.open_list_map, 3, stride=1, padding=1)
-                    - self.close_list_map
-                    - self.obstacles
+                    F.max_pool2d(self.open_list_map, 3, stride=1, padding=1) - self.close_list_map - self.obstacles
                 )
             step += 1
             if step >= self.max_steps:
                 stopped_by_max_iter = True
                 break
-            not_done = (
-                self.close_list_map.view(-1)[goal_idx].item() < 1.0
-            ) or (self.g_map.view(-1)[goal_idx].item() >= 0.1 * self.inf)
+            not_done = (self.close_list_map.view(-1)[goal_idx].item() < 1.0) or (
+                self.g_map.view(-1)[goal_idx].item() >= 0.1 * self.inf
+            )
             rad += 1
         if not stopped_by_max_iter:
             for _ in range(additional_steps):
                 # now propagating beyong start point
                 self.g_map = torch.min(
                     self.g_map,
-                    (
-                        self.neights2channels(
-                            F.pad(self.g_map, (1, 1, 1, 1), "replicate")
-                        )
-                        + c_map
-                    ).min(dim=1, keepdim=True)[0],
+                    (self.neights2channels(F.pad(self.g_map, (1, 1, 1, 1), "replicate")) + c_map).min(
+                        dim=1, keepdim=True
+                    )[0],
                 )
-                self.close_list_map = torch.max(
-                    self.close_list_map, self.open_list_map
-                )
+                self.close_list_map = torch.max(self.close_list_map, self.open_list_map)
                 self.open_list_map = F.relu(
-                    F.max_pool2d(self.open_list_map, 3, stride=1, padding=1)
-                    - self.close_list_map
-                    - self.obstacles
+                    F.max_pool2d(self.open_list_map, 3, stride=1, padding=1) - self.close_list_map - self.obstacles
                 )
         if return_path:
             out_path, cost = self.reconstruct_path()
@@ -332,35 +272,13 @@ class DifferentiableStarPlanner(nn.Module):
         w = coords.size(3)
         obstacles_pd = F.pad(self.obstacles, (1, 1, 1, 1), "replicate")
         if non_obstacle_cost_map is None:
-            learned_bias = torch.ones_like(self.obstacles).to(
-                obstacles_pd.device
-            )
+            learned_bias = torch.ones_like(self.obstacles).to(obstacles_pd.device)
         else:
             learned_bias = non_obstacle_cost_map.to(obstacles_pd.device)
-        left_diff_sq = (
-            self.gx_to_left(
-                F.pad(coords[:, 1:2, :, :], (1, 1, 0, 0), "replicate")
-            )
-            ** 2
-        )
-        right_diff_sq = (
-            self.gx_to_right(
-                F.pad(coords[:, 1:2, :, :], (1, 1, 0, 0), "replicate")
-            )
-            ** 2
-        )
-        up_diff_sq = (
-            self.gy_to_up(
-                F.pad(coords[:, 0:1, :, :], (0, 0, 1, 1), "replicate")
-            )
-            ** 2
-        )
-        down_diff_sq = (
-            self.gy_to_down(
-                F.pad(coords[:, 0:1, :, :], (0, 0, 1, 1), "replicate")
-            )
-            ** 2
-        )
+        left_diff_sq = self.gx_to_left(F.pad(coords[:, 1:2, :, :], (1, 1, 0, 0), "replicate")) ** 2
+        right_diff_sq = self.gx_to_right(F.pad(coords[:, 1:2, :, :], (1, 1, 0, 0), "replicate")) ** 2
+        up_diff_sq = self.gy_to_up(F.pad(coords[:, 0:1, :, :], (0, 0, 1, 1), "replicate")) ** 2
+        down_diff_sq = self.gy_to_down(F.pad(coords[:, 0:1, :, :], (0, 0, 1, 1), "replicate")) ** 2
         out = torch.cat(
             [
                 # Order in from up to down, from left to right
@@ -389,9 +307,7 @@ class DifferentiableStarPlanner(nn.Module):
                     obstacles_pd[:, :, 0:h, 1 : w + 1],
                     obstacles_pd[:, :, 1 : h + 1, 1 : w + 1],
                 ),
-                0 * right_diff_sq
-                + self.ob_cost
-                * obstacles_pd[:, :, 1 : h + 1, 1 : w + 1],  # current center
+                0 * right_diff_sq + self.ob_cost * obstacles_pd[:, :, 1 : h + 1, 1 : w + 1],  # current center
                 torch.sqrt(down_diff_sq + self.eps)
                 + self.ob_cost
                 * torch.max(
@@ -419,9 +335,7 @@ class DifferentiableStarPlanner(nn.Module):
             ],
             dim=1,
         )
-        return out + torch.clamp(
-            learned_bias.expand_as(out), min=0, max=self.ob_cost
-        )
+        return out + torch.clamp(learned_bias.expand_as(out), min=0, max=self.ob_cost)
 
     def propagate_traversal(self, node_coords, close, g, coords):
         ymin, ymax, xmin, xmax = self.safe_roi_2d(
@@ -431,17 +345,13 @@ class DifferentiableStarPlanner(nn.Module):
             node_coords[1] + 2,
         )
         mask = close[:, :, ymin:ymax, xmin:xmax] > 0
-        mask[
-            :, :, f2ind(node_coords, 0) - ymin, f2ind(node_coords, 1) - xmin
-        ] = 0
+        mask[:, :, f2ind(node_coords, 0) - ymin, f2ind(node_coords, 1) - xmin] = 0
         mask = mask > 0
         current_g_cost = g[:, :, ymin:ymax, xmin:xmax][mask].clone()
         if len(current_g_cost.view(-1)) == 0:
             # we are kind surrounded by obstacles,
             # but still need to output something
-            mask = torch.relu(
-                1.0 - self.been_there[:, :, ymin:ymax, xmin:xmax]
-            )
+            mask = torch.relu(1.0 - self.been_there[:, :, ymin:ymax, xmin:xmax])
             mask[
                 :,
                 :,
@@ -459,9 +369,7 @@ class DifferentiableStarPlanner(nn.Module):
             ) / (len(current_g_cost))
         #
         coords_roi = coords[:, :, ymin:ymax, xmin:xmax]
-        out = self.argmin(
-            current_g_cost, coords_roi[mask.expand_as(coords_roi)]
-        )
+        out = self.argmin(current_g_cost, coords_roi[mask.expand_as(coords_roi)])
         return out
 
     def get_clean_costmap_and_goodmask(self):
@@ -482,20 +390,14 @@ class DifferentiableStarPlanner(nn.Module):
         node_coords = goal_coords.cpu()
         out_path.append(node_coords)
         self.been_there = 0 * self.been_there.cpu()
-        self.been_there[
-            :, :, f2ind(node_coords, 0), f2ind(node_coords, 1)
-        ] = 1.0
+        self.been_there[:, :, f2ind(node_coords, 0), f2ind(node_coords, 1)] = 1.0
         self.close_list_map = self.close_list_map.cpu()
         self.g_map = self.g_map.cpu()
         self.coords = self.coords.cpu()
         count1 = 0
         while not done:
-            node_coords = self.propagate_traversal(
-                node_coords, self.close_list_map, self.g_map, self.coords
-            )
-            self.been_there[
-                :, :, f2ind(node_coords, 0), f2ind(node_coords, 1)
-            ] = 1.0
+            node_coords = self.propagate_traversal(node_coords, self.close_list_map, self.g_map, self.coords)
+            self.been_there[:, :, f2ind(node_coords, 0), f2ind(node_coords, 1)] = 1.0
             if torch.norm(node_coords - out_path[-1], 2).item() < 0.3:
                 y = node_coords.flatten()[0].long()
                 x = node_coords.flatten()[1].long()

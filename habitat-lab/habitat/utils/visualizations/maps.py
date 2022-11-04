@@ -42,9 +42,7 @@ MAP_SHORTEST_PATH_COLOR = 7
 MAP_VIEW_POINT_INDICATOR = 8
 MAP_TARGET_BOUNDING_BOX = 9
 TOP_DOWN_MAP_COLORS = np.full((256, 3), 150, dtype=np.uint8)
-TOP_DOWN_MAP_COLORS[10:] = cv2.applyColorMap(
-    np.arange(246, dtype=np.uint8), cv2.COLORMAP_JET
-).squeeze(1)[:, ::-1]
+TOP_DOWN_MAP_COLORS[10:] = cv2.applyColorMap(np.arange(246, dtype=np.uint8), cv2.COLORMAP_JET).squeeze(1)[:, ::-1]
 TOP_DOWN_MAP_COLORS[MAP_INVALID_POINT] = [255, 255, 255]  # White
 TOP_DOWN_MAP_COLORS[MAP_VALID_POINT] = [150, 150, 150]  # Light Grey
 TOP_DOWN_MAP_COLORS[MAP_BORDER_INDICATOR] = [50, 50, 50]  # Grey
@@ -72,16 +70,12 @@ def draw_agent(
     """
 
     # Rotate before resize to keep good resolution.
-    rotated_agent = scipy.ndimage.interpolation.rotate(
-        AGENT_SPRITE, agent_rotation * 180 / np.pi
-    )
+    rotated_agent = scipy.ndimage.interpolation.rotate(AGENT_SPRITE, agent_rotation * 180 / np.pi)
     # Rescale because rotation may result in larger image than original, but
     # the agent sprite size should stay the same.
     initial_agent_size = AGENT_SPRITE.shape[0]
     new_size = rotated_agent.shape[0]
-    agent_size_px = max(
-        1, int(agent_radius_px * 2 * new_size / initial_agent_size)
-    )
+    agent_size_px = max(1, int(agent_radius_px * 2 * new_size / initial_agent_size))
     resized_agent = cv2.resize(
         rotated_agent,
         (agent_size_px, agent_size_px),
@@ -133,20 +127,14 @@ def pointnav_draw_target_birdseye_view(
             (226, 12, 29),
         ]
 
-    assert len(target_band_radii) == len(
-        target_band_colors
-    ), "There must be an equal number of scales and colors."
+    assert len(target_band_radii) == len(target_band_colors), "There must be an equal number of scales and colors."
 
     goal_agent_dist = np.linalg.norm(agent_position - goal_position, 2)
 
-    goal_distance_padding = np.maximum(
-        2, 2 ** np.ceil(np.log(np.maximum(1e-6, goal_agent_dist)) / np.log(2))
-    )
+    goal_distance_padding = np.maximum(2, 2 ** np.ceil(np.log(np.maximum(1e-6, goal_agent_dist)) / np.log(2)))
     movement_scale = 1.0 / goal_distance_padding
     half_res = resolution_px // 2
-    im_position = np.full(
-        (resolution_px, resolution_px, 3), 255, dtype=np.uint8
-    )
+    im_position = np.full((resolution_px, resolution_px, 3), 255, dtype=np.uint8)
 
     # Draw bands:
     for scale, color in zip(target_band_radii, target_band_colors):
@@ -199,9 +187,7 @@ def to_grid(
     (coordinate_max, coordinate_max)
     """
     if sim is None and pathfinder is None:
-        raise RuntimeError(
-            "Must provide either a simulator or pathfinder instance"
-        )
+        raise RuntimeError("Must provide either a simulator or pathfinder instance")
 
     if pathfinder is None:
         pathfinder = sim.pathfinder
@@ -231,9 +217,7 @@ def from_grid(
     """
 
     if sim is None and pathfinder is None:
-        raise RuntimeError(
-            "Must provide either a simulator or pathfinder instance"
-        )
+        raise RuntimeError("Must provide either a simulator or pathfinder instance")
 
     if pathfinder is None:
         pathfinder = sim.pathfinder
@@ -250,19 +234,11 @@ def from_grid(
 
 
 def _outline_border(top_down_map):
-    left_right_block_nav = (top_down_map[:, :-1] == 1) & (
-        top_down_map[:, :-1] != top_down_map[:, 1:]
-    )
-    left_right_nav_block = (top_down_map[:, 1:] == 1) & (
-        top_down_map[:, :-1] != top_down_map[:, 1:]
-    )
+    left_right_block_nav = (top_down_map[:, :-1] == 1) & (top_down_map[:, :-1] != top_down_map[:, 1:])
+    left_right_nav_block = (top_down_map[:, 1:] == 1) & (top_down_map[:, :-1] != top_down_map[:, 1:])
 
-    up_down_block_nav = (top_down_map[:-1] == 1) & (
-        top_down_map[:-1] != top_down_map[1:]
-    )
-    up_down_nav_block = (top_down_map[1:] == 1) & (
-        top_down_map[:-1] != top_down_map[1:]
-    )
+    up_down_block_nav = (top_down_map[:-1] == 1) & (top_down_map[:-1] != top_down_map[1:])
+    up_down_nav_block = (top_down_map[1:] == 1) & (top_down_map[:-1] != top_down_map[1:])
 
     top_down_map[:, :-1][left_right_block_nav] = MAP_BORDER_INDICATOR
     top_down_map[:, 1:][left_right_nav_block] = MAP_BORDER_INDICATOR
@@ -271,23 +247,16 @@ def _outline_border(top_down_map):
     top_down_map[1:][up_down_nav_block] = MAP_BORDER_INDICATOR
 
 
-def calculate_meters_per_pixel(
-    map_resolution: int, sim: Optional["HabitatSim"] = None, pathfinder=None
-):
+def calculate_meters_per_pixel(map_resolution: int, sim: Optional["HabitatSim"] = None, pathfinder=None):
     r"""Calculate the meters_per_pixel for a given map resolution"""
     if sim is None and pathfinder is None:
-        raise RuntimeError(
-            "Must provide either a simulator or pathfinder instance"
-        )
+        raise RuntimeError("Must provide either a simulator or pathfinder instance")
 
     if pathfinder is None:
         pathfinder = sim.pathfinder
 
     lower_bound, upper_bound = pathfinder.get_bounds()
-    return min(
-        abs(upper_bound[coord] - lower_bound[coord]) / map_resolution
-        for coord in [0, 2]
-    )
+    return min(abs(upper_bound[coord] - lower_bound[coord]) / map_resolution for coord in [0, 2])
 
 
 def get_topdown_map(
@@ -311,13 +280,9 @@ def get_topdown_map(
     """
 
     if meters_per_pixel is None:
-        meters_per_pixel = calculate_meters_per_pixel(
-            map_resolution, pathfinder=pathfinder
-        )
+        meters_per_pixel = calculate_meters_per_pixel(map_resolution, pathfinder=pathfinder)
 
-    top_down_map = pathfinder.get_topdown_view(
-        meters_per_pixel=meters_per_pixel, height=height
-    ).astype(np.uint8)
+    top_down_map = pathfinder.get_topdown_view(meters_per_pixel=meters_per_pixel, height=height).astype(np.uint8)
 
     # Draw border if necessary
     if draw_border:
@@ -371,9 +336,7 @@ def colorize_topdown_map(
         # Only desaturate things that are valid points as only valid points get revealed
         desat_mask = top_down_map != MAP_INVALID_POINT
 
-        _map[desat_mask] = (
-            _map * fog_of_war_desat_values[fog_of_war_mask]
-        ).astype(np.uint8)[desat_mask]
+        _map[desat_mask] = (_map * fog_of_war_desat_values[fog_of_war_mask]).astype(np.uint8)[desat_mask]
 
     return _map
 
@@ -402,9 +365,7 @@ def draw_path(
         )
 
 
-def colorize_draw_agent_and_fit_to_height(
-    topdown_map_info: Dict[str, Any], output_height: int
-):
+def colorize_draw_agent_and_fit_to_height(topdown_map_info: Dict[str, Any], output_height: int):
     r"""Given the output of the TopDownMap measure, colorizes the map, draws the agent,
     and fits to a desired output height
 
@@ -412,9 +373,7 @@ def colorize_draw_agent_and_fit_to_height(
     :param output_height: The desired output height
     """
     top_down_map = topdown_map_info["map"]
-    top_down_map = colorize_topdown_map(
-        top_down_map, topdown_map_info["fog_of_war_mask"]
-    )
+    top_down_map = colorize_topdown_map(top_down_map, topdown_map_info["fog_of_war_mask"])
     map_agent_pos = topdown_map_info["agent_map_coord"]
     top_down_map = draw_agent(
         image=top_down_map,

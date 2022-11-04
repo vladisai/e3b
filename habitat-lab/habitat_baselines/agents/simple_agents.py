@@ -66,9 +66,7 @@ class RandomForwardAgent(RandomAgent):
             if np.random.uniform(0, 1, 1) < self.FORWARD_PROBABILITY:
                 action = HabitatSimActions.MOVE_FORWARD
             else:
-                action = np.random.choice(
-                    [HabitatSimActions.TURN_LEFT, HabitatSimActions.TURN_RIGHT]
-                )
+                action = np.random.choice([HabitatSimActions.TURN_LEFT, HabitatSimActions.TURN_RIGHT])
 
         return {"action": action}
 
@@ -88,9 +86,7 @@ class GoalFollower(RandomAgent):
         return angle
 
     def turn_towards_goal(self, angle_to_goal: ndarray) -> int:
-        if angle_to_goal > pi or (
-            (angle_to_goal < 0) and (angle_to_goal > -pi)
-        ):
+        if angle_to_goal > pi or ((angle_to_goal < 0) and (angle_to_goal > -pi)):
             action = HabitatSimActions.TURN_RIGHT
         else:
             action = HabitatSimActions.TURN_LEFT
@@ -100,9 +96,7 @@ class GoalFollower(RandomAgent):
         if self.is_goal_reached(observations):
             action = HabitatSimActions.STOP
         else:
-            angle_to_goal = self.normalize_angle(
-                np.array(observations[self.goal_sensor_uuid][1])
-            )
+            angle_to_goal = self.normalize_angle(np.array(observations[self.goal_sensor_uuid][1]))
             if abs(angle_to_goal) < self.angle_th:
                 action = HabitatSimActions.MOVE_FORWARD
             else:
@@ -112,16 +106,12 @@ class GoalFollower(RandomAgent):
 
 
 def get_all_subclasses(cls):
-    return set(cls.__subclasses__()).union(
-        [s for c in cls.__subclasses__() for s in get_all_subclasses(c)]
-    )
+    return set(cls.__subclasses__()).union([s for c in cls.__subclasses__() for s in get_all_subclasses(c)])
 
 
 def get_agent_cls(agent_class_name):
     sub_classes = [
-        sub_class
-        for sub_class in get_all_subclasses(habitat.Agent)
-        if sub_class.__name__ == agent_class_name
+        sub_class for sub_class in get_all_subclasses(habitat.Agent) if sub_class.__name__ == agent_class_name
     ]
     return sub_classes[0]
 
@@ -129,9 +119,7 @@ def get_agent_cls(agent_class_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--success-distance", type=float, default=0.2)
-    parser.add_argument(
-        "--task-config", type=str, default="configs/tasks/pointnav.yaml"
-    )
+    parser.add_argument("--task-config", type=str, default="configs/tasks/pointnav.yaml")
     parser.add_argument("--agent-class", type=str, default="GoalFollower")
     args = parser.parse_args()
 

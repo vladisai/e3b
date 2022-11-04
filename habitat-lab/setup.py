@@ -36,9 +36,7 @@ BASELINE_PATH = ["habitat_baselines", "habitat_baselines.*"]
 DEFAULT_EXCLUSION = ["test", "examples"]
 FULL_REQUIREMENTS = set()
 # collect requirements.txt file in all subdirectories
-for file_name in ["requirements.txt"] + glob.glob(
-    "habitat_baselines/**/requirements.txt", recursive=True
-):
+for file_name in ["requirements.txt"] + glob.glob("habitat_baselines/**/requirements.txt", recursive=True):
     with open(file_name) as f:
         reqs = f.read()
         FULL_REQUIREMENTS.update(reqs.strip().split("\n"))
@@ -61,9 +59,7 @@ class OptionedCommand:
     def run(self):
         if not self.all:  # install core only
             DEFAULT_EXCLUSION.extend(BASELINE_PATH)
-            self.distribution.packages = setuptools.find_packages(
-                exclude=DEFAULT_EXCLUSION
-            )
+            self.distribution.packages = setuptools.find_packages(exclude=DEFAULT_EXCLUSION)
             # self.distribution accesses arguments of setup() in main()
         else:  # install all except test and examples
             self.distribution.install_requires = FULL_REQUIREMENTS
@@ -71,17 +67,11 @@ class OptionedCommand:
 
 
 class InstallCommand(OptionedCommand, DefaultInstallCommand):
-    user_options = (
-        getattr(DefaultInstallCommand, "user_options", [])
-        + OptionedCommand.user_options
-    )
+    user_options = getattr(DefaultInstallCommand, "user_options", []) + OptionedCommand.user_options
 
 
 class DevelopCommand(OptionedCommand, DefaultDevelopCommand):
-    user_options = (
-        getattr(DefaultDevelopCommand, "user_options", [])
-        + OptionedCommand.user_options
-    )
+    user_options = getattr(DefaultDevelopCommand, "user_options", []) + OptionedCommand.user_options
 
 
 if __name__ == "__main__":

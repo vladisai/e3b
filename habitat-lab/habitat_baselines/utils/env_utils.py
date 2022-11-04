@@ -12,9 +12,7 @@ import habitat
 from habitat import Config, Env, RLEnv, VectorEnv, make_dataset
 
 
-def make_env_fn(
-    config: Config, env_class: Union[Type[Env], Type[RLEnv]]
-) -> Union[Env, RLEnv]:
+def make_env_fn(config: Config, env_class: Union[Type[Env], Type[RLEnv]]) -> Union[Env, RLEnv]:
     r"""Creates an env of type env_class with specified config and rank.
     This is to be passed in as an argument when creating VectorEnv.
 
@@ -26,9 +24,7 @@ def make_env_fn(
     Returns:
         env object created according to specification.
     """
-    dataset = make_dataset(
-        config.TASK_CONFIG.DATASET.TYPE, config=config.TASK_CONFIG.DATASET
-    )
+    dataset = make_dataset(config.TASK_CONFIG.DATASET.TYPE, config=config.TASK_CONFIG.DATASET)
     env = env_class(config=config, dataset=dataset)
     env.seed(config.TASK_CONFIG.SEED)
     return env
@@ -69,9 +65,7 @@ def construct_envs(
             raise RuntimeError(
                 "reduce the number of environments as there "
                 "aren't enough number of scenes.\n"
-                "num_environments: {}\tnum_scenes: {}".format(
-                    num_environments, len(scenes)
-                )
+                "num_environments: {}\tnum_scenes: {}".format(num_environments, len(scenes))
             )
 
         random.shuffle(scenes)
@@ -91,9 +85,7 @@ def construct_envs(
         if len(scenes) > 0:
             task_config.DATASET.CONTENT_SCENES = scene_splits[i]
 
-        task_config.SIMULATOR.HABITAT_SIM_V0.GPU_DEVICE_ID = (
-            config.SIMULATOR_GPU_ID
-        )
+        task_config.SIMULATOR.HABITAT_SIM_V0.GPU_DEVICE_ID = config.SIMULATOR_GPU_ID
 
         task_config.SIMULATOR.AGENT_0.SENSORS = config.SENSORS
 

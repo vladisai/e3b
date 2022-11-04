@@ -18,9 +18,7 @@ from PIL import Image
 
 from habitat_sim.utils.viz_utils import save_video
 
-matched_dir = glob.glob(
-    osp.join(osp.expanduser("~"), "ompl-1.5.*/py-bindings")
-)
+matched_dir = glob.glob(osp.join(osp.expanduser("~"), "ompl-1.5.*/py-bindings"))
 if len(matched_dir) > 0:
     sys.path.insert(0, matched_dir[0])
 
@@ -81,9 +79,7 @@ class MotionPlanner:
     def action_space(self):
         return spaces.Box(shape=(3,), low=0, high=1, dtype=np.float32)
 
-    def _render_debug_image(
-        self, add_txt: str, before_txt="", should_save=True
-    ):
+    def _render_debug_image(self, add_txt: str, before_txt="", should_save=True):
         """
         Render debug utility helper. Renders an image of the current scene to
         the debug directory.
@@ -116,23 +112,15 @@ class MotionPlanner:
         """
         self._mp_space.set_arm(x)
         if self._ee_margin is not None and self._sphere_id is not None:
-            self._use_sim.set_position(
-                self._use_sim.get_ee_pos(), self._sphere_id
-            )
+            self._use_sim.set_position(self._use_sim.get_ee_pos(), self._sphere_id)
         self._use_sim.micro_step()
 
         did_collide, coll_details = self._use_sim.get_collisions(
             self._config.COUNT_OBJ_COLLISIONS, self._ignore_names, True
         )
-        if (
-            self._ignore_first
-            or self._use_sim.should_ignore_first_collisions()
-        ) and self._coll_check_count == 0:
+        if (self._ignore_first or self._use_sim.should_ignore_first_collisions()) and self._coll_check_count == 0:
             self._ignore_names.extend(coll_details.robot_coll_ids)
-            self._log(
-                "First run, ignoring collisions from "
-                + str(self._ignore_names)
-            )
+            self._log("First run, ignoring collisions from " + str(self._ignore_names))
         self._coll_check_count += 1
         if take_image:
             self._render_debug_image(f"{did_collide}")
@@ -145,9 +133,7 @@ class MotionPlanner:
             return False
 
         # Check we satisfy the EE margin, if there is one.
-        if not self._check_ee_coll(
-            self._ee_margin, self._sphere_id, coll_details
-        ):
+        if not self._check_ee_coll(self._ee_margin, self._sphere_id, coll_details):
             return False
 
         return True
@@ -213,9 +199,7 @@ class MotionPlanner:
             use_sim.unset_targ_obj_idx(obj_id_target)
             self._sphere_id = None
 
-    def get_recent_plan_stats(
-        self, plan: np.ndarray, robo_targ: RobotTarget, name: str = ""
-    ):
+    def get_recent_plan_stats(self, plan: np.ndarray, robo_targ: RobotTarget, name: str = ""):
         """
         Return logging information about the most recent plan
         """
@@ -263,9 +247,7 @@ class MotionPlanner:
         use_sim.start_mp()
         self._log("Starting plan from %s" % str(start_js))
         self._log("Target info %s" % str(robot_target))
-        self._log(
-            "Agent position" + str(use_sim.get_robot_transform().translation)
-        )
+        self._log("Agent position" + str(use_sim.get_robot_transform().translation))
 
         env_state = copy(use_sim.capture_state())
         self._mp_space.set_env_state(env_state)
@@ -330,9 +312,7 @@ class MotionPlanner:
         # Visualize the target position.
         if robot_target.ee_target_pos is not None:
             robo_trans = use_sim.get_robot_transform()
-            use_targ_state = robo_trans.transform_point(
-                robot_target.ee_target_pos
-            )
+            use_targ_state = robo_trans.transform_point(robot_target.ee_target_pos)
             targ_viz_id = use_sim.add_sphere(0.03, color=[0, 0, 1, 1])
             use_sim.set_position(use_targ_state, targ_viz_id)
         else:
@@ -343,25 +323,19 @@ class MotionPlanner:
             use_sim.set_arm_pos(joints)
             all_ee_pos.append(use_sim.get_ee_pos())
             if self._ee_margin is not None:
-                use_sim.set_position(
-                    self._use_sim.get_ee_pos(), self._sphere_id
-                )
+                use_sim.set_position(self._use_sim.get_ee_pos(), self._sphere_id)
             did_collide = not self._is_state_valid(joints, True)
             if did_collide and self._should_render:
                 self.was_bad_coll = True
 
-            pic = self._render_debug_image(
-                "", f"{i}_{self._num_calls}", should_save=False
-            )
+            pic = self._render_debug_image("", f"{i}_{self._num_calls}", should_save=False)
             if did_collide:
                 pic = make_border_red(pic)
             all_frames.append(pic)
 
         if targ_viz_id is not None:
             use_sim.remove_object(targ_viz_id)
-            dist_to_goal = np.linalg.norm(
-                use_targ_state - use_sim.get_ee_pos()
-            )
+            dist_to_goal = np.linalg.norm(use_targ_state - use_sim.get_ee_pos())
         else:
             dist_to_goal = -1.0  # type: ignore[assignment]
 
@@ -386,9 +360,7 @@ class MotionPlanner:
         else:
             raise ValueError("Unrecognized simulator type")
 
-    def _check_ee_coll(
-        self, ee_margin: float, sphere_id: int, coll_details: CollisionDetails
-    ) -> bool:
+    def _check_ee_coll(self, ee_margin: float, sphere_id: int, coll_details: CollisionDetails) -> bool:
         if ee_margin is not None:
             obj_id = self.hold_id
 
@@ -445,18 +417,11 @@ class MotionPlanner:
             return None
         objective = pdef.getOptimizationObjective()
         if objective is not None:
-            cost = (
-                pdef.getSolutionPath()
-                .cost(pdef.getOptimizationObjective())
-                .value()
-            )
+            cost = pdef.getSolutionPath().cost(pdef.getOptimizationObjective()).value()
         else:
             cost = np.inf
 
-        self._log(
-            "Got a path of length %.2f and cost %.2f"
-            % (pdef.getSolutionPath().length(), cost)
-        )
+        self._log("Got a path of length %.2f and cost %.2f" % (pdef.getSolutionPath().length(), cost))
 
         path = pdef.getSolutionPath()
         joint_plan = mp_space.convert_sol(path)

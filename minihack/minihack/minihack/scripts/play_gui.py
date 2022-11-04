@@ -55,10 +55,7 @@ def main():
             action = env._actions.index(ch)
             step(action)
         except (ValueError, TypeError):
-            print(
-                f"Selected action {event.key} is not in action list. "
-                "Please try again."
-            )
+            print(f"Selected action {event.key} is not in action list. " "Please try again.")
 
     window = Window("MiniHack the Planet - " + args.env)
     window.reg_key_handler(key_handler)

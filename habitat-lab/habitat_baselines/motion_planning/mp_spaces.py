@@ -138,13 +138,8 @@ class JsMpSpace(MpSpace):
         """
         if restrictive:
             lower_joint_lims, upper_joint_lims = self._ik.get_joint_limits()
-            lower_joint_lims = [
-                -np.pi if np.isclose(a, 0.0) else a for a in lower_joint_lims
-            ]
-            upper_joint_lims = [
-                np.pi if np.isclose(a, 2 * np.pi) else a
-                for a in upper_joint_lims
-            ]
+            lower_joint_lims = [-np.pi if np.isclose(a, 0.0) else a for a in lower_joint_lims]
+            upper_joint_lims = [np.pi if np.isclose(a, 2 * np.pi) else a for a in upper_joint_lims]
             lower_joint_lims = self._norm_joint_angle(lower_joint_lims)
             upper_joint_lims = self._norm_joint_angle(upper_joint_lims)
             return np.stack([lower_joint_lims, upper_joint_lims], axis=-1)
@@ -187,9 +182,7 @@ class JsMpSpace(MpSpace):
             self._lower_joint_lims + eps,
             self._upper_joint_lims - eps,
         )
-        js_end = np.clip(
-            js_end, self._lower_joint_lims + eps, self._upper_joint_lims - eps
-        )
+        js_end = np.clip(js_end, self._lower_joint_lims + eps, self._upper_joint_lims - eps)
 
         self.used_js_start = js_start
         self.used_js_goal = js_end
@@ -226,14 +219,10 @@ class JsMpSpace(MpSpace):
         # state is provided. This is not an issue, it only affects this one
         # rendering.
         self._fk(self.used_js_goal)
-        Image.fromarray(self._mp_sim.render()).save(
-            osp.join(use_dir, f"{suffix}_goal_{self.num_calls}.jpeg")
-        )
+        Image.fromarray(self._mp_sim.render()).save(osp.join(use_dir, f"{suffix}_goal_{self.num_calls}.jpeg"))
 
         self._fk(self.used_js_start)
-        save_f_name = osp.join(
-            use_dir, f"{suffix}_start_{self.num_calls}.jpeg"
-        )
+        save_f_name = osp.join(use_dir, f"{suffix}_start_{self.num_calls}.jpeg")
         Image.fromarray(self._mp_sim.render()).save(save_f_name)
         print("Rendered start / goal MP to ", save_f_name)
         if targ_state is not None:

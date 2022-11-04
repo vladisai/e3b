@@ -57,19 +57,11 @@ class Episode:
     episode_id: str = attr.ib(default=None, validator=not_none_validator)
     scene_id: str = attr.ib(default=None, validator=not_none_validator)
     # path to the SceneDataset config file
-    scene_dataset_config: str = attr.ib(
-        default="default", validator=not_none_validator
-    )
+    scene_dataset_config: str = attr.ib(default="default", validator=not_none_validator)
     # list of paths to search for object config files in addition to the SceneDataset
-    additional_obj_config_paths: List[str] = attr.ib(
-        default=[], validator=not_none_validator
-    )
-    start_position: List[float] = attr.ib(
-        default=None, validator=not_none_validator
-    )
-    start_rotation: List[float] = attr.ib(
-        default=None, validator=not_none_validator
-    )
+    additional_obj_config_paths: List[str] = attr.ib(default=[], validator=not_none_validator)
+    start_position: List[float] = attr.ib(default=None, validator=not_none_validator)
+    start_rotation: List[float] = attr.ib(default=None, validator=not_none_validator)
     info: Optional[Dict[str, Any]] = None
     _shortest_path_cache: Any = attr.ib(init=False, default=None)
 
@@ -77,18 +69,12 @@ class Episode:
     # on_setattr=Episode._reset_shortest_path_cache_hook works as attrs
     # will pass the instance as the first argument!
     @staticmethod
-    def _reset_shortest_path_cache_hook(
-        self: "Episode", attribute: attr.Attribute, value: Any
-    ) -> Any:
+    def _reset_shortest_path_cache_hook(self: "Episode", attribute: attr.Attribute, value: Any) -> Any:
         self._shortest_path_cache = None
         return value
 
     def __getstate__(self):
-        return {
-            k: v
-            for k, v in self.__dict__.items()
-            if k not in {"_shortest_path_cache"}
-        }
+        return {k: v for k, v in self.__dict__.items() if k not in {"_shortest_path_cache"}}
 
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -135,10 +121,7 @@ class Dataset(Generic[T]):
         scenes_to_load = set(config.CONTENT_SCENES)
 
         def _filter(ep: T) -> bool:
-            return (
-                ALL_SCENES_MASK in scenes_to_load
-                or cls.scene_from_scene_path(ep.scene_id) in scenes_to_load
-            )
+            return ALL_SCENES_MASK in scenes_to_load or cls.scene_from_scene_path(ep.scene_id) in scenes_to_load
 
         return _filter
 
@@ -158,9 +141,7 @@ class Dataset(Generic[T]):
         :param scene_id: id of scene in scene dataset.
         :return: list of episodes for the :p:`scene_id`.
         """
-        return list(
-            filter(lambda x: x.scene_id == scene_id, iter(self.episodes))
-        )
+        return list(filter(lambda x: x.scene_id == scene_id, iter(self.episodes)))
 
     def get_episodes(self, indexes: List[int]) -> List[T]:
         r"""..
@@ -190,18 +171,12 @@ class Dataset(Generic[T]):
                 if isinstance(obj, np.ndarray):
                     return obj.tolist()
 
-                return (
-                    obj.__getstate__()
-                    if hasattr(obj, "__getstate__")
-                    else obj.__dict__
-                )
+                return obj.__getstate__() if hasattr(obj, "__getstate__") else obj.__dict__
 
         result = DatasetJSONEncoder().encode(self)
         return result
 
-    def from_json(
-        self, json_str: str, scenes_dir: Optional[str] = None
-    ) -> None:
+    def from_json(self, json_str: str, scenes_dir: Optional[str] = None) -> None:
         r"""Creates dataset from :p:`json_str`.
 
         :param json_str: JSON string containing episodes information.
@@ -266,21 +241,14 @@ class Dataset(Generic[T]):
         be duplicated.
         """
         if self.num_episodes < num_splits:
-            raise ValueError(
-                "Not enough episodes to create those many splits."
-            )
+            raise ValueError("Not enough episodes to create those many splits.")
 
         if episodes_per_split is not None:
             if allow_uneven_splits:
-                raise ValueError(
-                    "You probably don't want to specify allow_uneven_splits"
-                    " and episodes_per_split."
-                )
+                raise ValueError("You probably don't want to specify allow_uneven_splits" " and episodes_per_split.")
 
             if num_splits * episodes_per_split > self.num_episodes:
-                raise ValueError(
-                    "Not enough episodes to create those many splits."
-                )
+                raise ValueError("Not enough episodes to create those many splits.")
 
         new_datasets = []
 
@@ -297,9 +265,7 @@ class Dataset(Generic[T]):
 
         num_episodes = sum(split_lengths)
 
-        rand_items = np.random.choice(
-            self.num_episodes, num_episodes, replace=False
-        ).tolist()
+        rand_items = np.random.choice(self.num_episodes, num_episodes, replace=False).tolist()
         if collate_scene_ids:
             scene_ids: Dict[str, List[int]] = {}
             for rand_ind in rand_items:
@@ -445,10 +411,7 @@ class EpisodeIterator(Iterator[T]):
 
             next_episode = next(self._iterator)
 
-        if (
-            self._prev_scene_id != next_episode.scene_id
-            and self._prev_scene_id is not None
-        ):
+        if self._prev_scene_id != next_episode.scene_id and self._prev_scene_id is not None:
             self._rep_count = 0
             self._step_count = 0
 
@@ -459,10 +422,7 @@ class EpisodeIterator(Iterator[T]):
         r"""Internal method to switch the scene. Moves remaining episodes
         from current scene to the end and switch to next scene episodes.
         """
-        grouped_episodes = [
-            list(g)
-            for k, g in groupby(self._iterator, key=lambda x: x.scene_id)
-        ]
+        grouped_episodes = [list(g) for k, g in groupby(self._iterator, key=lambda x: x.scene_id)]
 
         if len(grouped_episodes) > 1:
             # Ensure we swap by moving the current group to the end
@@ -484,9 +444,7 @@ class EpisodeIterator(Iterator[T]):
 
         self._iterator = iter(episodes)
 
-    def _group_scenes(
-        self, episodes: Union[Sequence[Episode], List[Episode], ndarray]
-    ) -> List[T]:
+    def _group_scenes(self, episodes: Union[Sequence[Episode], List[Episode], ndarray]) -> List[T]:
         r"""Internal method that groups episodes by scene
         Groups will be ordered by the order the first episode of a given
         scene is in the list of episodes
@@ -508,9 +466,7 @@ class EpisodeIterator(Iterator[T]):
 
     @staticmethod
     def _randomize_value(value: int, value_range: float) -> int:
-        return random.randint(
-            int(value * (1 - value_range)), int(value * (1 + value_range))
-        )
+        return random.randint(int(value * (1 - value_range)), int(value * (1 + value_range)))
 
     def _set_shuffle_intervals(self) -> None:
         if self.max_scene_repetition_episodes > 0:
@@ -519,9 +475,7 @@ class EpisodeIterator(Iterator[T]):
             self._max_rep_episode = None
 
         if self.max_scene_repetition_steps > 0:
-            self._max_rep_step = self._randomize_value(
-                self.max_scene_repetition_steps, self.step_repetition_range
-            )
+            self._max_rep_step = self._randomize_value(self.max_scene_repetition_steps, self.step_repetition_range)
         else:
             self._max_rep_step = None
 
@@ -530,17 +484,11 @@ class EpisodeIterator(Iterator[T]):
         self._rep_count += 1
 
         # Shuffle if a scene has been selected more than _max_rep_episode times in a row
-        if (
-            self._max_rep_episode is not None
-            and self._rep_count >= self._max_rep_episode
-        ):
+        if self._max_rep_episode is not None and self._rep_count >= self._max_rep_episode:
             do_switch = True
 
         # Shuffle if a scene has been used for more than _max_rep_step steps in a row
-        if (
-            self._max_rep_step is not None
-            and self._step_count >= self._max_rep_step
-        ):
+        if self._max_rep_step is not None and self._step_count >= self._max_rep_step:
             do_switch = True
 
         if do_switch:

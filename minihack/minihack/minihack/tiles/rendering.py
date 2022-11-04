@@ -20,9 +20,7 @@ def get_image(pixel_obs, full_screen=False, resize=None, relative=False):
     if resize is not None:
         x_resize, y_resize = resize
         if relative:
-            image = image.resize(
-                (int(image.width * x_resize), int(image.height * y_resize))
-            )
+            image = image.resize((int(image.width * x_resize), int(image.height * y_resize)))
         else:
             image = image.resize((x_resize, y_resize))
 
@@ -45,16 +43,9 @@ def get_des_file_rendering(
     def get_pixel_obs(env, full_obs=True):
         obs = env.reset()
         if full_obs and wizard:
-            for c in (
-                "#wizintrinsic\rt\r\r#wizmap\r#wizwish\r"
-                + "a potion of object detection\r"
-            ):
+            for c in "#wizintrinsic\rt\r\r#wizmap\r#wizwish\r" + "a potion of object detection\r":
                 obs, sds = env.env.step(ord(c))
-            msg = (
-                obs[env._original_observation_keys.index("message")]
-                .tobytes()
-                .decode("utf-8")
-            )
+            msg = obs[env._original_observation_keys.index("message")].tobytes().decode("utf-8")
 
             for c in f"q{msg[0]}":
                 obs, sds = env.env.step(ord(c))

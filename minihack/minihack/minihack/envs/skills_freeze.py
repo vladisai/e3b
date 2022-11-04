@@ -14,9 +14,7 @@ class MiniHackFreeze(MiniHackSkill):
         rwrd_mngr = RewardManager()
         rwrd_mngr.add_message_event(freeze_msgs)
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=rwrd_mngr, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=rwrd_mngr, **kwargs)
 
 
 class MiniHackFreezeWand(MiniHackFreeze):
@@ -34,14 +32,14 @@ class MiniHackFreezeWandRestrictedActions(MiniHackFreeze):
         lvl_gen.add_object("cold", "/", cursestate="blessed")
         des_file = lvl_gen.get_des()
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.ZAP, \
-                                                     nethack.Command.FIRE)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.ZAP,
+            nethack.Command.FIRE,
+        )
         kwargs["actions"] = ACTIONS
-        
 
         super().__init__(*args, des_file=des_file, **kwargs)
-        
 
 
 class MiniHackFreezeHorn(MiniHackFreeze):
@@ -59,14 +57,14 @@ class MiniHackFreezeHornRestrictedActions(MiniHackFreeze):
         lvl_gen.add_object("frost horn", "(", cursestate="blessed")
         des_file = lvl_gen.get_des()
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.APPLY, \
-                                                     nethack.Command.FIRE)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.APPLY,
+            nethack.Command.FIRE,
+        )
         kwargs["actions"] = ACTIONS
-        
 
         super().__init__(*args, des_file=des_file, **kwargs)
-        
 
 
 class MiniHackFreezeRandom(MiniHackFreeze):
@@ -97,7 +95,6 @@ IF [50%] {
         super().__init__(*args, des_file=des_file, **kwargs)
 
 
-
 class MiniHackFreezeRandomRestrictedActions(MiniHackFreeze):
     def __init__(self, *args, **kwargs):
         des_file = """
@@ -124,16 +121,15 @@ IF [50%] {
 }
 """
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.ZAP, \
-                                                     nethack.Command.APPLY, \
-                                                     nethack.Command.FIRE)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.ZAP,
+            nethack.Command.APPLY,
+            nethack.Command.FIRE,
+        )
         kwargs["actions"] = ACTIONS
 
-        
         super().__init__(*args, des_file=des_file, **kwargs)
-
-        
 
 
 class MiniHackFreezeLava(MiniHackSkill):

@@ -48,13 +48,9 @@ class MiniHackRiver(MiniHackNavigation):
         for _ in range(n_monster):
             lvl_gen.add_monster()
 
-        lvl_gen.set_area_variable(
-            "$boulder_area", type="fillrect", x1=1, y1=1, x2=18, y2=5
-        )
+        lvl_gen.set_area_variable("$boulder_area", type="fillrect", x1=1, y1=1, x2=18, y2=5)
         for _ in range(n_boulder):
-            lvl_gen.add_object_area(
-                "$boulder_area", name="boulder", symbol="`"
-            )
+            lvl_gen.add_object_area("$boulder_area", name="boulder", symbol="`")
 
         lvl_gen.add_goal_pos((24, 2))
 

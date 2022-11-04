@@ -32,9 +32,7 @@ EPISODES_LIMIT = 6
 def check_json_serialization(dataset: habitat.Dataset):
     start_time = time.time()
     json_str = dataset.to_json()
-    logger.info(
-        "JSON conversion finished. {} sec".format((time.time() - start_time))
-    )
+    logger.info("JSON conversion finished. {} sec".format((time.time() - start_time)))
     decoded_dataset = RearrangeDatasetV0()
     decoded_dataset.from_json(json_str)
     decoded_dataset.config = dataset.config
@@ -52,13 +50,9 @@ def check_json_serialization(dataset: habitat.Dataset):
 def test_rearrange_dataset():
     dataset_config = get_config(CFG_TEST).DATASET
     if not RearrangeDatasetV0.check_config_paths_exist(dataset_config):
-        pytest.skip(
-            "Please download ReplicaCAD RearrangeDataset Dataset to data folder."
-        )
+        pytest.skip("Please download ReplicaCAD RearrangeDataset Dataset to data folder.")
 
-    dataset = habitat.make_dataset(
-        id_dataset=dataset_config.TYPE, config=dataset_config
-    )
+    dataset = habitat.make_dataset(id_dataset=dataset_config.TYPE, config=dataset_config)
     assert dataset
     dataset.episodes = dataset.episodes[0:EPISODES_LIMIT]
     check_json_serialization(dataset)
@@ -78,9 +72,7 @@ def test_rearrange_basline_envs(test_cfg_path):
 
     env_class = get_env_class(config.ENV_NAME)
 
-    env = habitat_baselines.utils.env_utils.make_env_fn(
-        env_class=env_class, config=config
-    )
+    env = habitat_baselines.utils.env_utils.make_env_fn(env_class=env_class, config=config)
 
     with env:
         for _ in range(10):
@@ -117,21 +109,15 @@ def test_rearrange_tasks(test_cfg_path):
 @pytest.mark.parametrize("debug_visualization", [False])
 @pytest.mark.parametrize("num_episodes", [2])
 @pytest.mark.parametrize("config", [GEN_TEST_CFG])
-def test_rearrange_episode_generator(
-    debug_visualization, num_episodes, config
-):
+def test_rearrange_episode_generator(debug_visualization, num_episodes, config):
     cfg = rr_gen.get_config_defaults()
     cfg.merge_from_file(config)
     dataset = RearrangeDatasetV0()
-    with rr_gen.RearrangeEpisodeGenerator(
-        cfg=cfg, debug_visualization=debug_visualization
-    ) as ep_gen:
+    with rr_gen.RearrangeEpisodeGenerator(cfg=cfg, debug_visualization=debug_visualization) as ep_gen:
         start_time = time.time()
         dataset.episodes += ep_gen.generate_episodes(num_episodes)
 
     # test serialization of freshly generated dataset
     check_json_serialization(dataset)
 
-    logger.info(
-        f"successful_ep = {len(dataset.episodes)} generated in {time.time()-start_time} seconds."
-    )
+    logger.info(f"successful_ep = {len(dataset.episodes)} generated in {time.time()-start_time} seconds.")

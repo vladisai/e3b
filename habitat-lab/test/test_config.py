@@ -18,24 +18,15 @@ def test_merged_configs():
     eqa_config = get_config(CFG_EQA)
     merged_config = get_config("{},{}".format(CFG_TEST, CFG_EQA))
     assert merged_config.TASK.TYPE == eqa_config.TASK.TYPE
-    assert (
-        merged_config.ENVIRONMENT.MAX_EPISODE_STEPS
-        == test_config.ENVIRONMENT.MAX_EPISODE_STEPS
-    )
+    assert merged_config.ENVIRONMENT.MAX_EPISODE_STEPS == test_config.ENVIRONMENT.MAX_EPISODE_STEPS
 
 
 def test_new_keys_merged_configs():
     test_config = get_config(CFG_TEST)
     new_keys_config = get_config(CFG_NEW_KEYS)
     merged_config = get_config("{},{}".format(CFG_TEST, CFG_NEW_KEYS))
-    assert (
-        merged_config.TASK.MY_NEW_TASK_PARAM
-        == new_keys_config.TASK.MY_NEW_TASK_PARAM
-    )
-    assert (
-        merged_config.ENVIRONMENT.MAX_EPISODE_STEPS
-        == test_config.ENVIRONMENT.MAX_EPISODE_STEPS
-    )
+    assert merged_config.TASK.MY_NEW_TASK_PARAM == new_keys_config.TASK.MY_NEW_TASK_PARAM
+    assert merged_config.ENVIRONMENT.MAX_EPISODE_STEPS == test_config.ENVIRONMENT.MAX_EPISODE_STEPS
 
 
 def test_overwrite_options():
@@ -44,6 +35,4 @@ def test_overwrite_options():
             config_paths=CFG_TEST,
             opts=["ENVIRONMENT.MAX_EPISODE_STEPS", steps_limit],
         )
-        assert (
-            config.ENVIRONMENT.MAX_EPISODE_STEPS == steps_limit
-        ), "Overwriting of config options failed."
+        assert config.ENVIRONMENT.MAX_EPISODE_STEPS == steps_limit, "Overwriting of config options failed."

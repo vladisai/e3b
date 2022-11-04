@@ -74,9 +74,7 @@ def _ground_truth_calculation(
     # Note that when we take the product over c_i, we write `s:t` as the
     # notation of the paper is inclusive of the `t-1`, but Python is exclusive.
     # Also note that np.prod([]) == 1.
-    values_t_plus_1 = np.concatenate(
-        [values, bootstrap_value[None, :]], axis=0
-    )
+    values_t_plus_1 = np.concatenate([values, bootstrap_value[None, :]], axis=0)
     for s in range(seq_len):
         v_s = np.copy(values[s])  # Very important copy.
         for t in range(s, seq_len):
@@ -84,19 +82,12 @@ def _ground_truth_calculation(
                 np.prod(discounts[s:t], axis=0)
                 * np.prod(cs[s:t], axis=0)
                 * clipped_rhos[t]
-                * (
-                    rewards[t]
-                    + discounts[t] * values_t_plus_1[t + 1]
-                    - values[t]
-                )
+                * (rewards[t] + discounts[t] * values_t_plus_1[t + 1] - values[t])
             )
         vs.append(v_s)
     vs = np.stack(vs, axis=0)
     pg_advantages = clipped_pg_rhos * (
-        rewards
-        + discounts
-        * np.concatenate([vs[1:], bootstrap_value[None, :]], axis=0)
-        - values
+        rewards + discounts * np.concatenate([vs[1:], bootstrap_value[None, :]], axis=0) - values
     )
 
     return vtrace.VTraceReturns(vs=vs, pg_advantages=pg_advantages)
@@ -112,13 +103,9 @@ class ActionLogProbsTest(unittest.TestCase):
         num_actions = 3
 
         policy_logits = _shaped_arange(seq_len, batch_size, num_actions) + 10
-        actions = np.random.randint(
-            0, num_actions, size=(seq_len, batch_size), dtype=np.int64
-        )
+        actions = np.random.randint(0, num_actions, size=(seq_len, batch_size), dtype=np.int64)
 
-        action_log_probs_tensor = vtrace.action_log_probs(
-            torch.from_numpy(policy_logits), torch.from_numpy(actions)
-        )
+        action_log_probs_tensor = vtrace.action_log_probs(torch.from_numpy(policy_logits), torch.from_numpy(actions))
 
         # Ground Truth
         # Using broadcasting to create a mask that indexes action logits
@@ -129,9 +116,7 @@ class ActionLogProbsTest(unittest.TestCase):
 
         # Note: Normally log(softmax) is not a good idea because it's not
         # numerically stable. However, in this test we have well-behaved values.
-        ground_truth_v = index_with_mask(
-            np.log(_softmax(policy_logits)), action_index_mask
-        )
+        ground_truth_v = index_with_mask(np.log(_softmax(policy_logits)), action_index_mask)
 
         assert_allclose(ground_truth_v, action_log_probs_tensor)
 
@@ -153,10 +138,7 @@ class VtraceTest(unittest.TestCase):
             "log_rhos": log_rhos,
             # T, B where B_i: [0.9 / (i+1)] * T
             "discounts": np.array(
-                [
-                    [0.9 / (b + 1) for b in range(batch_size)]
-                    for _ in range(seq_len)
-                ],
+                [[0.9 / (b + 1) for b in range(batch_size)] for _ in range(seq_len)],
                 dtype=np.float32,
             ),
             "rewards": _shaped_arange(seq_len, batch_size),
@@ -185,20 +167,11 @@ class VtraceTest(unittest.TestCase):
         clip_pg_rho_threshold = None  # No clipping.
 
         values = {
-            "behavior_policy_logits": _shaped_arange(
-                seq_len, batch_size, num_actions
-            ),
-            "target_policy_logits": _shaped_arange(
-                seq_len, batch_size, num_actions
-            ),
-            "actions": np.random.randint(
-                0, num_actions - 1, size=(seq_len, batch_size)
-            ),
+            "behavior_policy_logits": _shaped_arange(seq_len, batch_size, num_actions),
+            "target_policy_logits": _shaped_arange(seq_len, batch_size, num_actions),
+            "actions": np.random.randint(0, num_actions - 1, size=(seq_len, batch_size)),
             "discounts": np.array(  # T, B where B_i: [0.9 / (i+1)] * T
-                [
-                    [0.9 / (b + 1) for b in range(batch_size)]
-                    for _ in range(seq_len)
-                ],
+                [[0.9 / (b + 1) for b in range(batch_size)] for _ in range(seq_len)],
                 dtype=np.float32,
             ),
             "rewards": _shaped_arange(seq_len, batch_size),
@@ -213,12 +186,8 @@ class VtraceTest(unittest.TestCase):
             **values,
         )
 
-        target_log_probs = vtrace.action_log_probs(
-            values["target_policy_logits"], values["actions"]
-        )
-        behavior_log_probs = vtrace.action_log_probs(
-            values["behavior_policy_logits"], values["actions"]
-        )
+        target_log_probs = vtrace.action_log_probs(values["target_policy_logits"], values["actions"])
+        behavior_log_probs = vtrace.action_log_probs(values["behavior_policy_logits"], values["actions"])
         log_rhos = target_log_probs - behavior_log_probs
 
         # Calculate V-trace using the ground truth logits.
@@ -233,15 +202,9 @@ class VtraceTest(unittest.TestCase):
         )
 
         assert_allclose(from_iw.vs, from_logits_output.vs)
-        assert_allclose(
-            from_iw.pg_advantages, from_logits_output.pg_advantages
-        )
-        assert_allclose(
-            behavior_log_probs, from_logits_output.behavior_action_log_probs
-        )
-        assert_allclose(
-            target_log_probs, from_logits_output.target_action_log_probs
-        )
+        assert_allclose(from_iw.pg_advantages, from_logits_output.pg_advantages)
+        assert_allclose(behavior_log_probs, from_logits_output.behavior_action_log_probs)
+        assert_allclose(target_log_probs, from_logits_output.target_action_log_probs)
         assert_allclose(log_rhos, from_logits_output.log_rhos)
 
     def test_vtrace_from_logits_batch_1(self):
@@ -275,9 +238,7 @@ class VtraceTest(unittest.TestCase):
             "bootstrap_value": torch.zeros(B),
         }
 
-        with self.assertRaisesRegex(
-            RuntimeError, "same number of dimensions: got 3 and 2"
-        ):
+        with self.assertRaisesRegex(RuntimeError, "same number of dimensions: got 3 and 2"):
             vtrace.from_importance_weights(**values)
 
 

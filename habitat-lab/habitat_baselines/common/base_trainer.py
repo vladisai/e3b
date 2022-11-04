@@ -80,29 +80,19 @@ class BaseTrainer:
             None
         """
         self.device = (
-            torch.device("cuda", self.config.TORCH_GPU_ID)
-            if torch.cuda.is_available()
-            else torch.device("cpu")
+            torch.device("cuda", self.config.TORCH_GPU_ID) if torch.cuda.is_available() else torch.device("cpu")
         )
 
         if "tensorboard" in self.config.VIDEO_OPTION:
-            assert (
-                len(self.config.TENSORBOARD_DIR) > 0
-            ), "Must specify a tensorboard directory for video display"
+            assert len(self.config.TENSORBOARD_DIR) > 0, "Must specify a tensorboard directory for video display"
             os.makedirs(self.config.TENSORBOARD_DIR, exist_ok=True)
         if "disk" in self.config.VIDEO_OPTION:
-            assert (
-                len(self.config.VIDEO_DIR) > 0
-            ), "Must specify a directory for storing videos on disk"
+            assert len(self.config.VIDEO_DIR) > 0, "Must specify a directory for storing videos on disk"
 
-        with TensorboardWriter(
-            self.config.TENSORBOARD_DIR, flush_secs=self.flush_secs
-        ) as writer:
+        with TensorboardWriter(self.config.TENSORBOARD_DIR, flush_secs=self.flush_secs) as writer:
             if os.path.isfile(self.config.EVAL_CKPT_PATH_DIR):
                 # evaluate singe checkpoint
-                proposed_index = get_checkpoint_id(
-                    self.config.EVAL_CKPT_PATH_DIR
-                )
+                proposed_index = get_checkpoint_id(self.config.EVAL_CKPT_PATH_DIR)
                 if proposed_index is not None:
                     ckpt_idx = proposed_index
                 else:
@@ -118,9 +108,7 @@ class BaseTrainer:
                 while True:
                     current_ckpt = None
                     while current_ckpt is None:
-                        current_ckpt = poll_checkpoint_folder(
-                            self.config.EVAL_CKPT_PATH_DIR, prev_ckpt_ind
-                        )
+                        current_ckpt = poll_checkpoint_folder(self.config.EVAL_CKPT_PATH_DIR, prev_ckpt_ind)
                         time.sleep(2)  # sleep for 2 secs before polling again
                     logger.info(f"=======current_ckpt: {current_ckpt}=======")  # type: ignore
                     prev_ckpt_ind += 1
@@ -169,17 +157,13 @@ class BaseRLTrainer(BaseTrainer):
         if config.NUM_UPDATES != -1 and config.TOTAL_NUM_STEPS != -1:
             raise RuntimeError(
                 "NUM_UPDATES and TOTAL_NUM_STEPS are both specified.  One must be -1.\n"
-                " NUM_UPDATES: {} TOTAL_NUM_STEPS: {}".format(
-                    config.NUM_UPDATES, config.TOTAL_NUM_STEPS
-                )
+                " NUM_UPDATES: {} TOTAL_NUM_STEPS: {}".format(config.NUM_UPDATES, config.TOTAL_NUM_STEPS)
             )
 
         if config.NUM_UPDATES == -1 and config.TOTAL_NUM_STEPS == -1:
             raise RuntimeError(
                 "One of NUM_UPDATES and TOTAL_NUM_STEPS must be specified.\n"
-                " NUM_UPDATES: {} TOTAL_NUM_STEPS: {}".format(
-                    config.NUM_UPDATES, config.TOTAL_NUM_STEPS
-                )
+                " NUM_UPDATES: {} TOTAL_NUM_STEPS: {}".format(config.NUM_UPDATES, config.TOTAL_NUM_STEPS)
             )
 
         if config.NUM_CHECKPOINTS != -1 and config.CHECKPOINT_INTERVAL != -1:
@@ -212,32 +196,18 @@ class BaseRLTrainer(BaseTrainer):
         needs_checkpoint = False
         if self.config.NUM_CHECKPOINTS != -1:
             checkpoint_every = 1 / self.config.NUM_CHECKPOINTS
-            if (
-                self._last_checkpoint_percent + checkpoint_every
-                < self.percent_done()
-            ):
+            if self._last_checkpoint_percent + checkpoint_every < self.percent_done():
                 needs_checkpoint = True
                 self._last_checkpoint_percent = self.percent_done()
         else:
-            needs_checkpoint = (
-                self.num_updates_done % self.config.CHECKPOINT_INTERVAL
-            ) == 0
+            needs_checkpoint = (self.num_updates_done % self.config.CHECKPOINT_INTERVAL) == 0
 
         return needs_checkpoint
 
     def _should_save_resume_state(self) -> bool:
         return SAVE_STATE.is_set() or (
-            (
-                not self.config.RL.preemption.save_state_batch_only
-                or is_slurm_batch_job()
-            )
-            and (
-                (
-                    int(self.num_updates_done + 1)
-                    % self.config.RL.preemption.save_resume_state_interval
-                )
-                == 0
-            )
+            (not self.config.RL.preemption.save_state_batch_only or is_slurm_batch_job())
+            and ((int(self.num_updates_done + 1) % self.config.RL.preemption.save_resume_state_interval) == 0)
         )
 
     @property
@@ -286,15 +256,7 @@ class BaseRLTrainer(BaseTrainer):
         prev_actions: Tensor,
         batch: Dict[str, Tensor],
         rgb_frames: Union[List[List[Any]], List[List[ndarray]]],
-    ) -> Tuple[
-        VectorEnv,
-        Tensor,
-        Tensor,
-        Tensor,
-        Tensor,
-        Dict[str, Tensor],
-        List[List[Any]],
-    ]:
+    ) -> Tuple[VectorEnv, Tensor, Tensor, Tensor, Tensor, Dict[str, Tensor], List[List[Any]],]:
         # pausing self.envs with no new episode
         if len(envs_to_pause) > 0:
             state_index = list(range(envs.num_envs))
@@ -303,9 +265,7 @@ class BaseRLTrainer(BaseTrainer):
                 envs.pause_at(idx)
 
             # indexing along the batch dimensions
-            test_recurrent_hidden_states = test_recurrent_hidden_states[
-                state_index
-            ]
+            test_recurrent_hidden_states = test_recurrent_hidden_states[state_index]
             not_done_masks = not_done_masks[state_index]
             current_episode_reward = current_episode_reward[state_index]
             prev_actions = prev_actions[state_index]

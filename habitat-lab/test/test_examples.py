@@ -23,9 +23,7 @@ def run_main(*args):
 
 def powerset(iterable):
     s = list(iterable)
-    return itertools.chain.from_iterable(
-        itertools.combinations(s, r) for r in range(len(s) + 1)
-    )
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
 
 def run_main_subproc(args):
@@ -39,12 +37,8 @@ def run_main_subproc(args):
 
 
 @pytest.mark.skipif(
-    not osp.exists(
-        "data/scene_datasets/habitat-test-scenes/skokloster-castle.glb"
-    )
-    or not osp.exists(
-        "data/scene_datasets/habitat-test-scenes/van-gogh-room.glb"
-    )
+    not osp.exists("data/scene_datasets/habitat-test-scenes/skokloster-castle.glb")
+    or not osp.exists("data/scene_datasets/habitat-test-scenes/van-gogh-room.glb")
     or not osp.exists("data/scene_datasets/coda/coda.glb"),
     reason="Requires the habitat-test-scenes",
 )

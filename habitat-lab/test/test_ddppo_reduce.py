@@ -24,20 +24,10 @@ from habitat_baselines.rl.ddppo.algo import DDPPO
 from habitat_baselines.rl.ppo.policy import PointNavBaselinePolicy
 
 
-def _worker_fn(
-    world_rank: int, world_size: int, port: int, unused_params: bool
-):
-    device = (
-        torch.device("cuda")
-        if torch.cuda.is_available()
-        else torch.device("cpu")
-    )
-    tcp_store = distrib.TCPStore(  # type: ignore
-        "127.0.0.1", port, world_size, world_rank == 0
-    )
-    distrib.init_process_group(
-        "gloo", store=tcp_store, rank=world_rank, world_size=world_size
-    )
+def _worker_fn(world_rank: int, world_size: int, port: int, unused_params: bool):
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    tcp_store = distrib.TCPStore("127.0.0.1", port, world_size, world_rank == 0)  # type: ignore
+    distrib.init_process_group("gloo", store=tcp_store, rank=world_rank, world_size=world_size)
 
     config = get_config("habitat_baselines/config/test/ppo_pointnav_test.yaml")
     obs_space = gym.spaces.Dict(
@@ -51,9 +41,7 @@ def _worker_fn(
         }
     )
     action_space = ActionSpace({"move": EmptySpace()})
-    actor_critic = PointNavBaselinePolicy.from_config(
-        config, obs_space, action_space
-    )
+    actor_critic = PointNavBaselinePolicy.from_config(config, obs_space, action_space)
     # This use adds some arbitrary parameters that aren't part of the computation
     # graph, so they will mess up DDP if they aren't correctly ignored by it
     if unused_params:

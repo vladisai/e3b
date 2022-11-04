@@ -72,11 +72,10 @@ class BenchmarkGym:
         if num_episodes is None:
             num_episodes = len(self._env.episodes)
         else:
-            assert num_episodes <= len(self._env.episodes), (
-                "num_episodes({}) is larger than number of episodes "
-                "in environment ({})".format(
-                    num_episodes, len(self._env.episodes)
-                )
+            assert num_episodes <= len(
+                self._env.episodes
+            ), "num_episodes({}) is larger than number of episodes " "in environment ({})".format(
+                num_episodes, len(self._env.episodes)
             )
 
         assert num_episodes > 0, "num_episodes should be greater than 0"
@@ -113,13 +112,9 @@ class BenchmarkGym:
                 action = agent.act(self._gym_env.orig_obs)
                 traj_actions.append(action)
                 traj_dones.append(False)
-                traj_episode_ids.append(
-                    int(self._env.current_episode.episode_id)
-                )
+                traj_episode_ids.append(int(self._env.current_episode.episode_id))
 
-                observations, _, done, _ = self._gym_env.direct_hab_step(
-                    action
-                )
+                observations, _, done, _ = self._gym_env.direct_hab_step(action)
 
                 traj_next_obs.append(observations)
 
@@ -162,11 +157,7 @@ class BenchmarkGym:
                     images=rgb_frames,
                     episode_id=self._env.current_episode.episode_id,
                     checkpoint_idx=0,
-                    metrics={
-                        k: v
-                        for k, v in metrics.items()
-                        if k in self._vid_filename_metrics
-                    },
+                    metrics={k: v for k, v in metrics.items() if k in self._vid_filename_metrics},
                     tb_writer=self._writer,
                     verbose=False,
                 )
@@ -183,9 +174,7 @@ class BenchmarkGym:
                     "obs": all_obs,
                     "next_obs": all_next_obs,
                     "episode_ids": all_episode_ids,
-                    "actions": torch.tensor(
-                        [compress_action(action) for action in all_actions]
-                    ),
+                    "actions": torch.tensor([compress_action(action) for action in all_actions]),
                 },
                 self._traj_save_path,
             )

@@ -100,9 +100,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
-        )
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
@@ -137,9 +135,7 @@ class ResNet(nn.Module):
     def __init__(self, block, layers, num_classes=1000):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(
-            3, 64, kernel_size=7, stride=2, padding=3, bias=False
-        )
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -227,11 +223,7 @@ def resnet50(pretrained=False, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(
-            model_zoo.load_url(
-                model_urls["resnet50"], "pretrained_model/encoder"
-            )
-        )
+        model.load_state_dict(model_zoo.load_url(model_urls["resnet50"], "pretrained_model/encoder"))
     return model
 
 
@@ -406,21 +398,13 @@ class MFF(nn.Module):
 
         super(MFF, self).__init__()
 
-        self.up1 = _UpProjection(
-            num_input_features=block_channel[0], num_output_features=16
-        )
+        self.up1 = _UpProjection(num_input_features=block_channel[0], num_output_features=16)
 
-        self.up2 = _UpProjection(
-            num_input_features=block_channel[1], num_output_features=16
-        )
+        self.up2 = _UpProjection(num_input_features=block_channel[1], num_output_features=16)
 
-        self.up3 = _UpProjection(
-            num_input_features=block_channel[2], num_output_features=16
-        )
+        self.up3 = _UpProjection(num_input_features=block_channel[2], num_output_features=16)
 
-        self.up4 = _UpProjection(
-            num_input_features=block_channel[3], num_output_features=16
-        )
+        self.up4 = _UpProjection(num_input_features=block_channel[3], num_output_features=16)
 
         self.conv = nn.Conv2d(
             num_features,
@@ -470,9 +454,7 @@ class R(nn.Module):
         )
         self.bn1 = nn.BatchNorm2d(num_features)
 
-        self.conv2 = nn.Conv2d(
-            num_features, 1, kernel_size=5, stride=1, padding=2, bias=True
-        )
+        self.conv2 = nn.Conv2d(num_features, 1, kernel_size=5, stride=1, padding=2, bias=True)
 
     def forward(self, x):
         x0 = self.conv0(x)
@@ -548,9 +530,7 @@ class ToTensor:
 
     def to_tensor(self, pic):
         if not (_is_pil_image(pic) or _is_numpy_image(pic)):
-            raise TypeError(
-                "pic should be PIL Image or ndarray. Got {}".format(type(pic))
-            )
+            raise TypeError("pic should be PIL Image or ndarray. Got {}".format(type(pic)))
 
         if isinstance(pic, np.ndarray):
 
@@ -558,9 +538,7 @@ class ToTensor:
             return img.float().div(255)
 
         if accimage is not None and isinstance(pic, accimage.Image):  # type: ignore
-            nppic = np.zeros(  # type: ignore[unreachable]
-                [pic.channels, pic.height, pic.width], dtype=np.float32
-            )
+            nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)  # type: ignore[unreachable]
             pic.copyto(nppic)
             return torch.from_numpy(nppic)
 
@@ -570,9 +548,7 @@ class ToTensor:
         elif pic.mode == "I;16":
             img = torch.from_numpy(np.array(pic, np.int16, copy=False))
         else:
-            img = torch.ByteTensor(
-                torch.ByteStorage.from_buffer(pic.tobytes())  # type: ignore
-            )
+            img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))  # type: ignore
         # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
         if pic.mode == "YCbCr":
             nchannel = 3
@@ -611,9 +587,7 @@ def define_model(is_resnet, is_densenet, is_senet):
     if is_resnet:
         original_model = resnet50(pretrained=False)
         Encoder = E_resnet(original_model)
-        model1 = model(
-            Encoder, num_features=2048, block_channel=[256, 512, 1024, 2048]
-        )
+        model1 = model(Encoder, num_features=2048, block_channel=[256, 512, 1024, 2048])
     if is_densenet:
         # original_model = dendensenet161(pretrained=False)
         # Encoder = E_densenet(original_model)
@@ -633,9 +607,7 @@ def define_model(is_resnet, is_densenet, is_senet):
 
 class MonoDepthEstimator:
     def __init__(self, checkpoint="./pretrained_model/model_resnet"):
-        self.model = define_model(
-            is_resnet=True, is_densenet=False, is_senet=False
-        )
+        self.model = define_model(is_resnet=True, is_densenet=False, is_senet=False)
         self.model = torch.nn.DataParallel(self.model).cuda()
         cpt = torch.load(checkpoint)
         if "state_dict" in cpt:
@@ -669,9 +641,5 @@ class MonoDepthEstimator:
         image_torch = self.preprocess(image)
         # print(image_torch.size())
         depth_torch = self.model(image_torch)
-        depth = (
-            depth_torch.view(depth_torch.size(2), depth_torch.size(3))
-            .data.cpu()
-            .numpy()
-        )
+        depth = depth_torch.view(depth_torch.size(2), depth_torch.size(3)).data.cpu().numpy()
         return depth

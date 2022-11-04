@@ -8,7 +8,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-from torch import nn 
+from torch import nn
 from torch.nn import functional as F
 import numpy as np
 import pdb
@@ -18,18 +18,23 @@ from nle import nethack
 NUM_CHARS = 256
 PAD_CHAR = 0
 
+
 def init(module, weight_init, bias_init, gain=1):
     weight_init(module.weight.data, gain=gain)
     bias_init(module.bias.data)
     return module
 
 
-init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                        constant_(x, 0))
+init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
 
-init_relu_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                        constant_(x, 0), nn.init.calculate_gain('relu'))
-    
+init_relu_ = lambda m: init(
+    m,
+    nn.init.orthogonal_,
+    lambda x: nn.init.constant_(x, 0),
+    nn.init.calculate_gain("relu"),
+)
+
+
 def apply_init_(modules):
     """
     Initialize NN modules
@@ -45,13 +50,16 @@ def apply_init_(modules):
                 nn.init.constant_(m.bias, 0)
 
 
-
 class MinigridMLPEmbeddingNet(nn.Module):
     def __init__(self, hidden_dim=1024):
         super(MinigridMLPEmbeddingNet, self).__init__()
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
 
         self.fc = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
@@ -64,7 +72,7 @@ class MinigridMLPEmbeddingNet(nn.Module):
             nn.ReLU(),
             nn.Linear(128, 128),
         )
-        
+
     def forward(self, inputs, core_state=()):
         x = inputs
         T, B, *_ = x.shape
@@ -80,8 +88,12 @@ class MinigridMLPTargetEmbeddingNet(nn.Module):
     def __init__(self, hidden_dim=1024):
         super(MinigridMLPTargetEmbeddingNet, self).__init__()
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
 
         self.fc = nn.Sequential(
             nn.Linear(hidden_dim, 128),
@@ -92,7 +104,7 @@ class MinigridMLPTargetEmbeddingNet(nn.Module):
             nn.ReLU(),
             nn.Linear(128, 128),
         )
-        
+
     def forward(self, inputs, core_state=()):
         x = inputs
         T, B, *_ = x.shape
@@ -111,42 +123,43 @@ class MinigridMLPTargetEmbeddingNet(nn.Module):
 class MinigridInverseDynamicsNet(nn.Module):
     def __init__(self, num_actions, emb_size=128, p_dropout=0.0):
         super(MinigridInverseDynamicsNet, self).__init__()
-        self.num_actions = num_actions 
-        
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
-        self.inverse_dynamics = nn.Sequential(
-            init_(nn.Linear(2 * emb_size, 256)), 
-            nn.ReLU(),
-            nn.Dropout(p=p_dropout)
-        )
+        self.num_actions = num_actions
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, 
-            lambda x: nn.init.constant_(x, 0))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
+        self.inverse_dynamics = nn.Sequential(init_(nn.Linear(2 * emb_size, 256)), nn.ReLU(), nn.Dropout(p=p_dropout))
+
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
         self.id_out = init_(nn.Linear(256, self.num_actions))
 
-        
     def forward(self, state_embedding, next_state_embedding):
         inputs = torch.cat((state_embedding, next_state_embedding), dim=2)
         action_logits = self.id_out(self.inverse_dynamics(inputs))
         return action_logits
-    
+
 
 class MinigridForwardDynamicsNet(nn.Module):
     def __init__(self, num_actions, hidden_dim=1024):
         super(MinigridForwardDynamicsNet, self).__init__()
-        self.num_actions = num_actions 
+        self.num_actions = num_actions
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
-    
-        self.forward_dynamics = nn.Sequential(
-            init_(nn.Linear(hidden_dim + self.num_actions, hidden_dim)), 
-            nn.ReLU(), 
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
         )
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, 
-            lambda x: nn.init.constant_(x, 0))
+        self.forward_dynamics = nn.Sequential(
+            init_(nn.Linear(hidden_dim + self.num_actions, hidden_dim)),
+            nn.ReLU(),
+        )
+
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
 
         self.fd_out = init_(nn.Linear(hidden_dim, hidden_dim))
 
@@ -171,12 +184,8 @@ class Crop(nn.Module):
         self.height = height
         self.width_target = width_target
         self.height_target = height_target
-        width_grid = _step_to_range(2 / (self.width - 1), self.width_target)[
-            None, :
-        ].expand(self.height_target, -1)
-        height_grid = _step_to_range(2 / (self.height - 1), height_target)[
-            :, None
-        ].expand(-1, self.width_target)
+        width_grid = _step_to_range(2 / (self.width - 1), self.width_target)[None, :].expand(self.height_target, -1)
+        height_grid = _step_to_range(2 / (self.height - 1), height_target)[:, None].expand(-1, self.width_target)
 
         # "clone" necessary, https://github.com/pytorch/pytorch/issues/34880
         self.register_buffer("width_grid", width_grid.clone())
@@ -200,7 +209,7 @@ class Crop(nn.Module):
 
         x_shift = 2 / (self.width - 1) * (x.float() - self.width // 2)
         y_shift = 2 / (self.height - 1) * (y.float() - self.height // 2)
-        
+
         grid = torch.stack(
             [
                 self.width_grid[None, :, :] + x_shift[:, None, None],
@@ -210,17 +219,14 @@ class Crop(nn.Module):
         )
 
         # TODO: only cast to int if original tensor was int
-        return (
-            torch.round(F.grid_sample(inputs, grid, align_corners=True))
-            .squeeze(1)
-            .long()
-        )
+        return torch.round(F.grid_sample(inputs, grid, align_corners=True)).squeeze(1).long()
 
 
 class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
-    
+
+
 class NetHackPolicyNet(nn.Module):
     def __init__(
         self,
@@ -232,14 +238,13 @@ class NetHackPolicyNet(nn.Module):
         embedding_dim=64,
         crop_dim=9,
         num_layers=5,
-        msg_model="lt_cnn"
+        msg_model="lt_cnn",
     ):
         super(NetHackPolicyNet, self).__init__()
 
-
         self.register_buffer("reward_sum", torch.zeros(()))
         self.register_buffer("reward_m2", torch.zeros(()))
-        self.register_buffer("reward_count", torch.zeros(()).fill_(1e-8))        
+        self.register_buffer("reward_count", torch.zeros(()).fill_(1e-8))
 
         self.glyph_shape = observation_shape["glyphs"].shape
         self.blstats_size = observation_shape["blstats"].shape[0]
@@ -285,9 +290,7 @@ class NetHackPolicyNet(nn.Module):
             for i in range(L)
         ]
 
-        self.extract_representation = nn.Sequential(
-            *interleave(conv_extract, [nn.ELU()] * len(conv_extract))
-        )
+        self.extract_representation = nn.Sequential(*interleave(conv_extract, [nn.ELU()] * len(conv_extract)))
 
         # CNN crop model.
         conv_extract_crop = [
@@ -301,16 +304,14 @@ class NetHackPolicyNet(nn.Module):
             for i in range(L)
         ]
 
-        self.extract_crop_representation = nn.Sequential(
-            *interleave(conv_extract_crop, [nn.ELU()] * len(conv_extract))
-        )
+        self.extract_crop_representation = nn.Sequential(*interleave(conv_extract_crop, [nn.ELU()] * len(conv_extract)))
 
         out_dim = self.k_dim
         # CNN over full glyph map
         out_dim += self.H * self.W * Y
 
         # CNN crop model.
-        out_dim += self.crop_dim ** 2 * Y
+        out_dim += self.crop_dim**2 * Y
 
         self.embed_blstats = nn.Sequential(
             nn.Linear(self.blstats_size, self.k_dim),
@@ -320,15 +321,11 @@ class NetHackPolicyNet(nn.Module):
         )
 
         self.msg_model = msg_model
-        if self.msg_model == 'lt_cnn':
+        if self.msg_model == "lt_cnn":
             self.msg_hdim = 64
             self.msg_edim = 32
-            self.char_lt = nn.Embedding(
-                NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR
-            )            
-            self.conv1 = nn.Conv1d(
-                self.msg_edim, self.msg_hdim, kernel_size=7
-            )
+            self.char_lt = nn.Embedding(NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR)
+            self.conv1 = nn.Conv1d(self.msg_edim, self.msg_hdim, kernel_size=7)
             # remaining convolutions, relus, pools, and a small FC network
             self.conv2_6_fc = nn.Sequential(
                 nn.ReLU(),
@@ -357,16 +354,12 @@ class NetHackPolicyNet(nn.Module):
                 nn.Linear(2 * self.msg_hdim, self.msg_hdim),
             )  # final output -- [ B x h_dim x 5 ]
             out_dim += self.msg_hdim
-            
-        elif self.msg_model == 'lt_cnn_small':
+
+        elif self.msg_model == "lt_cnn_small":
             self.msg_hdim = 64
             self.msg_edim = 32
-            self.char_lt = nn.Embedding(
-                NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR
-            )            
-            self.conv1 = nn.Conv1d(
-                self.msg_edim, self.msg_hdim, kernel_size=7
-            )
+            self.char_lt = nn.Embedding(NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR)
+            self.conv1 = nn.Conv1d(self.msg_edim, self.msg_hdim, kernel_size=7)
             # remaining convolutions, relus, pools, and a small FC network
             self.conv2_6_fc = nn.Sequential(
                 nn.ReLU(),
@@ -385,30 +378,17 @@ class NetHackPolicyNet(nn.Module):
                 nn.ReLU(),
                 nn.Linear(2 * self.msg_hdim, self.msg_hdim),
             )  # final output -- [ B x h_dim x 5 ]
-            out_dim += self.msg_hdim 
+            out_dim += self.msg_hdim
 
-            
-        self.fc1 = nn.Sequential(
-            nn.Linear(out_dim, self.h_dim),
-            nn.ReLU()
-        )
+        self.fc1 = nn.Sequential(nn.Linear(out_dim, self.h_dim), nn.ReLU())
 
-        self.fc2 = nn.Sequential(
-            nn.Linear(self.h_dim, self.h_dim),
-            nn.ReLU()
-        )
-        
+        self.fc2 = nn.Sequential(nn.Linear(self.h_dim, self.h_dim), nn.ReLU())
 
         if self.use_lstm:
             self.core = nn.LSTM(self.h_dim, self.h_dim, num_layers=1)
 
         self.policy = nn.Linear(self.h_dim, self.num_actions)
         self.baseline = nn.Linear(self.h_dim, 1)
-
-
-
-    
-
 
     @torch.no_grad()
     def update_running_moments(self, reward_batch):
@@ -419,9 +399,7 @@ class NetHackPolicyNet(nn.Module):
 
         curr_mean = self.reward_sum / self.reward_count
         new_m2 = torch.sum((reward_batch - new_mean) ** 2) + (
-            (self.reward_count * new_count)
-            / (self.reward_count + new_count)
-            * (new_mean - curr_mean) ** 2
+            (self.reward_count * new_count) / (self.reward_count + new_count) * (new_mean - curr_mean) ** 2
         )
 
         self.reward_count += new_count
@@ -431,15 +409,12 @@ class NetHackPolicyNet(nn.Module):
     @torch.no_grad()
     def get_running_std(self):
         """Returns standard deviation of the running mean of the reward."""
-        return torch.sqrt(self.reward_m2 / self.reward_count)        
+        return torch.sqrt(self.reward_m2 / self.reward_count)
 
     def initial_state(self, batch_size=1):
         if not self.use_lstm:
             return tuple()
-        return tuple(
-            torch.zeros(self.core.num_layers, batch_size, self.core.hidden_size)
-            for _ in range(2)
-        )
+        return tuple(torch.zeros(self.core.num_layers, batch_size, self.core.hidden_size) for _ in range(2))
 
     def _select(self, embed, x):
         # Work around slow backward pass of nn.Embedding, see
@@ -449,7 +424,7 @@ class NetHackPolicyNet(nn.Module):
 
     def forward(self, env_outputs, core_state, decode=False):
 
-#        env_outputs = env_outputs['frame']
+        #        env_outputs = env_outputs['frame']
         # -- [T x B x H x W]
         glyphs = env_outputs["glyphs"]
 
@@ -513,12 +488,11 @@ class NetHackPolicyNet(nn.Module):
 
         # -- [B x K']
         glyphs_rep = glyphs_rep.view(T * B, -1)
-        
+
         assert glyphs_rep.shape[0] == T * B
 
         # -- [B x K'']
         reps.append(glyphs_rep)
-
 
         # MESSAGING MODEL
         if self.msg_model != "none":
@@ -530,8 +504,6 @@ class NetHackPolicyNet(nn.Module):
                 char_rep = self.conv2_6_fc(self.conv1(char_emb))
             reps.append(char_rep)
 
-        
-
         st = torch.cat(reps, dim=1)
 
         # -- [B x K]
@@ -539,7 +511,6 @@ class NetHackPolicyNet(nn.Module):
         st = self.fc2(st1)
         if self.sphere_norm == 1:
             st = F.normalize(st, p=2, dim=-1)
-
 
         if self.use_lstm:
             core_input = st.view(T, B, -1)
@@ -554,7 +525,7 @@ class NetHackPolicyNet(nn.Module):
                 try:
                     output, core_state = self.core(input.unsqueeze(0), core_state)
                 except:
-                    print('self.core')
+                    print("self.core")
                     print(core_input)
                     print(self.core)
                 core_output_list.append(output)
@@ -578,12 +549,11 @@ class NetHackPolicyNet(nn.Module):
         action = action.view(T, B)
 
         outputs = dict(policy_logits=policy_logits, baseline=baseline, action=action)
-        outputs['policy_hiddens'] = st.detach()
+        outputs["policy_hiddens"] = st.detach()
         return (
             outputs,
             core_state,
         )
-
 
 
 class NetHackStateEmbeddingNet(nn.Module):
@@ -600,10 +570,9 @@ class NetHackStateEmbeddingNet(nn.Module):
     ):
         super(NetHackStateEmbeddingNet, self).__init__()
 
-
         self.register_buffer("reward_sum", torch.zeros(()))
         self.register_buffer("reward_m2", torch.zeros(()))
-        self.register_buffer("reward_count", torch.zeros(()).fill_(1e-8))        
+        self.register_buffer("reward_count", torch.zeros(()).fill_(1e-8))
 
         self.glyph_shape = observation_shape["glyphs"].shape
         self.blstats_size = observation_shape["blstats"].shape[0]
@@ -649,7 +618,10 @@ class NetHackStateEmbeddingNet(nn.Module):
         ]
 
         self.extract_representation = nn.Sequential(
-            *interleave(conv_extract, [nn.Sequential(nn.ELU(), nn.Dropout(self.p_dropout))] * len(conv_extract))
+            *interleave(
+                conv_extract,
+                [nn.Sequential(nn.ELU(), nn.Dropout(self.p_dropout))] * len(conv_extract),
+            )
         )
 
         # CNN crop model.
@@ -665,7 +637,10 @@ class NetHackStateEmbeddingNet(nn.Module):
         ]
 
         self.extract_crop_representation = nn.Sequential(
-            *interleave(conv_extract_crop, [nn.Sequential(nn.ELU(), nn.Dropout(self.p_dropout))] * len(conv_extract))
+            *interleave(
+                conv_extract_crop,
+                [nn.Sequential(nn.ELU(), nn.Dropout(self.p_dropout))] * len(conv_extract),
+            )
         )
 
         self.feat_extract = self.extract_representation
@@ -675,7 +650,7 @@ class NetHackStateEmbeddingNet(nn.Module):
         out_dim += self.H * self.W * Y
 
         # CNN crop model.
-        out_dim += self.crop_dim ** 2 * Y
+        out_dim += self.crop_dim**2 * Y
 
         self.embed_blstats = nn.Sequential(
             nn.Linear(self.blstats_size, self.k_dim),
@@ -686,16 +661,12 @@ class NetHackStateEmbeddingNet(nn.Module):
             nn.Dropout(self.p_dropout),
         )
 
-        self.msg_model = msg_model        
-        if msg_model == 'lt_cnn':
+        self.msg_model = msg_model
+        if msg_model == "lt_cnn":
             self.msg_hdim = 64
             self.msg_edim = 32
-            self.char_lt = nn.Embedding(
-                NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR
-            )            
-            self.conv1 = nn.Conv1d(
-                self.msg_edim, self.msg_hdim, kernel_size=7
-            )
+            self.char_lt = nn.Embedding(NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR)
+            self.conv1 = nn.Conv1d(self.msg_edim, self.msg_hdim, kernel_size=7)
             # remaining convolutions, relus, pools, and a small FC network
             self.conv2_6_fc = nn.Sequential(
                 nn.ReLU(),
@@ -730,9 +701,6 @@ class NetHackStateEmbeddingNet(nn.Module):
                 nn.Linear(2 * self.msg_hdim, self.msg_hdim),
             )  # final output -- [ B x h_dim x 5 ]
             out_dim += self.msg_hdim
-            
-
-        
 
         self.fc1 = nn.Sequential(
             nn.Linear(out_dim, self.h_dim),
@@ -748,8 +716,6 @@ class NetHackStateEmbeddingNet(nn.Module):
         if self.use_lstm:
             self.core = nn.LSTM(self.h_dim, self.h_dim, num_layers=1)
 
-
-
     @torch.no_grad()
     def update_running_moments(self, reward_batch):
         """Maintains a running mean of reward."""
@@ -759,9 +725,7 @@ class NetHackStateEmbeddingNet(nn.Module):
 
         curr_mean = self.reward_sum / self.reward_count
         new_m2 = torch.sum((reward_batch - new_mean) ** 2) + (
-            (self.reward_count * new_count)
-            / (self.reward_count + new_count)
-            * (new_mean - curr_mean) ** 2
+            (self.reward_count * new_count) / (self.reward_count + new_count) * (new_mean - curr_mean) ** 2
         )
 
         self.reward_count += new_count
@@ -771,15 +735,12 @@ class NetHackStateEmbeddingNet(nn.Module):
     @torch.no_grad()
     def get_running_std(self):
         """Returns standard deviation of the running mean of the reward."""
-        return torch.sqrt(self.reward_m2 / self.reward_count)        
+        return torch.sqrt(self.reward_m2 / self.reward_count)
 
     def initial_state(self, batch_size=1):
         if not self.use_lstm:
             return tuple()
-        return tuple(
-            torch.zeros(self.core.num_layers, batch_size, self.core.hidden_size)
-            for _ in range(2)
-        )
+        return tuple(torch.zeros(self.core.num_layers, batch_size, self.core.hidden_size) for _ in range(2))
 
     def _select(self, embed, x):
         # Work around slow backward pass of nn.Embedding, see
@@ -793,7 +754,7 @@ class NetHackStateEmbeddingNet(nn.Module):
 
         # -- [T x B x F]
         blstats = env_outputs["blstats"]
-            
+
         T, B, *_ = glyphs.shape
 
         # -- [B' x H x W]
@@ -857,21 +818,19 @@ class NetHackStateEmbeddingNet(nn.Module):
         # MESSAGING MODEL
         if self.msg_model != "none":
             # [T x B x 256] -> [T * B x 256]
-            messages = env_outputs["message"].long()                
+            messages = env_outputs["message"].long()
             messages = messages.view(T * B, -1)
             if self.msg_model == "lt_cnn":
                 # [ T * B x E x 256 ]
                 char_emb = self.char_lt(messages).transpose(1, 2)
                 char_rep = self.conv2_6_fc(self.conv1(char_emb))
             reps.append(char_rep)
-        
 
         st = torch.cat(reps, dim=1)
 
         # -- [B x K]
         st1 = self.fc1(st)
         st = self.fc2(st1)
-        
 
         if self.use_lstm:
             core_input = st.view(T, B, -1)
@@ -886,7 +845,7 @@ class NetHackStateEmbeddingNet(nn.Module):
                 try:
                     output, core_state = self.core(input.unsqueeze(0), core_state)
                 except:
-                    print('self.core')
+                    print("self.core")
                     print(core_input)
                     print(self.core)
                 core_output_list.append(output)
@@ -902,8 +861,6 @@ class NetHackStateEmbeddingNet(nn.Module):
         )
 
 
-
-
 class MarioDoomPolicyNet(nn.Module):
     def __init__(self, observation_shape, num_actions, use_lstm=True, hidden_size=288):
         super(MarioDoomPolicyNet, self).__init__()
@@ -911,23 +868,58 @@ class MarioDoomPolicyNet(nn.Module):
         self.num_actions = num_actions
         self.hidden_size = hidden_size
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                                constant_(x, 0), nn.init.calculate_gain('relu'))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
 
         self.feat_extract = nn.Sequential(
-            init_(nn.Conv2d(in_channels=self.observation_shape[0], out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=self.observation_shape[0],
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
-            init_(nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=32,
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
-            init_(nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=32,
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
-            init_(nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=32,
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
         )
         self.use_lstm = use_lstm
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                                constant_(x, 0))
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
 
         if self.use_lstm:
             self.core = nn.LSTM(self.hidden_size, 256, 2)
@@ -937,37 +929,33 @@ class MarioDoomPolicyNet(nn.Module):
         self.policy = init_(nn.Linear(256, self.num_actions))
         self.baseline = init_(nn.Linear(256, 1))
 
-
     def initial_state(self, batch_size):
         if self.use_lstm:
-            return tuple(torch.zeros(self.core.num_layers, batch_size, 
-                                     self.core.hidden_size) for _ in range(2))
+            return tuple(torch.zeros(self.core.num_layers, batch_size, self.core.hidden_size) for _ in range(2))
         else:
             return ()
 
     def forward(self, inputs, core_state=()):
         # -- [unroll_length x batch_size x height x width x channels]
-        x = inputs['frame']
+        x = inputs["frame"]
         T, B, C, W, H = x.shape
         x = x.reshape(T, B, W, H, C)
 
         # -- [unroll_length*batch_size x height x width x channels]
         x = torch.flatten(x, 0, 1)  # Merge time and batch.
         x = x.float() / 255.0
-        
+
         # -- [unroll_length*batch_size x channels x width x height]
         x = x.transpose(1, 3)
         x = self.feat_extract(x)
 
-
         core_input = x.view(T * B, -1)
-
 
         if self.use_lstm:
             core_input = core_input.view(T, B, -1)
             core_output_list = []
-#            notdone = (~inputs['done'].type(torch.ByteTensor)).float()
-            notdone = (~inputs['done']).float()
+            #            notdone = (~inputs['done'].type(torch.ByteTensor)).float()
+            notdone = (~inputs["done"]).float()
             if core_input.is_cuda:
                 notdone = notdone.cuda()
             t = 0
@@ -985,8 +973,7 @@ class MarioDoomPolicyNet(nn.Module):
         baseline = self.baseline(core_output)
 
         if self.training:
-            action = torch.multinomial(
-                F.softmax(policy_logits, dim=1), num_samples=1)
+            action = torch.multinomial(F.softmax(policy_logits, dim=1), num_samples=1)
         else:
             action = torch.argmax(policy_logits, dim=1)
 
@@ -994,8 +981,10 @@ class MarioDoomPolicyNet(nn.Module):
         baseline = baseline.view(T, B)
         action = action.view(T, B)
 
-        return dict(policy_logits=policy_logits, baseline=baseline, 
-                    action=action), core_state
+        return (
+            dict(policy_logits=policy_logits, baseline=baseline, action=action),
+            core_state,
+        )
 
 
 class MarioDoomStateEmbeddingNet(nn.Module):
@@ -1003,27 +992,62 @@ class MarioDoomStateEmbeddingNet(nn.Module):
         super(MarioDoomStateEmbeddingNet, self).__init__()
         self.observation_shape = observation_shape
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
 
         self.feat_extract = nn.Sequential(
-            init_(nn.Conv2d(in_channels=self.observation_shape[0], out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=self.observation_shape[0],
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
-            init_(nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=32,
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
-            init_(nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=32,
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
-            init_(nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), stride=2, padding=1)),
+            init_(
+                nn.Conv2d(
+                    in_channels=32,
+                    out_channels=32,
+                    kernel_size=(3, 3),
+                    stride=2,
+                    padding=1,
+                )
+            ),
             nn.ELU(),
         )
 
     def initial_state(self, batch_size):
         return ()
-        
-    
+
     def forward(self, inputs, x=None, decode=False):
         # -- [unroll_length x batch_size x height x width x channels]
-        x = inputs['frame']
+        x = inputs["frame"]
         T, B, C, W, H = x.shape
         x = x.reshape(T, B, W, H, C)
 
@@ -1036,7 +1060,7 @@ class MarioDoomStateEmbeddingNet(nn.Module):
         x = self.feat_extract(x)
 
         state_embedding = x.view(T, B, -1)
-        
+
         return state_embedding, None
 
 
@@ -1045,17 +1069,20 @@ class MarioDoomForwardDynamicsNet(nn.Module):
         super(MarioDoomForwardDynamicsNet, self).__init__()
         self.num_actions = num_actions
         self.hidden_size = hidden_size
-            
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
-    
-        self.forward_dynamics = nn.Sequential(
-            init_(nn.Linear(self.hidden_size + self.num_actions, 256)), 
-            nn.ReLU(), 
+
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
         )
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0))
+        self.forward_dynamics = nn.Sequential(
+            init_(nn.Linear(self.hidden_size + self.num_actions, 256)),
+            nn.ReLU(),
+        )
+
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
 
         self.fd_out = init_(nn.Linear(256, self.hidden_size))
 
@@ -1072,21 +1099,22 @@ class MarioDoomInverseDynamicsNet(nn.Module):
         self.num_actions = num_actions
         self.hidden_size = hidden_size
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0), nn.init.calculate_gain('relu'))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
         self.inverse_dynamics = nn.Sequential(
-            init_(nn.Linear(2 * self.hidden_size, 256)), 
-            nn.ReLU(), 
+            init_(nn.Linear(2 * self.hidden_size, 256)),
+            nn.ReLU(),
         )
 
-        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                            constant_(x, 0))
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
 
         self.id_out = init_(nn.Linear(256, self.num_actions))
 
-        
     def forward(self, state_embedding, next_state_embedding):
         inputs = torch.cat((state_embedding, next_state_embedding), dim=2)
         action_logits = self.id_out(self.inverse_dynamics(inputs))
         return action_logits
-    

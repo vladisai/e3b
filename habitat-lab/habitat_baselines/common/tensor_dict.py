@@ -15,9 +15,7 @@ import torch
 
 TensorLike = Union[torch.Tensor, np.ndarray, numbers.Integral]
 DictTree = Dict[str, Union[TensorLike, "DictTree"]]  # type: ignore
-TensorIndexType = Union[
-    int, slice, torch.Tensor, Tuple[Union[int, slice, torch.Tensor], ...]
-]
+TensorIndexType = Union[int, slice, torch.Tensor, Tuple[Union[int, slice, torch.Tensor], ...]]
 
 
 class TensorDict(Dict[str, Union["TensorDict", torch.Tensor]]):
@@ -63,9 +61,7 @@ class TensorDict(Dict[str, Union["TensorDict", torch.Tensor]]):
     def __getitem__(self, index: TensorIndexType) -> "TensorDict":
         ...
 
-    def __getitem__(
-        self, index: Union[str, TensorIndexType]
-    ) -> Union["TensorDict", torch.Tensor]:
+    def __getitem__(self, index: Union[str, TensorIndexType]) -> Union["TensorDict", torch.Tensor]:
         if isinstance(index, str):
             return super().__getitem__(index)
         else:
@@ -99,15 +95,9 @@ class TensorDict(Dict[str, Union["TensorDict", torch.Tensor]]):
             super().__setitem__(index, value)  # type: ignore
         else:
             if not isinstance(value, dict):
-                raise RuntimeError(
-                    "Set with indexing requires that the value is a dict"
-                )
+                raise RuntimeError("Set with indexing requires that the value is a dict")
             if strict and (self.keys() != value.keys()):
-                raise KeyError(
-                    "Keys don't match: Dest={} Source={}".format(
-                        self.keys(), value.keys()
-                    )
-                )
+                raise KeyError("Keys don't match: Dest={} Source={}".format(self.keys(), value.keys()))
 
             for k in self.keys():
                 if k not in value:
@@ -169,14 +159,10 @@ class TensorDict(Dict[str, Union["TensorDict", torch.Tensor]]):
 
         return dst
 
-    def map(
-        self, func: Callable[[torch.Tensor], torch.Tensor]
-    ) -> "TensorDict":
+    def map(self, func: Callable[[torch.Tensor], torch.Tensor]) -> "TensorDict":
         return self.map_func(func, self)
 
-    def map_in_place(
-        self, func: Callable[[torch.Tensor], torch.Tensor]
-    ) -> "TensorDict":
+    def map_in_place(self, func: Callable[[torch.Tensor], torch.Tensor]) -> "TensorDict":
         return self.map_func(func, self, self)
 
     def __deepcopy__(self, _memo=None) -> "TensorDict":

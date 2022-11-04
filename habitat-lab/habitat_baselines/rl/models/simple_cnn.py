@@ -40,20 +40,14 @@ class SimpleCNN(nn.Module):
         self._cnn_layers_stride = [(4, 4), (2, 2), (1, 1)]
 
         if self._n_input_rgb > 0:
-            cnn_dims = np.array(
-                observation_space.spaces["rgb"].shape[:2], dtype=np.float32
-            )
+            cnn_dims = np.array(observation_space.spaces["rgb"].shape[:2], dtype=np.float32)
         elif self._n_input_depth > 0:
-            cnn_dims = np.array(
-                observation_space.spaces["depth"].shape[:2], dtype=np.float32
-            )
+            cnn_dims = np.array(observation_space.spaces["depth"].shape[:2], dtype=np.float32)
 
         if self.is_blind:
             self.cnn = nn.Sequential()
         else:
-            for kernel_size, stride in zip(
-                self._cnn_layers_kernel_size, self._cnn_layers_stride
-            ):
+            for kernel_size, stride in zip(self._cnn_layers_kernel_size, self._cnn_layers_stride):
                 cnn_dims = self._conv_output_dim(
                     dimension=cnn_dims,
                     padding=np.array([0, 0], dtype=np.float32),
@@ -91,9 +85,7 @@ class SimpleCNN(nn.Module):
 
         self.layer_init()
 
-    def _conv_output_dim(
-        self, dimension, padding, dilation, kernel_size, stride
-    ):
+    def _conv_output_dim(self, dimension, padding, dilation, kernel_size, stride):
         r"""Calculates the output height and width based on the input
         height and width to the convolution layer.
 
@@ -104,18 +96,7 @@ class SimpleCNN(nn.Module):
         for i in range(len(dimension)):
             out_dimension.append(
                 int(
-                    np.floor(
-                        (
-                            (
-                                dimension[i]
-                                + 2 * padding[i]
-                                - dilation[i] * (kernel_size[i] - 1)
-                                - 1
-                            )
-                            / stride[i]
-                        )
-                        + 1
-                    )
+                    np.floor(((dimension[i] + 2 * padding[i] - dilation[i] * (kernel_size[i] - 1) - 1) / stride[i]) + 1)
                 )
             )
         return tuple(out_dimension)
@@ -123,9 +104,7 @@ class SimpleCNN(nn.Module):
     def layer_init(self):
         for layer in self.cnn:  # type: ignore
             if isinstance(layer, (nn.Conv2d, nn.Linear)):
-                nn.init.kaiming_normal_(
-                    layer.weight, nn.init.calculate_gain("relu")
-                )
+                nn.init.kaiming_normal_(layer.weight, nn.init.calculate_gain("relu"))
                 if layer.bias is not None:
                     nn.init.constant_(layer.bias, val=0)
 
@@ -139,9 +118,7 @@ class SimpleCNN(nn.Module):
             rgb_observations = observations["rgb"]
             # permute tensor to dimension [BATCH x CHANNEL x HEIGHT X WIDTH]
             rgb_observations = rgb_observations.permute(0, 3, 1, 2)
-            rgb_observations = (
-                rgb_observations.float() / 255.0
-            )  # normalize RGB
+            rgb_observations = rgb_observations.float() / 255.0  # normalize RGB
             cnn_input.append(rgb_observations)
 
         if self._n_input_depth > 0:

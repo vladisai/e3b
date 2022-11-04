@@ -38,9 +38,7 @@ class SimpleRLEnv(habitat.RLEnv):
 
 
 def draw_top_down_map(info, output_size):
-    return maps.colorize_draw_agent_and_fit_to_height(
-        info["top_down_map"], output_size
-    )
+    return maps.colorize_draw_agent_and_fit_to_height(info["top_down_map"], output_size)
 
 
 def shortest_path_example():
@@ -52,25 +50,19 @@ def shortest_path_example():
         goal_radius = env.episodes[0].goals[0].radius
         if goal_radius is None:
             goal_radius = config.SIMULATOR.FORWARD_STEP_SIZE
-        follower = ShortestPathFollower(
-            env.habitat_env.sim, goal_radius, False
-        )
+        follower = ShortestPathFollower(env.habitat_env.sim, goal_radius, False)
 
         print("Environment creation successful")
         for episode in range(3):
             env.reset()
-            dirname = os.path.join(
-                IMAGE_DIR, "shortest_path_example", "%02d" % episode
-            )
+            dirname = os.path.join(IMAGE_DIR, "shortest_path_example", "%02d" % episode)
             if os.path.exists(dirname):
                 shutil.rmtree(dirname)
             os.makedirs(dirname)
             print("Agent stepping around inside environment.")
             images = []
             while not env.habitat_env.episode_over:
-                best_action = follower.get_next_action(
-                    env.habitat_env.current_episode.goals[0].position
-                )
+                best_action = follower.get_next_action(env.habitat_env.current_episode.goals[0].position)
                 if best_action is None:
                     break
 

@@ -96,9 +96,7 @@ _C.TASK.POINTGOAL_SENSOR.DIMENSIONALITY = 2
 # POINTGOAL WITH GPS+COMPASS SENSOR
 # -----------------------------------------------------------------------------
 _C.TASK.POINTGOAL_WITH_GPS_COMPASS_SENSOR = _C.TASK.POINTGOAL_SENSOR.clone()
-_C.TASK.POINTGOAL_WITH_GPS_COMPASS_SENSOR.TYPE = (
-    "PointGoalWithGPSCompassSensor"
-)
+_C.TASK.POINTGOAL_WITH_GPS_COMPASS_SENSOR.TYPE = "PointGoalWithGPSCompassSensor"
 # -----------------------------------------------------------------------------
 # OBJECTGOAL SENSOR
 # -----------------------------------------------------------------------------
@@ -217,10 +215,10 @@ _C.SIMULATOR = CN()
 _C.SIMULATOR.TYPE = "Sim-v0"
 _C.SIMULATOR.ACTION_SPACE_CONFIG = "v0"
 _C.SIMULATOR.FORWARD_STEP_SIZE = 0.25  # in metres
-_C.SIMULATOR.SCENE = (
-    "data/scene_datasets/habitat-test-scenes/van-gogh-room.glb"
+_C.SIMULATOR.SCENE = "data/scene_datasets/habitat-test-scenes/van-gogh-room.glb"
+_C.SIMULATOR.SCENE_DATASET = (
+    "default"  # the scene dataset to load in the MetaDataMediator. Should contain SIMULATOR.SCENE
 )
-_C.SIMULATOR.SCENE_DATASET = "default"  # the scene dataset to load in the MetaDataMediator. Should contain SIMULATOR.SCENE
 _C.SIMULATOR.ADDITIONAL_OBJECT_PATHS = (
     []
 )  # a list of directory or config paths to search in addition to the dataset for object configs
@@ -275,16 +273,12 @@ _C.SIMULATOR.EQUIRECT_RGB_SENSOR.TYPE = "HabitatSimEquirectangularRGBSensor"
 # -----------------------------------------------------------------------------
 _C.SIMULATOR.EQUIRECT_DEPTH_SENSOR = SIMULATOR_SENSOR.clone()
 _C.SIMULATOR.EQUIRECT_DEPTH_SENSOR.merge_from_other_cfg(SIMULATOR_DEPTH_SENSOR)
-_C.SIMULATOR.EQUIRECT_DEPTH_SENSOR.TYPE = (
-    "HabitatSimEquirectangularDepthSensor"
-)
+_C.SIMULATOR.EQUIRECT_DEPTH_SENSOR.TYPE = "HabitatSimEquirectangularDepthSensor"
 # -----------------------------------------------------------------------------
 # EQUIRECT SEMANTIC SENSOR
 # -----------------------------------------------------------------------------
 _C.SIMULATOR.EQUIRECT_SEMANTIC_SENSOR = SIMULATOR_SENSOR.clone()
-_C.SIMULATOR.EQUIRECT_SEMANTIC_SENSOR.TYPE = (
-    "HabitatSimEquirectangularSemanticSensor"
-)
+_C.SIMULATOR.EQUIRECT_SEMANTIC_SENSOR.TYPE = "HabitatSimEquirectangularSemanticSensor"
 # -----------------------------------------------------------------------------
 # FISHEYE SENSOR
 # -----------------------------------------------------------------------------
@@ -374,9 +368,7 @@ _C.SIMULATOR.HABITAT_SIM_V0.GPU_GPU = False
 # Whether or not the agent slides on collisions
 _C.SIMULATOR.HABITAT_SIM_V0.ALLOW_SLIDING = True
 _C.SIMULATOR.HABITAT_SIM_V0.ENABLE_PHYSICS = False
-_C.SIMULATOR.HABITAT_SIM_V0.PHYSICS_CONFIG_FILE = (
-    "./data/default.physics_config.json"
-)
+_C.SIMULATOR.HABITAT_SIM_V0.PHYSICS_CONFIG_FILE = "./data/default.physics_config.json"
 # Possibly unstable optimization for extra performance with concurrent rendering
 _C.SIMULATOR.HABITAT_SIM_V0.LEAVE_CONTEXT_WITH_BACKGROUND_RENDERER = False
 # -----------------------------------------------------------------------------
@@ -430,9 +422,7 @@ _C.DATASET.TYPE = "PointNav-v1"
 _C.DATASET.SPLIT = "train"
 _C.DATASET.SCENES_DIR = "data/scene_datasets"
 _C.DATASET.CONTENT_SCENES = ["*"]
-_C.DATASET.DATA_PATH = (
-    "data/datasets/pointnav/habitat-test-scenes/v1/{split}/{split}.json.gz"
-)
+_C.DATASET.DATA_PATH = "data/datasets/pointnav/habitat-test-scenes/v1/{split}/{split}.json.gz"
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

@@ -21,13 +21,9 @@ def check_make_dir(directory_path: str) -> bool:
         try:
             makedirs(directory_path)
         except OSError:
-            logger.error(
-                f"check_make_dir: Failed to create the specified directory_path: {directory_path}"
-            )
+            logger.error(f"check_make_dir: Failed to create the specified directory_path: {directory_path}")
             return False
-        logger.info(
-            f"check_make_dir: directory_path did not exist and was created: {directory_path}"
-        )
+        logger.info(f"check_make_dir: directory_path did not exist and was created: {directory_path}")
     return True
 
 

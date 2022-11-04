@@ -25,9 +25,7 @@ def new_env_one_step():
     return done
 
 
-@pytest.mark.parametrize(
-    "ctx", [mp.get_context(m) for m in START_METHODS], ids=START_METHODS
-)
+@pytest.mark.parametrize("ctx", [mp.get_context(m) for m in START_METHODS], ids=START_METHODS)
 class TestEnvSubprocess:
     def test_env_in_subprocess(self, ctx):
         p = ctx.Process(target=new_env_one_step)

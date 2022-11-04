@@ -115,9 +115,7 @@ class AgentComposition(ParameterizedAgent):
         should_auto_end=True,
         auto_get_args_fn=None,
     ):
-        super().__init__(
-            env, config, action_config, should_auto_end, auto_get_args_fn
-        )
+        super().__init__(env, config, action_config, should_auto_end, auto_get_args_fn)
         self.skills: List[ParameterizedAgent] = skills
         self.cur_skill: int = 0
 
@@ -179,9 +177,7 @@ class ArmTargModule(ParameterizedAgent):
         should_auto_end=True,
         auto_get_args_fn=None,
     ):
-        super().__init__(
-            env, config, action_config, should_auto_end, auto_get_args_fn
-        )
+        super().__init__(env, config, action_config, should_auto_end, auto_get_args_fn)
         self._grasp_thresh = self._agent_config.ARM_ACTION.GRASP_THRESH_DIST
         self._viz_points = []
 
@@ -215,18 +211,14 @@ class ArmTargModule(ParameterizedAgent):
 
     def _add_debug_viz_point(self, pos):
         pos_name = f"arm_targ_{len(self._viz_points)}"
-        self._sim.viz_ids[pos_name] = self._sim.visualize_position(
-            pos, self._sim.viz_ids[pos_name]
-        )
+        self._sim.viz_ids[pos_name] = self._sim.visualize_position(pos, self._sim.viz_ids[pos_name])
         self._viz_points.append(pos_name)
 
     def act(self, observations: Observations) -> Dict[str, Any]:
         assert self._enter_kwargs is not None, "Need to first call `set_args`!"
 
         if not self._has_generated_plan:
-            self._plan = self._generate_plan(
-                observations, **self._enter_kwargs
-            )
+            self._plan = self._generate_plan(observations, **self._enter_kwargs)
             self._has_generated_plan = True
 
         cur_plan_ac = self._get_plan_ac(observations)
@@ -269,10 +261,7 @@ class ArmTargModule(ParameterizedAgent):
 
     def should_term(self, observations: Observations) -> bool:
         done = self._term
-        if (
-            self._plan is not None
-            and self.adjusted_plan_idx >= len(self._plan) + self.wait_after
-        ):
+        if self._plan is not None and self.adjusted_plan_idx >= len(self._plan) + self.wait_after:
             self._log("Plan finished")
             done = True
 
@@ -280,9 +269,7 @@ class ArmTargModule(ParameterizedAgent):
             self._log("Skill timed out")
             done = True
 
-        if self._has_generated_plan and self._internal_should_term(
-            observations
-        ):
+        if self._has_generated_plan and self._internal_should_term(observations):
             self._log("Skill requested termination")
             done = True
 
@@ -340,9 +327,7 @@ class IkMoveArm(ArmTargModule):
             return None
         ee_pos = observations[EEPositionSensor.cls_uuid]
         to_target = self._robot_target - ee_pos
-        to_target = self._config.IK_SPEED_FACTOR * (
-            to_target / np.linalg.norm(to_target)
-        )
+        to_target = self._config.IK_SPEED_FACTOR * (to_target / np.linalg.norm(to_target))
         return to_target
 
     def _on_done(self):
@@ -354,9 +339,7 @@ class IkMoveArm(ArmTargModule):
         self._robot_target = robot_target
 
     def _internal_should_term(self, observations):
-        dist_to_target = np.linalg.norm(
-            observations["ee_pos"] - self._robot_target
-        )
+        dist_to_target = np.linalg.norm(observations["ee_pos"] - self._robot_target)
 
         return dist_to_target < self._config.IK_DIST_THRESH
 
@@ -416,10 +399,7 @@ class SpaManipPick(ArmTargModule):
 
         ee_dist = np.linalg.norm(self._robo_targ.ee_target_pos - cur_ee)
         ee_dist_to_obj = np.linalg.norm(obj.translation - cur_ee)
-        if (
-            ee_dist_to_obj < self._grasp_thresh
-            and ee_dist < self._config.EXEC_EE_THRESH
-        ):
+        if ee_dist_to_obj < self._grasp_thresh and ee_dist < self._config.EXEC_EE_THRESH:
             self._set_info("execute_failure", 0)
             self._set_info("execute_bad_coll_failure", 0)
         else:
@@ -445,9 +425,7 @@ class SpaResetModule(ArmTargModule):
         ignore_first=False,
         auto_get_args_fn=None,
     ):
-        super().__init__(
-            env, config, action_config, should_auto_end, auto_get_args_fn
-        )
+        super().__init__(env, config, action_config, should_auto_end, auto_get_args_fn)
         self._ignore_first = ignore_first
 
     def _generate_plan(self, observations, **kwargs):
@@ -461,22 +439,16 @@ class SpaResetModule(ArmTargModule):
             use_prev=True,
         )
 
-        robo_targ = RobotTarget(
-            joints_target=self._sim.robot.params.arm_init_params
-        )
+        robo_targ = RobotTarget(joints_target=self._sim.robot.params.arm_init_params)
         plan = self._mp.motion_plan(
             self._sim.robot.arm_joint_pos,
             robo_targ,
             timeout=self._config.TIMEOUT,
         )
 
-        for k, v in self._mp.get_recent_plan_stats(
-            plan, robo_targ, "reset_"
-        ).items():
+        for k, v in self._mp.get_recent_plan_stats(plan, robo_targ, "reset_").items():
             self._set_info(k, v)
-        self._set_info(
-            "execute_reset_bad_coll_failure", int(self._mp.was_bad_coll)
-        )
+        self._set_info("execute_reset_bad_coll_failure", int(self._mp.was_bad_coll))
         # Don't double count execute failure.
         self._set_info("execute_reset_failure", int(plan is not None))
         return plan
@@ -521,11 +493,7 @@ def main():
 
     def should_save(metrics):
         was_success = metrics[config.RL.SUCCESS_MEASURE]
-        return (
-            was_success
-            and metrics["length"]
-            == config.TASK_CONFIG.ENVIRONMENT.MAX_EPISODE_STEPS
-        )
+        return was_success and metrics["length"] == config.TASK_CONFIG.ENVIRONMENT.MAX_EPISODE_STEPS
 
     benchmark = BenchmarkGym(
         config,
@@ -548,14 +516,10 @@ def main():
         return {"robot_target": skill._task.desired_resting}
 
     skills = {
-        "reach": IkMoveArm(
-            env, spa_cfg, ac_cfg, auto_get_args_fn=get_arm_rest_args
-        ),
+        "reach": IkMoveArm(env, spa_cfg, ac_cfg, auto_get_args_fn=get_arm_rest_args),
         "pick": AgentComposition(
             [
-                SpaManipPick(
-                    env, spa_cfg, ac_cfg, auto_get_args_fn=get_object_args
-                ),
+                SpaManipPick(env, spa_cfg, ac_cfg, auto_get_args_fn=get_object_args),
                 SpaResetModule(
                     env,
                     spa_cfg,

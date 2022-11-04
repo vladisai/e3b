@@ -73,12 +73,8 @@ class RearrangeTask(NavigationTask):
             observations = None
             self._sim._try_acquire_context()
             prev_sim_obs = self._sim.get_sensor_observations()
-            observations = self._sim._sensor_suite.get_observations(
-                prev_sim_obs
-            )
-            task_obs = self.sensor_suite.get_observations(
-                observations=observations, episode=episode, task=self
-            )
+            observations = self._sim._sensor_suite.get_observations(prev_sim_obs)
+            task_obs = self.sensor_suite.get_observations(observations=observations, episode=episode, task=self)
             observations.update(task_obs)
 
         self.prev_measures = self.measurements.get_metrics()
@@ -110,10 +106,7 @@ class RearrangeTask(NavigationTask):
         if self.should_end:
             done = True
 
-        if (
-            self._sim.grasp_mgr.is_violating_hold_constraint()
-            and self._config.CONSTRAINT_VIOLATION_ENDS_EPISODE
-        ):
+        if self._sim.grasp_mgr.is_violating_hold_constraint() and self._config.CONSTRAINT_VIOLATION_ENDS_EPISODE:
             done = True
 
         return not done
@@ -124,14 +117,8 @@ class RearrangeTask(NavigationTask):
         contact_points = self._sim.get_physics_contact_points()
 
         def get_max_force(contact_points, check_id):
-            match_contacts = [
-                x
-                for x in contact_points
-                if check_id in [x.object_id_a, x.object_id_b]
-            ]
-            match_contacts = [
-                x for x in match_contacts if x.object_id_a != x.object_id_b
-            ]
+            match_contacts = [x for x in contact_points if check_id in [x.object_id_a, x.object_id_b]]
+            match_contacts = [x for x in match_contacts if x.object_id_a != x.object_id_b]
 
             max_force = 0
             if len(match_contacts) > 0:
@@ -142,10 +129,7 @@ class RearrangeTask(NavigationTask):
         forces = [
             abs(x.normal_force)
             for x in contact_points
-            if (
-                x.object_id_a not in self._ignore_collisions
-                and x.object_id_b not in self._ignore_collisions
-            )
+            if (x.object_id_a not in self._ignore_collisions and x.object_id_b not in self._ignore_collisions)
         ]
         max_force = max(forces) if len(forces) > 0 else 0
 

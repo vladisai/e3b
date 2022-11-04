@@ -49,26 +49,20 @@ def paste_overlapping_image(
     max_pad = (
         max(
             0,
-            (location[0] + (foreground_size[0] - foreground_size[0] // 2))
-            - background.shape[0],
+            (location[0] + (foreground_size[0] - foreground_size[0] // 2)) - background.shape[0],
         ),
         max(
             0,
-            (location[1] + (foreground_size[1] - foreground_size[1] // 2))
-            - background.shape[1],
+            (location[1] + (foreground_size[1] - foreground_size[1] // 2)) - background.shape[1],
         ),
     )
 
     background_patch = background[
         (location[0] - foreground_size[0] // 2 + min_pad[0]) : (
-            location[0]
-            + (foreground_size[0] - foreground_size[0] // 2)
-            - max_pad[0]
+            location[0] + (foreground_size[0] - foreground_size[0] // 2) - max_pad[0]
         ),
         (location[1] - foreground_size[1] // 2 + min_pad[1]) : (
-            location[1]
-            + (foreground_size[1] - foreground_size[1] // 2)
-            - max_pad[1]
+            location[1] + (foreground_size[1] - foreground_size[1] // 2) - max_pad[1]
         ),
     ]
     foreground = foreground[
@@ -128,9 +122,7 @@ def images_to_video(
 
     # File names are not allowed to be over 255 characters
     video_name_split = video_name.split("/")
-    video_name = "/".join(
-        video_name_split[:-1] + [video_name_split[-1][:251] + ".mp4"]
-    )
+    video_name = "/".join(video_name_split[:-1] + [video_name_split[-1][:251] + ".mp4"])
 
     writer = imageio.get_writer(
         os.path.join(output_dir, video_name),
@@ -170,9 +162,7 @@ def tile_images(render_obs_images: List[np.ndarray]) -> np.ndarray:
     tiled into columns making the returned image wider than tall.
     """
     # Get the images in descending order of vertical height.
-    render_obs_images = sorted(
-        render_obs_images, key=lambda x: x.shape[0], reverse=True
-    )
+    render_obs_images = sorted(render_obs_images, key=lambda x: x.shape[0], reverse=True)
     img_cols = [[render_obs_images[0]]]
     max_height = render_obs_images[0].shape[0]
     cur_y = 0.0
@@ -192,9 +182,7 @@ def tile_images(render_obs_images: List[np.ndarray]) -> np.ndarray:
     total_width = sum(col_widths)
 
     # Tile the images, pasting the columns side by side.
-    final_im = np.zeros(
-        (max_height, total_width, 3), dtype=render_obs_images[0].dtype
-    )
+    final_im = np.zeros((max_height, total_width, 3), dtype=render_obs_images[0].dtype)
     cur_x = 0
     for i in range(len(img_cols)):
         next_x = cur_x + col_widths[i]
@@ -240,9 +228,7 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
 
         render_obs_images.append(rgb)
 
-    assert (
-        len(render_obs_images) > 0
-    ), "Expected at least one visual sensor enabled."
+    assert len(render_obs_images) > 0, "Expected at least one visual sensor enabled."
 
     shapes_are_equal = len(set(x.shape for x in render_obs_images)) == 1
     if not shapes_are_equal:
@@ -255,9 +241,7 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
         render_frame = draw_collision(render_frame)
 
     if "top_down_map" in info:
-        top_down_map = maps.colorize_draw_agent_and_fit_to_height(
-            info["top_down_map"], render_frame.shape[0]
-        )
+        top_down_map = maps.colorize_draw_agent_and_fit_to_height(info["top_down_map"], render_frame.shape[0])
         render_frame = np.concatenate((render_frame, top_down_map), axis=1)
     return render_frame
 

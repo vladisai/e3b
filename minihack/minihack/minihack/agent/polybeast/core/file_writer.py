@@ -23,9 +23,7 @@ import weakref
 
 
 def _save_metadata(path, metadata):
-    metadata["date_save"] = datetime.datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S.%f"
-    )
+    metadata["date_save"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(path, "w") as f:
         json.dump(metadata, f, indent=4, sort_keys=True)
 
@@ -41,9 +39,7 @@ def gather_metadata():
     try:
         import git
     except ImportError:
-        logging.warning(
-            "Couldn't import gitpython module; install it with `pip install gitpython`."
-        )
+        logging.warning("Couldn't import gitpython module; install it with `pip install gitpython`.")
     else:
         try:
             repo = git.Repo(search_parent_directories=True)
@@ -75,9 +71,7 @@ class FileWriter:
     def __init__(self, xp_args=None, rootdir="~/palaas"):
         if rootdir == "~/palaas":
             # make unique id in case someone uses the default rootdir
-            xpid = "{proc}_{unixtime}".format(
-                proc=os.getpid(), unixtime=int(time.time())
-            )
+            xpid = "{proc}_{unixtime}".format(proc=os.getpid(), unixtime=int(time.time()))
             rootdir = os.path.join(rootdir, xpid)
         self.basepath = os.path.expandvars(os.path.expanduser(rootdir))
 
@@ -117,18 +111,13 @@ class FileWriter:
 
         self._logger.info("Saving arguments to %s", self.paths["meta"])
         if os.path.exists(self.paths["meta"]):
-            self._logger.warning(
-                "Path to meta file already exists. " "Not overriding meta."
-            )
+            self._logger.warning("Path to meta file already exists. " "Not overriding meta.")
         else:
             self.save_metadata()
 
         self._logger.info("Saving messages to %s", self.paths["msg"])
         if os.path.exists(self.paths["msg"]):
-            self._logger.warning(
-                "Path to message file already exists. "
-                "New data will be appended."
-            )
+            self._logger.warning("Path to message file already exists. " "New data will be appended.")
 
         fhandle = logging.FileHandler(self.paths["msg"])
         fhandle.setFormatter(formatter)
@@ -138,10 +127,7 @@ class FileWriter:
         self._logger.info("Saving logs' fields to %s", self.paths["fields"])
         self.fieldnames = ["_tick", "_time"]
         if os.path.exists(self.paths["logs"]):
-            self._logger.warning(
-                "Path to log file already exists. "
-                "New data will be appended."
-            )
+            self._logger.warning("Path to log file already exists. " "New data will be appended.")
             # Override default fieldnames.
             with open(self.paths["fields"], "r") as csvfile:
                 reader = csv.reader(csvfile)
@@ -162,14 +148,10 @@ class FileWriter:
         self._fieldwriter = csv.writer(self._fieldfile)
         self._fieldfile.flush()
         self._logfile = open(self.paths["logs"], "a")
-        self._logwriter = csv.DictWriter(
-            self._logfile, fieldnames=self.fieldnames
-        )
+        self._logwriter = csv.DictWriter(self._logfile, fieldnames=self.fieldnames)
 
         # Auto-close (and save) on destruction.
-        weakref.finalize(
-            self, _save_metadata, self.paths["meta"], self.metadata
-        )
+        weakref.finalize(self, _save_metadata, self.paths["meta"], self.metadata)
 
     def log(self, to_log, tick=None, verbose=False):
         if tick is not None:
@@ -194,9 +176,7 @@ class FileWriter:
         if verbose:
             self._logger.info(
                 "LOG | %s",
-                ", ".join(
-                    ["{}: {}".format(k, to_log[k]) for k in sorted(to_log)]
-                ),
+                ", ".join(["{}: {}".format(k, to_log[k]) for k in sorted(to_log)]),
             )
 
         self._logwriter.writerow(to_log)

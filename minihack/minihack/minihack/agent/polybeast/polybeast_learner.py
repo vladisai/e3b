@@ -135,17 +135,12 @@ parser.add_argument("--write_profiler_trace", action="store_true",
 
 
 logging.basicConfig(
-    format=(
-        "[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] "
-        "%(message)s"
-    ),
+    format=("[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] " "%(message)s"),
     level=0,
 )
 
 
-def inference(
-    inference_batcher, model, flags, actor_device, lock=threading.Lock()
-):  # noqa: B008
+def inference(inference_batcher, model, flags, actor_device, lock=threading.Lock()):  # noqa: B008
     with torch.no_grad():
         for batch in inference_batcher:
             batched_env_outputs, agent_state = batch.get_inputs()
@@ -174,9 +169,7 @@ def inference(
             batch.set_outputs(outputs)
 
 
-EnvOutput = collections.namedtuple(
-    "EnvOutput", "frame rewards done episode_step episode_return"
-)
+EnvOutput = collections.namedtuple("EnvOutput", "frame rewards done episode_step episode_return")
 AgentOutput = NetHackNet.AgentOutput
 Batch = collections.namedtuple("Batch", "env agent")
 
@@ -187,9 +180,7 @@ def clip(flags, rewards):
     elif flags.reward_clipping == "soft_asymmetric":
         squeezed = torch.tanh(rewards / 5.0)
         # Negative rewards are given less weight than positive rewards.
-        clipped_rewards = (
-            torch.where(rewards < 0, 0.3 * squeezed, squeezed) * 5.0
-        )
+        clipped_rewards = torch.where(rewards < 0, 0.3 * squeezed, squeezed) * 5.0
     elif flags.reward_clipping == "none":
         clipped_rewards = rewards
     else:
@@ -223,9 +214,7 @@ def learn(
         output, _ = model(observation, initial_agent_state, learning=True)
 
         # Use last baseline value (from the value function) to bootstrap.
-        learner_outputs = AgentOutput._make(
-            (output["action"], output["policy_logits"], output["baseline"])
-        )
+        learner_outputs = AgentOutput._make((output["action"], output["policy_logits"], output["baseline"]))
 
         # At this point, the environment outputs at time step `t` are the inputs
         # that lead to the learner_outputs at time step `t`. After the following
@@ -251,9 +240,7 @@ def learn(
         total_loss = 0
 
         # INTRINSIC REWARDS
-        calculate_intrinsic = (
-            isinstance(model, IntrinsicRewardNet) and model.intrinsic_enabled()
-        )
+        calculate_intrinsic = isinstance(model, IntrinsicRewardNet) and model.intrinsic_enabled()
         if calculate_intrinsic:
             # Compute intrinsic reward and loss
             if "int_baseline" not in output:
@@ -267,9 +254,7 @@ def learn(
                 target = output["target"][1:]
                 predicted = output["predicted"][1:]
                 # loss for prediction failures, not really "forward" model
-                forward_loss = flags.rnd.forward_cost * F.mse_loss(
-                    target, predicted, reduction="mean"
-                )
+                forward_loss = flags.rnd.forward_cost * F.mse_loss(target, predicted, reduction="mean")
                 total_loss += forward_loss
 
                 # reward based on unpredicted scenarios
@@ -280,42 +265,21 @@ def learn(
                 next_state_emb = output["state_embedding"][1:]
                 actions = actor_outputs.action
 
-                pred_next_state_emb = model.forward_dynamics_model(
-                    state_emb, actions
-                )
-                pred_actions = model.inverse_dynamics_model(
-                    state_emb, next_state_emb
-                )
+                pred_next_state_emb = model.forward_dynamics_model(state_emb, actions)
+                pred_actions = model.inverse_dynamics_model(state_emb, next_state_emb)
 
-                forward_loss = (
-                    flags.ride.forward_cost
-                    * losses.compute_forward_dynamics_loss(
-                        pred_next_state_emb, next_state_emb
-                    )
+                forward_loss = flags.ride.forward_cost * losses.compute_forward_dynamics_loss(
+                    pred_next_state_emb, next_state_emb
                 )
-                inverse_loss = (
-                    flags.ride.inverse_cost
-                    * losses.compute_inverse_dynamics_loss(
-                        pred_actions, actions
-                    )
-                )
+                inverse_loss = flags.ride.inverse_cost * losses.compute_inverse_dynamics_loss(pred_actions, actions)
                 total_loss += forward_loss + inverse_loss
 
-                intrinsic_reward += torch.norm(
-                    next_state_emb - state_emb, dim=2, p=2
-                )
+                intrinsic_reward += torch.norm(next_state_emb - state_emb, dim=2, p=2)
                 if flags.ride.count_norm:
                     if "state_visits" not in observation:
-                        raise RuntimeError(
-                            "ride.count_norm=true but state_counter=none"
-                        )
+                        raise RuntimeError("ride.count_norm=true but state_counter=none")
                     # -- [T x B ]
-                    counts = (
-                        observation["state_visits"][1:]
-                        .squeeze(-1)
-                        .float()
-                        .sqrt()
-                    )
+                    counts = observation["state_visits"][1:].squeeze(-1).float().sqrt()
                     intrinsic_reward /= counts
 
             if flags.int.normalize_reward:
@@ -329,9 +293,7 @@ def learn(
 
         # STANDARD EXTRINSIC LOSSES / REWARDS
         if flags.entropy_cost > 0:
-            entropy_loss = flags.entropy_cost * losses.compute_entropy_loss(
-                learner_outputs.policy_logits
-            )
+            entropy_loss = flags.entropy_cost * losses.compute_entropy_loss(learner_outputs.policy_logits)
             total_loss += entropy_loss
 
         if not flags.no_extrinsic:
@@ -371,14 +333,10 @@ def learn(
 
             # use a separate discounting factor for intrinsic rewards
             if flags.int.episodic:
-                int_discounts = (
-                    ~env_outputs.done
-                ).float() * flags.int.discounting
+                int_discounts = (~env_outputs.done).float() * flags.int.discounting
             else:
                 # can also do non-episodic intrinsic rewards
-                int_discounts = discounts.new_full(
-                    discounts.size(), flags.int.discounting
-                )
+                int_discounts = discounts.new_full(discounts.size(), flags.int.discounting)
 
             int_vtrace_returns = vtrace.from_logits(
                 behavior_policy_logits=actor_outputs.policy_logits,
@@ -387,17 +345,12 @@ def learn(
                 discounts=int_discounts,  # intrinsic discounts
                 rewards=int_clipped_rewards,  # intrinsic reward
                 values=output["int_baseline"][1:],  # intrinsic baseline
-                bootstrap_value=output["int_baseline"][
-                    -1
-                ],  # intrinsic bootstrap
+                bootstrap_value=output["int_baseline"][-1],  # intrinsic bootstrap
             )
 
             # intrinsic baseline loss
-            int_baseline_loss = (
-                flags.int.baseline_cost
-                * losses.compute_baseline_loss(
-                    int_vtrace_returns.vs - output["int_baseline"][1:]
-                )
+            int_baseline_loss = flags.int.baseline_cost * losses.compute_baseline_loss(
+                int_vtrace_returns.vs - output["int_baseline"][1:]
             )
 
             # intrinsic policy gradient loss
@@ -413,9 +366,7 @@ def learn(
         optimizer.zero_grad()
         total_loss.backward()
         if flags.grad_norm_clipping > 0:
-            nn.utils.clip_grad_norm_(
-                model.parameters(), flags.grad_norm_clipping
-            )
+            nn.utils.clip_grad_norm_(model.parameters(), flags.grad_norm_clipping)
         optimizer.step()
         scheduler.step()
 
@@ -423,13 +374,9 @@ def learn(
 
         # LOGGING
         episode_returns = env_outputs.episode_return[env_outputs.done]
-        stats["step"] = (
-            stats.get("step", 0) + flags.unroll_length * flags.batch_size
-        )
+        stats["step"] = stats.get("step", 0) + flags.unroll_length * flags.batch_size
         stats["mean_episode_return"] = torch.mean(episode_returns).item()
-        stats["mean_episode_step"] = torch.mean(
-            env_outputs.episode_step.float()
-        ).item()
+        stats["mean_episode_step"] = torch.mean(env_outputs.episode_step.float()).item()
         stats["total_loss"] = total_loss.item()
         if flags.entropy_cost > 0:
             stats["entropy_loss"] = entropy_loss.item()
@@ -473,9 +420,7 @@ def learn(
                 env_outputs.episode_step[:, 0],
                 env_outputs.episode_step.shape,
             )
-            print(
-                "rewards", env_outputs.rewards[:, 0], env_outputs.rewards.shape
-            )
+            print("rewards", env_outputs.rewards[:, 0], env_outputs.rewards.shape)
             print(
                 "episode_return",
                 env_outputs.episode_return[:, 0],
@@ -554,13 +499,9 @@ def train(flags):
 
     model = create_model(flags, learner_device)
 
-    plogger.metadata["model_numel"] = sum(
-        p.numel() for p in model.parameters() if p.requires_grad
-    )
+    plogger.metadata["model_numel"] = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    logging.info(
-        "Number of model parameters: %i", plogger.metadata["model_numel"]
-    )
+    logging.info("Number of model parameters: %i", plogger.metadata["model_numel"])
 
     actor_model = create_model(flags, actor_device)
 
@@ -608,9 +549,7 @@ def train(flags):
 
     if flags.checkpoint and os.path.exists(flags.checkpoint):
         logging.info("Loading checkpoint: %s" % flags.checkpoint)
-        checkpoint_states = torch.load(
-            flags.checkpoint, map_location=flags.learner_device
-        )
+        checkpoint_states = torch.load(flags.checkpoint, map_location=flags.learner_device)
         model.load_state_dict(checkpoint_states["model_state_dict"])
         optimizer.load_state_dict(checkpoint_states["optimizer_state_dict"])
         scheduler.load_state_dict(checkpoint_states["scheduler_state_dict"])
@@ -672,9 +611,7 @@ def train(flags):
 
     try:
         train_start_time = timeit.default_timer()
-        train_time_offset = stats.get(
-            "train_seconds", 0
-        )  # used for resuming training
+        train_time_offset = stats.get("train_seconds", 0)  # used for resuming training
         last_checkpoint_time = timeit.default_timer()
 
         dev_checkpoint_intervals = [0, 0.25, 0.5, 0.75]
@@ -688,9 +625,7 @@ def train(flags):
             loop_end_time = timeit.default_timer()
             loop_end_step = stats.get("step", 0)
 
-            stats["train_seconds"] = round(
-                loop_end_time - train_start_time + train_time_offset, 1
-            )
+            stats["train_seconds"] = round(loop_end_time - train_start_time + train_time_offset, 1)
 
             if loop_end_time - last_checkpoint_time > 10 * 60:
                 # Save every 10 min.
@@ -705,18 +640,12 @@ def train(flags):
                     dev_checkpoint_intervals = dev_checkpoint_intervals[1:]
 
             logging.info(
-                "Step %i @ %.1f SPS. Inference batcher size: %i."
-                " Learner queue size: %i."
-                " Other stats: (%s)",
+                "Step %i @ %.1f SPS. Inference batcher size: %i." " Learner queue size: %i." " Other stats: (%s)",
                 loop_end_step,
-                (loop_end_step - loop_start_step)
-                / (loop_end_time - loop_start_time),
+                (loop_end_step - loop_start_step) / (loop_end_time - loop_start_time),
                 inference_batcher.size(),
                 learner_queue.size(),
-                ", ".join(
-                    f"{key} = {format_value(value)}"
-                    for key, value in stats.items()
-                ),
+                ", ".join(f"{key} = {format_value(value)}" for key, value in stats.items()),
             )
             loop_start_time = loop_end_time
             loop_start_step = loop_end_step

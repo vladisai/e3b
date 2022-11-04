@@ -35,6 +35,4 @@ class HabitatLogger(logging.Logger):
         self.addHandler(filehandler)
 
 
-logger = HabitatLogger(
-    name="habitat", level=logging.INFO, format_str="%(asctime)-15s %(message)s"
-)
+logger = HabitatLogger(name="habitat", level=logging.INFO, format_str="%(asctime)-15s %(message)s")

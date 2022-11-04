@@ -30,9 +30,7 @@ class ForwardDynamicsNet(nn.Module):
         )
 
     def forward(self, state_embedding, action):
-        action_one_hot = F.one_hot(
-            action, num_classes=self.num_actions
-        ).float()
+        action_one_hot = F.one_hot(action, num_classes=self.num_actions).float()
         inputs = torch.cat((state_embedding, action_one_hot), dim=-1)
         next_state_emb = self.forward_dynamics(inputs)
         return next_state_emb

@@ -115,9 +115,7 @@ class LevelGenerator:
         flags=("hardfloor",),
         solidfill=" ",
     ):
-        assert all(
-            f in MAZE_FLAGS for f in flags
-        ), f"One of the provided maze flags is incorrect: {flags}"
+        assert all(f in MAZE_FLAGS for f in flags), f"One of the provided maze flags is incorrect: {flags}"
         flags_str = ",".join(flags)
 
         self.header = f"""
@@ -150,9 +148,7 @@ GEOMETRY:center,center
 
     def get_map_str(self):
         """Returns the map as a string."""
-        map_list = [
-            "".join(self.map[i]) + "\n" for i in range(self.map.shape[0])
-        ]
+        map_list = ["".join(self.map[i]) + "\n" for i in range(self.map.shape[0])]
         return "".join(map_list)
 
     def get_map_array(self):
@@ -185,17 +181,10 @@ GEOMETRY:center,center
     @staticmethod
     def _validate_coord(coord):
         """Validate a given typle of coordinates."""
-        assert (
-            isinstance(coord, tuple)
-            and len(coord) == 2
-            and isinstance(coord[0], int)
-            and isinstance(coord[1], int)
-        )
+        assert isinstance(coord, tuple) and len(coord) == 2 and isinstance(coord[0], int) and isinstance(coord[1], int)
         return coord
 
-    def add_object(
-        self, name="random", symbol="%", place=None, cursestate=None
-    ):
+    def add_object(self, name="random", symbol="%", place=None, cursestate=None):
         """Add an object to the map.
 
         Args:
@@ -218,9 +207,7 @@ GEOMETRY:center,center
         """
         place = self._validate_place(place)
         assert isinstance(symbol, str) and len(symbol) == 1
-        assert isinstance(
-            name, str
-        )  # TODO maybe check object exists in NetHack
+        assert isinstance(name, str)  # TODO maybe check object exists in NetHack
 
         if name != "random":
             name = f'"{name}"'
@@ -241,9 +228,7 @@ GEOMETRY:center,center
         else:
             self.footer += f"OBJECT:random,{place}\n"
 
-    def add_object_area(
-        self, area_name, name="random", symbol="%", cursestate=None
-    ):
+    def add_object_area(self, area_name, name="random", symbol="%", cursestate=None):
         """Add an object in an area of the map defined by `area_name` variable.
         See ``add_object`` for more details.
         """
@@ -274,14 +259,8 @@ GEOMETRY:center,center
                 https://nethackwiki.com/wiki/Des-file_format#MONSTER.
         """
         place = self._validate_place(place)
-        assert (
-            symbol == "random"
-            or symbol is None
-            or (isinstance(symbol, str) and len(symbol) == 1)
-        )
-        assert isinstance(
-            name, str
-        )  # TODO maybe check object exists in NetHac
+        assert symbol == "random" or symbol is None or (isinstance(symbol, str) and len(symbol) == 1)
+        assert isinstance(name, str)  # TODO maybe check object exists in NetHac
 
         if name != "random":
             name = f'"{name}"'
@@ -292,10 +271,7 @@ GEOMETRY:center,center
         self.footer += f"MONSTER:{name},{place}"
 
         if len(args) > 0:
-            assert any(
-                arg in ["hostile", "peaceful", "asleep", "awake"]
-                for arg in args
-            )
+            assert any(arg in ["hostile", "peaceful", "asleep", "awake"] for arg in args)
             for arg in args:
                 self.footer += f",{arg}"
 

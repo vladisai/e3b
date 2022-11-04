@@ -71,9 +71,7 @@ def train(cfg: DictConfig) -> None:
         if is_env_registered(cfg.env):
             cfg.env = get_env_shortcut(cfg.env)
         else:
-            raise KeyError(
-                f"Could not find an environement with a name: {cfg.env}."
-            )
+            raise KeyError(f"Could not find an environement with a name: {cfg.env}.")
 
     # Update configuration with parsed arguments in specific ways
     config = merge_dicts(
@@ -126,9 +124,7 @@ def train(cfg: DictConfig) -> None:
                 tags=cfg.tags.split(","),
             )
         )
-        os.environ[
-            "TUNE_DISABLE_AUTO_CALLBACK_LOGGERS"
-        ] = "1"  # Only log to wandb
+        os.environ["TUNE_DISABLE_AUTO_CALLBACK_LOGGERS"] = "1"  # Only log to wandb
 
     # Hacky monkey-patching to allow for OmegaConf config
     def _is_allowed_type(obj):

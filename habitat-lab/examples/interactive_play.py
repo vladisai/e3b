@@ -73,9 +73,7 @@ def get_input_vel_ctlr(skip_pygame, arm_action, g_args, prev_obs, env):
         return step_env(env, "EMPTY", {}, g_args), None
 
     if "ARM_ACTION" in env.action_space.spaces:
-        arm_action_space = env.action_space.spaces["ARM_ACTION"].spaces[
-            "arm_action"
-        ]
+        arm_action_space = env.action_space.spaces["ARM_ACTION"].spaces["arm_action"]
         arm_ctrlr = env.task.actions["ARM_ACTION"].arm_ctrlr
         base_action = None
     else:
@@ -234,9 +232,7 @@ def play_env(env, args, config):
     if not args.no_render:
         draw_obs = observations_to_image(obs, {})
         pygame.init()
-        screen = pygame.display.set_mode(
-            [draw_obs.shape[1], draw_obs.shape[0]]
-        )
+        screen = pygame.display.set_mode([draw_obs.shape[1], draw_obs.shape[0]])
 
     i = 0
     target_fps = 60.0
@@ -300,9 +296,7 @@ def play_env(env, args, config):
 
     if args.save_actions:
         if len(all_arm_actions) < args.save_actions_count:
-            raise ValueError(
-                f"Only did {len(all_arm_actions)} actions but {args.save_actions_count} are required"
-            )
+            raise ValueError(f"Only did {len(all_arm_actions)} actions but {args.save_actions_count} are required")
         all_arm_actions = np.array(all_arm_actions)[: args.save_actions_count]
         os.makedirs(SAVE_ACTIONS_DIR, exist_ok=True)
         save_path = osp.join(SAVE_ACTIONS_DIR, args.save_actions_fname)
@@ -331,9 +325,7 @@ if __name__ == "__main__":
     parser.add_argument("--save-obs", action="store_true", default=False)
     parser.add_argument("--save-obs-fname", type=str, default="play.mp4")
     parser.add_argument("--save-actions", action="store_true", default=False)
-    parser.add_argument(
-        "--save-actions-fname", type=str, default="play_actions.txt"
-    )
+    parser.add_argument("--save-actions-fname", type=str, default="play_actions.txt")
     parser.add_argument(
         "--save-actions-count",
         type=int,
@@ -373,9 +365,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     if not has_pygame() and not args.no_render:
-        raise ImportError(
-            "Need to install PyGame (run `pip install pygame==2.0.1`)"
-        )
+        raise ImportError("Need to install PyGame (run `pip install pygame==2.0.1`)")
 
     config = habitat.get_config(args.cfg, args.opts)
     config.defrost()
@@ -387,9 +377,7 @@ if __name__ == "__main__":
         config.ENVIRONMENT.MAX_EPISODE_STEPS = 0
     if args.add_ik:
         config.TASK.ACTIONS.ARM_ACTION.ARM_CONTROLLER = "ArmEEAction"
-        config.SIMULATOR.IK_ARM_URDF = (
-            "./data/robots/hab_fetch/robots/fetch_onlyarm.urdf"
-        )
+        config.SIMULATOR.IK_ARM_URDF = "./data/robots/hab_fetch/robots/fetch_onlyarm.urdf"
     config.freeze()
 
     with habitat.Env(config=config) as env:

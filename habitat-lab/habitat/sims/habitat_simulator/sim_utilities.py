@@ -23,9 +23,7 @@ def register_custom_wireframe_box_template(
     Return the new template's handle.
     """
     obj_attr_mgr = sim.get_object_template_manager()
-    cube_template = obj_attr_mgr.get_template_by_handle(
-        obj_attr_mgr.get_template_handles("cubeWireframe")[0]
-    )
+    cube_template = obj_attr_mgr.get_template_by_handle(obj_attr_mgr.get_template_handles("cubeWireframe")[0])
     cube_template.scale = size
     obj_attr_mgr.register_template(cube_template, template_name)
     return template_name
@@ -45,9 +43,7 @@ def add_wire_box(
     if orientation is None:
         orientation = mn.Quaternion()
     box_template_handle = register_custom_wireframe_box_template(sim, size)
-    new_object = sim.get_rigid_object_manager().add_object_by_template_handle(
-        box_template_handle, attach_to
-    )
+    new_object = sim.get_rigid_object_manager().add_object_by_template_handle(box_template_handle, attach_to)
     new_object.motion_type = habitat_sim.physics.MotionType.KINEMATIC
     new_object.collidable = False
     # translate to local offset if attached or global offset if not
@@ -68,9 +64,7 @@ def add_transformed_wire_box(
     if transform is None:
         transform = mn.Matrix4()
     box_template_handle = register_custom_wireframe_box_template(sim, size)
-    new_object = sim.get_rigid_object_manager().add_object_by_template_handle(
-        box_template_handle
-    )
+    new_object = sim.get_rigid_object_manager().add_object_by_template_handle(box_template_handle)
     new_object.motion_type = habitat_sim.physics.MotionType.KINEMATIC
     new_object.collidable = False
     # translate to local offset if attached or global offset if not
@@ -86,14 +80,10 @@ def add_viz_sphere(
     Returns the new object.
     """
     obj_attr_mgr = sim.get_object_template_manager()
-    sphere_template = obj_attr_mgr.get_template_by_handle(
-        obj_attr_mgr.get_template_handles("icosphereWireframe")[0]
-    )
+    sphere_template = obj_attr_mgr.get_template_by_handle(obj_attr_mgr.get_template_handles("icosphereWireframe")[0])
     sphere_template.scale = mn.Vector3(radius)
     obj_attr_mgr.register_template(sphere_template, "viz_sphere")
-    new_object = sim.get_rigid_object_manager().add_object_by_template_handle(
-        "viz_sphere"
-    )
+    new_object = sim.get_rigid_object_manager().add_object_by_template_handle("viz_sphere")
     new_object.motion_type = habitat_sim.physics.MotionType.KINEMATIC
     new_object.collidable = False
     new_object.translation = pos
@@ -129,9 +119,7 @@ def get_ao_global_bb(
     for link_ix in range(-1, obj.num_links):
         link_node = obj.get_link_scene_node(link_ix)
         bb = link_node.cumulative_bb
-        global_bb = habitat_sim.geo.get_transformed_bb(
-            bb, link_node.transformation
-        )
+        global_bb = habitat_sim.geo.get_transformed_bb(bb, link_node.transformation)
         cumulative_global_bb = mn.math.join(cumulative_global_bb, global_bb)
     return cumulative_global_bb
 
@@ -167,13 +155,8 @@ def bb_ray_prescreen(
     for ix, key_point in enumerate(key_points):
         world_point = object_local_to_global.transform_point(key_point)
         # NOTE: instead of explicit Y coordinate, we project onto any gravity vector
-        world_point_height = world_point.projected_onto_normalized(
-            -gravity_dir
-        ).length()
-        if (
-            lowest_key_point is None
-            or lowest_key_point_height > world_point_height
-        ):
+        world_point_height = world_point.projected_onto_normalized(-gravity_dir).length()
+        if lowest_key_point is None or lowest_key_point_height > world_point_height:
             lowest_key_point = world_point
             lowest_key_point_height = world_point_height
         # cast a ray in gravity direction
@@ -187,15 +170,9 @@ def bb_ray_prescreen(
                 elif hit.object_id in support_obj_ids:
                     hit_point = ray.origin + ray.direction * hit.ray_distance
                     support_impacts[ix] = hit_point
-                    support_impact_height = mn.math.dot(
-                        hit_point, -gravity_dir
-                    )
+                    support_impact_height = mn.math.dot(hit_point, -gravity_dir)
 
-                    if (
-                        highest_support_impact is None
-                        or highest_support_impact_height
-                        < support_impact_height
-                    ):
+                    if highest_support_impact is None or highest_support_impact_height < support_impact_height:
                         highest_support_impact = hit_point
                         highest_support_impact_height = support_impact_height
                         highest_support_impact_with_stage = hit.object_id == -1
@@ -203,23 +180,13 @@ def bb_ray_prescreen(
                 # terminates at the first non-self ray hit
                 break
     # compute the relative base height of the object from its lowest bb corner and COM
-    base_rel_height = (
-        lowest_key_point_height
-        - obj.translation.projected_onto_normalized(-gravity_dir).length()
-    )
+    base_rel_height = lowest_key_point_height - obj.translation.projected_onto_normalized(-gravity_dir).length()
 
     # account for the affects of stage mesh margin
-    margin_offset = (
-        0
-        if not highest_support_impact_with_stage
-        else sim.get_stage_initialization_template().margin
-    )
+    margin_offset = 0 if not highest_support_impact_with_stage else sim.get_stage_initialization_template().margin
 
     surface_snap_point = (
-        None
-        if 0 not in support_impacts
-        else support_impacts[0]
-        + gravity_dir * (base_rel_height - margin_offset)
+        None if 0 not in support_impacts else support_impacts[0] + gravity_dir * (base_rel_height - margin_offset)
     )
     # return list of obstructed and grounded rays, relative base height, distance to first surface impact, and ray results details
     return {
@@ -271,15 +238,9 @@ def snap_down(
         sim.perform_discrete_collision_detection()
         cps = sim.get_physics_contact_points()
         for cp in cps:
-            if (
-                cp.object_id_a == obj.object_id
-                or cp.object_id_b == obj.object_id
-            ) and (
+            if (cp.object_id_a == obj.object_id or cp.object_id_b == obj.object_id) and (
                 (cp.contact_distance < -0.01)
-                or not (
-                    cp.object_id_a in support_obj_ids
-                    or cp.object_id_b in support_obj_ids
-                )
+                or not (cp.object_id_a in support_obj_ids or cp.object_id_b in support_obj_ids)
             ):
                 obj.translation = cached_position
                 # print(f" Failure: contact in final position w/ distance = {cp.contact_distance}.")
@@ -301,16 +262,12 @@ def get_all_object_ids(sim: habitat_sim.Simulator) -> Dict[int, str]:
 
     object_id_map = {}
 
-    for _object_handle, rigid_object in rom.get_objects_by_handle_substring(
-        ""
-    ).items():
+    for _object_handle, rigid_object in rom.get_objects_by_handle_substring("").items():
         object_id_map[rigid_object.object_id] = rigid_object.handle
 
     for _object_handle, ao in aom.get_objects_by_handle_substring("").items():
         object_id_map[ao.object_id] = ao.handle
         for object_id, link_ix in ao.link_object_ids.items():
-            object_id_map[object_id] = (
-                ao.handle + " -- " + ao.get_link_name(link_ix)
-            )
+            object_id_map[object_id] = ao.handle + " -- " + ao.get_link_name(link_ix)
 
     return object_id_map

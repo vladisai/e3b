@@ -58,14 +58,10 @@ class _EvalActionsWrapper(torch.nn.Module):
 
 
 class DecentralizedDistributedMixin:
-    def _get_advantages_distributed(
-        self, rollouts: RolloutStorage
-    ) -> torch.Tensor:
+    def _get_advantages_distributed(self, rollouts: RolloutStorage) -> torch.Tensor:
         advantages = (
             rollouts.buffers["returns"][: rollouts.current_rollout_step_idx]  # type: ignore
-            - rollouts.buffers["value_preds"][
-                : rollouts.current_rollout_step_idx
-            ]
+            - rollouts.buffers["value_preds"][: rollouts.current_rollout_step_idx]
         )
         if not self.use_normalized_advantage:  # type: ignore
             return advantages
@@ -105,15 +101,11 @@ class DecentralizedDistributedMixin:
 
         self._evaluate_actions_wrapper = Guard(_EvalActionsWrapper(self.actor_critic), self.device)  # type: ignore
 
-    def _evaluate_actions(
-        self, observations, rnn_hidden_states, prev_actions, masks, action
-    ):
+    def _evaluate_actions(self, observations, rnn_hidden_states, prev_actions, masks, action):
         r"""Internal method that calls Policy.evaluate_actions.  This is used instead of calling
         that directly so that that call can be overrided with inheritance
         """
-        return self._evaluate_actions_wrapper.ddp(
-            observations, rnn_hidden_states, prev_actions, masks, action
-        )
+        return self._evaluate_actions_wrapper.ddp(observations, rnn_hidden_states, prev_actions, masks, action)
 
 
 class DDPPO(DecentralizedDistributedMixin, PPO):

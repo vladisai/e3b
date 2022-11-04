@@ -50,9 +50,7 @@ class Registry(metaclass=Singleton):
     ) -> Callable:
         def wrap(to_register):
             if assert_type is not None:
-                assert issubclass(
-                    to_register, assert_type
-                ), "{} must be a subclass of {}".format(
+                assert issubclass(to_register, assert_type), "{} must be a subclass of {}".format(
                     to_register, assert_type
                 )
             register_name = to_register.__name__ if name is None else name
@@ -90,14 +88,10 @@ class Registry(metaclass=Singleton):
 
         """
 
-        return cls._register_impl(
-            "task", to_register, name, assert_type=EmbodiedTask
-        )
+        return cls._register_impl("task", to_register, name, assert_type=EmbodiedTask)
 
     @classmethod
-    def register_simulator(
-        cls, to_register: None = None, *, name: Optional[str] = None
-    ):
+    def register_simulator(cls, to_register: None = None, *, name: Optional[str] = None):
         r"""Register a simulator to registry with key :p:`name`
 
         :param name: Key with which the simulator will be registered.
@@ -121,9 +115,7 @@ class Registry(metaclass=Singleton):
 
         """
 
-        return cls._register_impl(
-            "sim", to_register, name, assert_type=Simulator
-        )
+        return cls._register_impl("sim", to_register, name, assert_type=Simulator)
 
     @classmethod
     def register_sensor(cls, to_register=None, *, name: Optional[str] = None):
@@ -133,9 +125,7 @@ class Registry(metaclass=Singleton):
             If :py:`None` will use the name of the class
         """
 
-        return cls._register_impl(
-            "sensor", to_register, name, assert_type=Sensor
-        )
+        return cls._register_impl("sensor", to_register, name, assert_type=Sensor)
 
     @classmethod
     def register_measure(cls, to_register=None, *, name: Optional[str] = None):
@@ -145,14 +135,10 @@ class Registry(metaclass=Singleton):
             If :py:`None` will use the name of the class
         """
 
-        return cls._register_impl(
-            "measure", to_register, name, assert_type=Measure
-        )
+        return cls._register_impl("measure", to_register, name, assert_type=Measure)
 
     @classmethod
-    def register_task_action(
-        cls, to_register=None, *, name: Optional[str] = None
-    ):
+    def register_task_action(cls, to_register=None, *, name: Optional[str] = None):
         r"""Add a task action in this registry under key 'name'
 
         :param action_space: An action space that describes parameters to the
@@ -162,9 +148,7 @@ class Registry(metaclass=Singleton):
             :py:`None` will use the name of the task action's method.
         """
 
-        return cls._register_impl(
-            "task_action", to_register, name, assert_type=Action
-        )
+        return cls._register_impl("task_action", to_register, name, assert_type=Action)
 
     @classmethod
     def register_dataset(cls, to_register=None, *, name: Optional[str] = None):
@@ -174,14 +158,10 @@ class Registry(metaclass=Singleton):
             If :py:`None` will use the name of the class
         """
 
-        return cls._register_impl(
-            "dataset", to_register, name, assert_type=Dataset
-        )
+        return cls._register_impl("dataset", to_register, name, assert_type=Dataset)
 
     @classmethod
-    def register_action_space_configuration(
-        cls, to_register=None, *, name: Optional[str] = None
-    ):
+    def register_action_space_configuration(cls, to_register=None, *, name: Optional[str] = None):
         r"""Register a action space configuration to registry with key :p:`name`
 
         :param name: Key with which the action space will be registered.
@@ -224,9 +204,7 @@ class Registry(metaclass=Singleton):
         return cls._get_impl("dataset", name)
 
     @classmethod
-    def get_action_space_configuration(
-        cls, name: str
-    ) -> Type[ActionSpaceConfiguration]:
+    def get_action_space_configuration(cls, name: str) -> Type[ActionSpaceConfiguration]:
         return cls._get_impl("action_space_config", name)
 
 

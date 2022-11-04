@@ -29,9 +29,7 @@ from minihack.agent.common.models.dynamics import (
 
 class IntrinsicRewardNet(BaseNet):
     def __init__(self, observation_shape, num_actions, flags, device):
-        super(IntrinsicRewardNet, self).__init__(
-            observation_shape, num_actions, flags, device
-        )
+        super(IntrinsicRewardNet, self).__init__(observation_shape, num_actions, flags, device)
         self.register_buffer("intrinsic_sum", torch.zeros(()))
         self.register_buffer("intrinsic_m2", torch.zeros(()))
         self.register_buffer("intrinsic_count", torch.zeros(()).fill_(1e-8))
@@ -52,9 +50,7 @@ class IntrinsicRewardNet(BaseNet):
 
         curr_mean = self.intrinsic_sum / self.intrinsic_count
         new_m2 = torch.sum((reward_batch - new_mean) ** 2) + (
-            (self.intrinsic_count * new_count)
-            / (self.intrinsic_count + new_count)
-            * (new_mean - curr_mean) ** 2
+            (self.intrinsic_count * new_count) / (self.intrinsic_count + new_count) * (new_mean - curr_mean) ** 2
         )
 
         self.intrinsic_count += new_count
@@ -69,14 +65,10 @@ class IntrinsicRewardNet(BaseNet):
 
 class RNDNet(IntrinsicRewardNet):
     def __init__(self, observation_shape, num_actions, flags, device):
-        super(RNDNet, self).__init__(
-            observation_shape, num_actions, flags, device
-        )
+        super(RNDNet, self).__init__(observation_shape, num_actions, flags, device)
 
         if self.equalize_input_dim:
-            raise NotImplementedError(
-                "rnd model does not support equalize_input_dim"
-            )
+            raise NotImplementedError("rnd model does not support equalize_input_dim")
 
         Y = 8  # number of output filters
 
@@ -95,28 +87,20 @@ class RNDNet(IntrinsicRewardNet):
         )
 
         if self.intrinsic_input not in ("crop_only", "glyph_only", "full"):
-            raise NotImplementedError(
-                "RND input type %s" % self.intrinsic_input
-            )
+            raise NotImplementedError("RND input type %s" % self.intrinsic_input)
 
         rnd_out_dim = 0
         if self.intrinsic_input in ("crop_only", "full"):
-            self.rndtgt_extract_crop_representation = copy.deepcopy(
-                self.extract_crop_representation
-            ).requires_grad_(False)
-            self.rndprd_extract_crop_representation = copy.deepcopy(
-                self.extract_crop_representation
+            self.rndtgt_extract_crop_representation = copy.deepcopy(self.extract_crop_representation).requires_grad_(
+                False
             )
+            self.rndprd_extract_crop_representation = copy.deepcopy(self.extract_crop_representation)
 
-            rnd_out_dim += self.crop_dim ** 2 * Y  # crop dim
+            rnd_out_dim += self.crop_dim**2 * Y  # crop dim
 
         if self.intrinsic_input in ("full", "glyph_only"):
-            self.rndtgt_extract_representation = copy.deepcopy(
-                self.extract_representation
-            ).requires_grad_(False)
-            self.rndprd_extract_representation = copy.deepcopy(
-                self.extract_representation
-            )
+            self.rndtgt_extract_representation = copy.deepcopy(self.extract_representation).requires_grad_(False)
+            self.rndprd_extract_representation = copy.deepcopy(self.extract_representation)
             rnd_out_dim += self.H * self.W * Y  # glyph dim
 
             if self.intrinsic_input == "full":
@@ -139,48 +123,33 @@ class RNDNet(IntrinsicRewardNet):
             if self.msg_model != "lt_cnn":
                 logging.warning(
                     "msg.model set to %s, but RND overriding to lt_cnn for its input--"
-                    "so the policy and RND are using different models for the messages"
-                    % self.msg_model
+                    "so the policy and RND are using different models for the messages" % self.msg_model
                 )
 
-            self.rndtgt_char_lt = nn.Embedding(
-                NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR
-            ).requires_grad_(False)
-            self.rndprd_char_lt = nn.Embedding(
-                NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR
-            )
+            self.rndtgt_char_lt = nn.Embedding(NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR).requires_grad_(False)
+            self.rndprd_char_lt = nn.Embedding(NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR)
 
             # similar to Zhang et al, 2016
             # Character-level Convolutional Networks for Text Classification
             # https://arxiv.org/abs/1509.01626
             # replace one-hot inputs with learned embeddings
-            self.rndtgt_conv1 = nn.Conv1d(
-                self.msg_edim, self.msg_hdim, kernel_size=7
-            ).requires_grad_(False)
-            self.rndprd_conv1 = nn.Conv1d(
-                self.msg_edim, self.msg_hdim, kernel_size=7
-            )
+            self.rndtgt_conv1 = nn.Conv1d(self.msg_edim, self.msg_hdim, kernel_size=7).requires_grad_(False)
+            self.rndprd_conv1 = nn.Conv1d(self.msg_edim, self.msg_hdim, kernel_size=7)
 
             # remaining convolutions, relus, pools, and a small FC network
-            self.rndtgt_conv2_6_fc = copy.deepcopy(
-                self.conv2_6_fc
-            ).requires_grad_(False)
+            self.rndtgt_conv2_6_fc = copy.deepcopy(self.conv2_6_fc).requires_grad_(False)
             self.rndprd_conv2_6_fc = copy.deepcopy(self.conv2_6_fc)
             rnd_out_dim += self.msg_hdim
 
-        self.rndtgt_fc = (
-            nn.Sequential(  # matching RND paper making this smaller
-                nn.Linear(rnd_out_dim, self.h_dim)
-            ).requires_grad_(False)
-        )
-        self.rndprd_fc = (
-            nn.Sequential(  # matching RND paper making this bigger
-                nn.Linear(rnd_out_dim, self.h_dim),
-                nn.ELU(),
-                nn.Linear(self.h_dim, self.h_dim),
-                nn.ELU(),
-                nn.Linear(self.h_dim, self.h_dim),
-            )
+        self.rndtgt_fc = nn.Sequential(  # matching RND paper making this smaller
+            nn.Linear(rnd_out_dim, self.h_dim)
+        ).requires_grad_(False)
+        self.rndprd_fc = nn.Sequential(  # matching RND paper making this bigger
+            nn.Linear(rnd_out_dim, self.h_dim),
+            nn.ELU(),
+            nn.Linear(self.h_dim, self.h_dim),
+            nn.ELU(),
+            nn.Linear(self.h_dim, self.h_dim),
         )
 
         modules_to_init = [
@@ -239,9 +208,7 @@ class RNDNet(IntrinsicRewardNet):
         reps = [features_emb]
 
         # -- [B x H' x W']
-        crop = self.glyph_embedding.GlyphTuple(
-            *[self.crop(g, coordinates) for g in glyphs]
-        )
+        crop = self.glyph_embedding.GlyphTuple(*[self.crop(g, coordinates) for g in glyphs])
         # -- [B x H' x W' x K]
         crop_emb = self.glyph_embedding(crop)
 
@@ -283,9 +250,7 @@ class RNDNet(IntrinsicRewardNet):
             messages = inputs["message"].long().view(T * B, -1)
             if self.msg_model == "cnn":
                 # convert messages to one-hot, [T * B x 96 x 256]
-                one_hot = F.one_hot(messages, num_classes=NUM_CHARS).transpose(
-                    1, 2
-                )
+                one_hot = F.one_hot(messages, num_classes=NUM_CHARS).transpose(1, 2)
                 char_rep = self.conv2_6_fc(self.conv1(one_hot.float()))
             elif self.msg_model == "lt_cnn":
                 # [ T * B x E x 256 ]
@@ -311,15 +276,11 @@ class RNDNet(IntrinsicRewardNet):
         with torch.no_grad():
             if self.intrinsic_input == "crop_only":
                 tgt_crop_emb = self.rndtgt_embed(crop).transpose(1, 3)
-                tgt_crop_rep = self.rndtgt_extract_crop_representation(
-                    tgt_crop_emb
-                )
+                tgt_crop_rep = self.rndtgt_extract_crop_representation(tgt_crop_emb)
                 tgt_st = self.rndtgt_fc(tgt_crop_rep.view(T * B, -1))
             elif self.intrinsic_input == "glyph_only":
                 tgt_glyphs_emb = self.rndtgt_embed(glyphs).transpose(1, 3)
-                tgt_glyphs_rep = self.rndtgt_extract_representation(
-                    tgt_glyphs_emb
-                )
+                tgt_glyphs_rep = self.rndtgt_extract_representation(tgt_glyphs_emb)
                 tgt_st = self.rndtgt_fc(tgt_glyphs_rep.view(T * B, -1))
             else:  # full
                 tgt_reps = []
@@ -327,24 +288,16 @@ class RNDNet(IntrinsicRewardNet):
                 tgt_reps.append(tgt_feats)
 
                 tgt_crop_emb = self.rndtgt_embed(crop).transpose(1, 3)
-                tgt_crop_rep = self.rndtgt_extract_crop_representation(
-                    tgt_crop_emb
-                )
+                tgt_crop_rep = self.rndtgt_extract_crop_representation(tgt_crop_emb)
                 tgt_reps.append(tgt_crop_rep.view(T * B, -1))
 
                 tgt_glyphs_emb = self.rndtgt_embed(glyphs).transpose(1, 3)
-                tgt_glyphs_rep = self.rndtgt_extract_representation(
-                    tgt_glyphs_emb
-                )
+                tgt_glyphs_rep = self.rndtgt_extract_representation(tgt_glyphs_emb)
                 tgt_reps.append(tgt_glyphs_rep.view(T * B, -1))
 
                 if self.msg_model != "none":
-                    tgt_char_emb = self.rndtgt_char_lt(messages).transpose(
-                        1, 2
-                    )
-                    tgt_char_rep = self.rndtgt_conv2_6_fc(
-                        self.rndprd_conv1(tgt_char_emb)
-                    )
+                    tgt_char_emb = self.rndtgt_char_lt(messages).transpose(1, 2)
+                    tgt_char_rep = self.rndtgt_conv2_6_fc(self.rndprd_conv1(tgt_char_emb))
                     tgt_reps.append(tgt_char_rep)
 
                 tgt_st = self.rndtgt_fc(torch.cat(tgt_reps, dim=1))
@@ -352,9 +305,7 @@ class RNDNet(IntrinsicRewardNet):
         # PREDICTOR NETWORK
         if self.intrinsic_input == "crop_only":
             prd_crop_emb = self.rndprd_embed(crop).transpose(1, 3)
-            prd_crop_rep = self.rndprd_extract_crop_representation(
-                prd_crop_emb
-            )
+            prd_crop_rep = self.rndprd_extract_crop_representation(prd_crop_emb)
             prd_st = self.rndprd_fc(prd_crop_rep.view(T * B, -1))
         elif self.intrinsic_input == "glyph_only":
             prd_glyphs_emb = self.rndprd_embed(glyphs).transpose(1, 3)
@@ -366,9 +317,7 @@ class RNDNet(IntrinsicRewardNet):
             prd_reps.append(prd_feats)
 
             prd_crop_emb = self.rndprd_embed(crop).transpose(1, 3)
-            prd_crop_rep = self.rndprd_extract_crop_representation(
-                prd_crop_emb
-            )
+            prd_crop_rep = self.rndprd_extract_crop_representation(prd_crop_emb)
             prd_reps.append(prd_crop_rep.view(T * B, -1))
 
             prd_glyphs_emb = self.rndprd_embed(glyphs).transpose(1, 3)
@@ -377,9 +326,7 @@ class RNDNet(IntrinsicRewardNet):
 
             if self.msg_model != "none":
                 prd_char_emb = self.rndprd_char_lt(messages).transpose(1, 2)
-                prd_char_rep = self.rndprd_conv2_6_fc(
-                    self.rndprd_conv1(prd_char_emb)
-                )
+                prd_char_rep = self.rndprd_conv2_6_fc(self.rndprd_conv1(prd_char_emb))
                 prd_reps.append(prd_char_rep)
 
             prd_st = self.rndprd_fc(torch.cat(prd_reps, dim=1))
@@ -408,9 +355,7 @@ class RNDNet(IntrinsicRewardNet):
         baseline = self.baseline(core_output)
 
         if self.training:
-            action = torch.multinomial(
-                F.softmax(policy_logits, dim=1), num_samples=1
-            )
+            action = torch.multinomial(F.softmax(policy_logits, dim=1), num_samples=1)
         else:
             # Don't sample when testing.
             action = torch.argmax(policy_logits, dim=1)
@@ -432,14 +377,10 @@ class RNDNet(IntrinsicRewardNet):
 
 class RIDENet(IntrinsicRewardNet):
     def __init__(self, observation_shape, num_actions, flags, device):
-        super(RIDENet, self).__init__(
-            observation_shape, num_actions, flags, device
-        )
+        super(RIDENet, self).__init__(observation_shape, num_actions, flags, device)
 
         if flags.msg.model != "none":
-            raise NotImplementedError(
-                "model=%s + msg.model=%s" % (flags.model, flags.msg.model)
-            )
+            raise NotImplementedError("model=%s + msg.model=%s" % (flags.model, flags.msg.model))
 
         self.forward_dynamics_model = ForwardDynamicsNet(
             num_actions,
@@ -465,21 +406,15 @@ class RIDENet(IntrinsicRewardNet):
         )
 
         if self.intrinsic_input not in ("crop_only", "glyph_only", "full"):
-            raise NotImplementedError(
-                "RIDE input type %s" % self.intrinsic_input
-            )
+            raise NotImplementedError("RIDE input type %s" % self.intrinsic_input)
 
         ride_out_dim = 0
         if self.intrinsic_input in ("crop_only", "full"):
-            self.ride_extract_crop_representation = copy.deepcopy(
-                self.extract_crop_representation
-            )
-            ride_out_dim += self.crop_dim ** 2 * Y  # crop dim
+            self.ride_extract_crop_representation = copy.deepcopy(self.extract_crop_representation)
+            ride_out_dim += self.crop_dim**2 * Y  # crop dim
 
         if self.intrinsic_input in ("full", "glyph_only"):
-            self.ride_extract_representation = copy.deepcopy(
-                self.extract_representation
-            )
+            self.ride_extract_representation = copy.deepcopy(self.extract_representation)
             ride_out_dim += self.H * self.W * Y  # glyph dim
 
             if self.intrinsic_input == "full":
@@ -532,9 +467,7 @@ class RIDENet(IntrinsicRewardNet):
         reps = [features_emb]
 
         # -- [B x H' x W']
-        crop = self.glyph_embedding.GlyphTuple(
-            *[self.crop(g, coordinates) for g in glyphs]
-        )
+        crop = self.glyph_embedding.GlyphTuple(*[self.crop(g, coordinates) for g in glyphs])
         # -- [B x H' x W' x K]
         crop_emb = self.glyph_embedding(crop)
 
@@ -576,9 +509,7 @@ class RIDENet(IntrinsicRewardNet):
         # PREDICTOR NETWORK
         if self.intrinsic_input == "crop_only":
             ride_crop_emb = self.ride_embed(crop).transpose(1, 3)
-            ride_crop_rep = self.ride_extract_crop_representation(
-                ride_crop_emb
-            )
+            ride_crop_rep = self.ride_extract_crop_representation(ride_crop_emb)
             ride_st = self.ride_fc(ride_crop_rep.view(T * B, -1))
         elif self.intrinsic_input == "glyph_only":
             ride_glyphs_emb = self.ride_embed(glyphs).transpose(1, 3)
@@ -590,9 +521,7 @@ class RIDENet(IntrinsicRewardNet):
             ride_reps.append(ride_feats)
 
             ride_crop_emb = self.ride_embed(crop).transpose(1, 3)
-            ride_crop_rep = self.ride_extract_crop_representation(
-                ride_crop_emb
-            )
+            ride_crop_rep = self.ride_extract_crop_representation(ride_crop_emb)
             ride_reps.append(ride_crop_rep.view(T * B, -1))
 
             ride_glyphs_emb = self.ride_embed(glyphs).transpose(1, 3)
@@ -623,9 +552,7 @@ class RIDENet(IntrinsicRewardNet):
         baseline = self.baseline(core_output)
 
         if self.training:
-            action = torch.multinomial(
-                F.softmax(policy_logits, dim=1), num_samples=1
-            )
+            action = torch.multinomial(F.softmax(policy_logits, dim=1), num_samples=1)
         else:
             # Don't sample when testing.
             action = torch.argmax(policy_logits, dim=1)

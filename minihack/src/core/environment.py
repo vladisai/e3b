@@ -13,7 +13,6 @@ def _format_frame(frame):
 
 
 class Environment:
-
     def __init__(self, gym_env, fix_seed=False):
         self.gym_env = gym_env
         self.episode_return = None
@@ -36,8 +35,8 @@ class Environment:
             done=initial_done,
             episode_return=self.episode_return,
             episode_step=self.episode_step,
-            last_action=initial_last_action)
-
+            last_action=initial_last_action,
+        )
 
     def step(self, action):
         frame, reward, done, unused_info = self.gym_env.step(action.item())
@@ -62,8 +61,8 @@ class Environment:
             done=done,
             episode_return=episode_return,
             episode_step=episode_step,
-            last_action=action)
-
+            last_action=action,
+        )
 
     def close(self):
         self.gym_env.close()

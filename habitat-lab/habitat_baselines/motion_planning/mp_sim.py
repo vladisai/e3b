@@ -155,15 +155,11 @@ class HabMpSim(MpSim):
     def get_obj_info(self, obj_idx) -> ObjectGraspTarget:
         return ObjectGraspTarget(
             bb=get_aabb(obj_idx, self._sim),
-            transformation=self._sim.get_rigid_object_manager()
-            .get_object_by_id(obj_idx)
-            .transformation,
+            transformation=self._sim.get_rigid_object_manager().get_object_by_id(obj_idx).transformation,
         )
 
     def set_position(self, pos, obj_id):
-        self._sim.get_rigid_object_manager().get_object_by_id(
-            obj_id
-        ).translation = pos
+        self._sim.get_rigid_object_manager().get_object_by_id(obj_id).translation = pos
 
     def get_arm_pos(self):
         return self._sim.robot.arm_joint_pos
@@ -175,9 +171,7 @@ class HabMpSim(MpSim):
     def add_sphere(self, radius, color=None):
         sphere_id = self._sim.draw_sphere(radius)
 
-        rigid_obj = self._sim.get_rigid_object_manager().get_object_by_id(
-            sphere_id
-        )
+        rigid_obj = self._sim.get_rigid_object_manager().get_object_by_id(sphere_id)
         rigid_obj.override_collision_group(CollisionGroups.UserGroup7)
         return sphere_id
 
@@ -186,15 +180,11 @@ class HabMpSim(MpSim):
 
     def set_targ_obj_idx(self, targ_obj_idx):
         if targ_obj_idx is not None:
-            self._sim.get_rigid_object_manager().get_object_by_id(
-                targ_obj_idx
-            ).override_collision_group(128)
+            self._sim.get_rigid_object_manager().get_object_by_id(targ_obj_idx).override_collision_group(128)
 
     def unset_targ_obj_idx(self, targ_obj_idx):
         if targ_obj_idx is not None:
-            self._sim.get_rigid_object_manager().get_object_by_id(
-                targ_obj_idx
-            ).override_collision_group(8)
+            self._sim.get_rigid_object_manager().get_object_by_id(targ_obj_idx).override_collision_group(8)
 
     def render(self):
         obs = self._sim.step(0)  # NOTE: same as step(-1)

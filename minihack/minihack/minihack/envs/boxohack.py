@@ -52,13 +52,9 @@ class BoxoHack(MiniHackNavigation):
                 "the minihack/scripts/download_boxoban_levels.py script."
             )
 
-        self._reward_shaping_coefficient = kwargs.pop(
-            "reward_shaping_coefficient", 0
-        )
+        self._reward_shaping_coefficient = kwargs.pop("reward_shaping_coefficient", 0)
 
-        super().__init__(
-            *args, des_file=self.get_lvl_gen().get_des(), **kwargs
-        )
+        super().__init__(*args, des_file=self.get_lvl_gen().get_des(), **kwargs)
 
     def get_env_map(self, level):
         info = {"fountains": [], "boulders": []}
@@ -113,25 +109,16 @@ class BoxoHack(MiniHackNavigation):
             return 0
         return (
             self._time_penalty
-            + (
-                self._count_boulders_on_fountains(observation)
-                - self._count_boulders_on_fountains(last_observation)
-            )
+            + (self._count_boulders_on_fountains(observation) - self._count_boulders_on_fountains(last_observation))
             * self._reward_shaping_coefficient
         )
 
     def _count_boulders_on_fountains(self, observation):
-        return len(
-            self._goal_pos_set.intersection(
-                self._object_positions(observation, "`")
-            )
-        )
+        return len(self._goal_pos_set.intersection(self._object_positions(observation, "`")))
 
     def _object_positions(self, observation, object_char):
         char_obs = observation[self._original_observation_keys.index("chars")]
-        return set(
-            (x, y) for x, y in zip(*np.where(char_obs == ord(object_char)))
-        )
+        return set((x, y) for x, y in zip(*np.where(char_obs == ord(object_char))))
 
 
 class MiniHackBoxobanUnfiltered(BoxoHack):

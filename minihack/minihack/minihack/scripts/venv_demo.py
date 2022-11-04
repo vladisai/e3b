@@ -11,8 +11,7 @@ try:
     from stable_baselines3.common.utils import set_random_seed
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "To use MiniGrid-based environments, please install"
-        " stable_baselines3: pip install stable_baselines3"
+        "To use MiniGrid-based environments, please install" " stable_baselines3: pip install stable_baselines3"
     )
 
 
@@ -24,12 +23,8 @@ parser.add_argument(
     default="MiniHack-MazeWalk-15x15-v0",
     help="MiniHack gym environment.",
 )
-parser.add_argument(
-    "--num_env", type=int, default=4, help="Number of environments."
-)
-parser.add_argument(
-    "--num_steps", type=int, default=10000, help="Number of environments."
-)
+parser.add_argument("--num_env", type=int, default=4, help="Number of environments.")
+parser.add_argument("--num_steps", type=int, default=10000, help="Number of environments.")
 parser.add_argument("--subproc", dest="subproc", action="store_true")
 parser.add_argument("--no-subproc", dest="subproc", action="store_false")
 parser.set_defaults(subproc=True)
@@ -57,9 +52,7 @@ class VecEnv_Wrapper:
 
     def __getattr__(self, name):
         if name.startswith("_"):
-            raise AttributeError(
-                "attempted to get missing private attribute '{}'".format(name)
-            )
+            raise AttributeError("attempted to get missing private attribute '{}'".format(name))
         return getattr(self.env, name)
 
 
@@ -87,14 +80,10 @@ def make_env(env_id, subproc, rank, seed=0):
 def make_venv(args):
     if not args.subproc:
         # Performs actions sequentially
-        venv = DummyVecEnv(
-            [make_env(args.env, args.subproc, i) for i in range(args.num_env)]
-        )
+        venv = DummyVecEnv([make_env(args.env, args.subproc, i) for i in range(args.num_env)])
     else:
         # Performs actions in parallel processes
-        venv = SubprocVecEnv(
-            [make_env(args.env, args.subproc, i) for i in range(args.num_env)]
-        )
+        venv = SubprocVecEnv([make_env(args.env, args.subproc, i) for i in range(args.num_env)])
 
     return venv
 

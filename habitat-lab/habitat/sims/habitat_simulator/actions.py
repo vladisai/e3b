@@ -58,9 +58,7 @@ class HabitatSimActionsSingleton(metaclass=Singleton):
             HabitatSimActions.extend_action_space("MY_ACTION")
             print(HabitatSimActions.MY_ACTION)
         """
-        assert (
-            name not in self._known_actions
-        ), "Cannot register an action name twice"
+        assert name not in self._known_actions, "Cannot register an action name twice"
         self._known_actions[name] = len(self._known_actions)
 
         return self._known_actions[name]
@@ -97,9 +95,7 @@ class HabitatSimV0ActionSpaceConfiguration(ActionSpaceConfiguration):
             HabitatSimActions.STOP: habitat_sim.ActionSpec("stop"),
             HabitatSimActions.MOVE_FORWARD: habitat_sim.ActionSpec(
                 "move_forward",
-                habitat_sim.ActuationSpec(
-                    amount=self.config.FORWARD_STEP_SIZE
-                ),
+                habitat_sim.ActuationSpec(amount=self.config.FORWARD_STEP_SIZE),
             ),
             HabitatSimActions.TURN_LEFT: habitat_sim.ActionSpec(
                 "turn_left",
@@ -113,9 +109,7 @@ class HabitatSimV0ActionSpaceConfiguration(ActionSpaceConfiguration):
 
 
 @registry.register_action_space_configuration(name="v1")
-class HabitatSimV1ActionSpaceConfiguration(
-    HabitatSimV0ActionSpaceConfiguration
-):
+class HabitatSimV1ActionSpaceConfiguration(HabitatSimV0ActionSpaceConfiguration):
     def get(self):
         config = super().get()
         new_config = {
@@ -177,9 +171,7 @@ class HabitatSimPyRobotActionSpaceConfiguration(ActionSpaceConfiguration):
             # The perfect actions are needed for the oracle planner
             "_forward": habitat_sim.ActionSpec(
                 "move_forward",
-                habitat_sim.ActuationSpec(
-                    amount=self.config.FORWARD_STEP_SIZE
-                ),
+                habitat_sim.ActuationSpec(amount=self.config.FORWARD_STEP_SIZE),
             ),
             "_left": habitat_sim.ActionSpec(
                 "turn_left",
@@ -196,7 +188,5 @@ class HabitatSimPyRobotActionSpaceConfiguration(ActionSpaceConfiguration):
 class HabitatSimVelocityCtrlActionSpaceConfiguration(ActionSpaceConfiguration):
     def get(self):
         return {
-            HabitatSimActions.VELOCITY_CTRL: habitat_sim.ActionSpec(
-                "velocity_control"
-            ),
+            HabitatSimActions.VELOCITY_CTRL: habitat_sim.ActionSpec("velocity_control"),
         }

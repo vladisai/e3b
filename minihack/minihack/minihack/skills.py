@@ -31,9 +31,7 @@ class MiniHackSkill(MiniHack):
         # Autopickup off by defautlt
         kwargs["autopickup"] = kwargs.pop("autopickup", False)
         # Allowing one-letter menu questions
-        kwargs["allow_all_yn_questions"] = kwargs.pop(
-            "allow_all_yn_questions", True
-        )
+        kwargs["allow_all_yn_questions"] = kwargs.pop("allow_all_yn_questions", True)
         # Perform know steps
         kwargs["allow_all_modes"] = kwargs.pop("allow_all_modes", False)
         # Play with Caveman character by default
@@ -45,9 +43,7 @@ class MiniHackSkill(MiniHack):
             "inv_strs",
             "inv_letters",
         ]
-        kwargs["observation_keys"] = kwargs.pop(
-            "observation_keys", default_keys
-        )
+        kwargs["observation_keys"] = kwargs.pop("observation_keys", default_keys)
         super().__init__(*args, des_file=des_file, **kwargs)
 
 

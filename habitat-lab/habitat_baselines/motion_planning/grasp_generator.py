@@ -82,9 +82,7 @@ class GraspGenerator:
             self._mp_sim.set_arm_pos(desired_js)
             self._mp_sim.micro_step()
 
-            state_valid = all(
-                [self._is_state_valid_fn(desired_js) for _ in range(5)]
-            )
+            state_valid = all([self._is_state_valid_fn(desired_js) for _ in range(5)])
             if state_valid:
                 found_sol = np.array(desired_js)
                 break
@@ -134,9 +132,7 @@ class GraspGenerator:
         size_y = obj_dat.bb.size_y() / 2.0
         return np.array([0.0, size_y, 0.0])
 
-    def _bounding_sphere_sample(
-        self, obj_idx: int, obj_dat: ObjectGraspTarget
-    ) -> RobotTarget:
+    def _bounding_sphere_sample(self, obj_idx: int, obj_dat: ObjectGraspTarget) -> RobotTarget:
         obj_pos = np.array(obj_dat.transformation.translation)
 
         inv_robo_T = self._mp_sim.get_robot_transform().inverted()
@@ -166,13 +162,9 @@ class GraspGenerator:
             point += obj_pos
 
             if self.knows_other_objs:
-                closest_idx = np.argmin(
-                    np.linalg.norm(scene_obj_pos - point, axis=-1)
-                )
+                closest_idx = np.argmin(np.linalg.norm(scene_obj_pos - point, axis=-1))
                 if scene_obj_ids[closest_idx] != obj_idx:
-                    self._verbose_log(
-                        "Grasp point didn't match desired object"
-                    )
+                    self._verbose_log("Grasp point didn't match desired object")
                     continue
 
             local_point = inv_robo_T.transform_point(point)
@@ -192,27 +184,19 @@ class GraspGenerator:
             ee_dist = np.linalg.norm(real_ee_pos - obj_pos)
             if ee_dist >= self._grasp_thresh:
                 found_goal_js = goal_js
-                self._verbose_log(
-                    f"Actual EE wasn't in grasp range. {ee_dist} away"
-                )
+                self._verbose_log(f"Actual EE wasn't in grasp range. {ee_dist} away")
                 continue
 
             if self.knows_other_objs:
                 # Does the actual end-effector position grasp the object we want?
-                closest_idx = np.argmin(
-                    np.linalg.norm(scene_obj_pos - real_ee_pos, axis=-1)
-                )
+                closest_idx = np.argmin(np.linalg.norm(scene_obj_pos - real_ee_pos, axis=-1))
                 if scene_obj_ids[closest_idx] != obj_idx:
                     self._verbose_log("Actual EE did not match desired object")
                     continue
 
             if self._should_render:
-                sim.viz_ids["ee"] = sim.visualize_position(
-                    real_ee_pos, sim.viz_ids["ee"], r=5.0
-                )
-                Image.fromarray(self._mp_sim.render()).save(
-                    f"{self._log_dir}/grasp_plan_{i}_{ee_dist}.jpeg"
-                )
+                sim.viz_ids["ee"] = sim.visualize_position(real_ee_pos, sim.viz_ids["ee"], r=5.0)
+                Image.fromarray(self._mp_sim.render()).save(f"{self._log_dir}/grasp_plan_{i}_{ee_dist}.jpeg")
 
             self._verbose_log(f"Found solution at {i}, breaking")
             found_goal_js = goal_js
@@ -258,13 +242,9 @@ class GraspGenerator:
     def _grasp_debug_points(self, obj_pos, grasp_point):
         sim = self._mp_sim._sim
         if self._should_render:
-            sim.viz_ids["obj"] = sim.visualize_position(
-                obj_pos, sim.viz_ids["obj"], r=5.0
-            )
+            sim.viz_ids["obj"] = sim.visualize_position(obj_pos, sim.viz_ids["obj"], r=5.0)
 
-            sim.viz_ids["grasp"] = sim.visualize_position(
-                grasp_point, sim.viz_ids["grasp"], r=5.0
-            )
+            sim.viz_ids["grasp"] = sim.visualize_position(grasp_point, sim.viz_ids["grasp"], r=5.0)
 
     def gen_target_from_obj_idx(self, obj_idx):
         obj_dat = self._mp_sim.get_obj_info(obj_idx)

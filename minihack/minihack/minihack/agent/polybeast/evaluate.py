@@ -42,13 +42,9 @@ def load_model(env, checkpoint_path):
     flags = polyhydra.get_common_flags(flags)
     flags = polyhydra.get_environment_flags(flags)
     flags = polyhydra.get_learner_flags(flags)
-    model = minihack.agent.polybeast.models.create_model(
-        flags, torch.device("cpu")
-    )
+    model = minihack.agent.polybeast.models.create_model(flags, torch.device("cpu"))
 
-    checkpoint_states = torch.load(
-        pretrained_path, map_location=torch.device("cpu")
-    )
+    checkpoint_states = torch.load(pretrained_path, map_location=torch.device("cpu"))
 
     model.load_state_dict(checkpoint_states["model_state_dict"])
 
@@ -106,10 +102,7 @@ def eval(
         try:
             import PIL.Image
         except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                "To safe GIF files of trajectories, please install Pillow:"
-                " pip install Pillow"
-            )
+            raise ModuleNotFoundError("To safe GIF files of trajectories, please install Pillow:" " pip install Pillow")
         # Create a tmp directory for individual screenshots
         tmpdir = tempfile.mkdtemp()
 
@@ -186,9 +179,7 @@ def eval(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Tool for evaluating pretrained models."
-    )
+    parser = argparse.ArgumentParser(description="Tool for evaluating pretrained models.")
     parser.add_argument(
         "-e",
         "--env",
@@ -226,18 +217,14 @@ def main():
     parser.add_argument(
         "--seeds",
         default=None,
-        help="Seeds to send to NetHack. Can be a dict or int. "
-        "Defaults to None (no seeding).",
+        help="Seeds to send to NetHack. Can be a dict or int. " "Defaults to None (no seeding).",
     )
     parser.add_argument(
         "--savedir",
         default=None,
-        help="Directory path where data will be saved. "
-        "Defaults to None (not data saved).",
+        help="Directory path where data will be saved. " "Defaults to None (not data saved).",
     )
-    parser.add_argument(
-        "--no-render", action="store_true", help="Disables env.render()."
-    )
+    parser.add_argument("--no-render", action="store_true", help="Disables env.render().")
     parser.add_argument(
         "--render_mode",
         type=str,
@@ -286,9 +273,7 @@ def main():
     flags = parser.parse_args()
 
     if flags.savedir == "args":
-        flags.savedir = "{}_{}_{}.zip".format(
-            time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env
-        )
+        flags.savedir = "{}_{}_{}.zip".format(time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env)
 
     if flags.save_gif and "pixel_crop" not in flags.obs_keys:
         flags.obs_keys += ",pixel_crop"

@@ -59,15 +59,13 @@ class ArmAction(SimulatorTaskAction):
         super().__init__(*args, config=config, sim=sim, **kwargs)
         arm_controller_cls = eval(self._config.ARM_CONTROLLER)
         self._sim: RearrangeSim = sim
-        self.arm_ctrlr = arm_controller_cls(
-            *args, config=config, sim=sim, **kwargs
-        )
+        self.arm_ctrlr = arm_controller_cls(*args, config=config, sim=sim, **kwargs)
 
         if self._config.GRIP_CONTROLLER is not None:
             grip_controller_cls = eval(self._config.GRIP_CONTROLLER)
-            self.grip_ctrlr: Optional[
-                GripSimulatorTaskAction
-            ] = grip_controller_cls(*args, config=config, sim=sim, **kwargs)
+            self.grip_ctrlr: Optional[GripSimulatorTaskAction] = grip_controller_cls(
+                *args, config=config, sim=sim, **kwargs
+            )
         else:
             self.grip_ctrlr = None
 
@@ -119,9 +117,7 @@ class ArmRelPosAction(SimulatorTaskAction):
         delta_pos *= self._config.DELTA_POS_LIMIT
         # The actual joint positions
         self._sim: RearrangeSim
-        self._sim.robot.arm_motor_pos = (
-            delta_pos + self._sim.robot.arm_motor_pos
-        )
+        self._sim.robot.arm_motor_pos = delta_pos + self._sim.robot.arm_motor_pos
 
         if should_step:
             return self._sim.step(HabitatSimActions.ARM_VEL)
@@ -259,20 +255,12 @@ class BaseVelAction(SimulatorTaskAction):
         before_trans_state = self._capture_robot_state(self._sim)
 
         trans = self._sim.robot.sim_obj.transformation
-        rigid_state = habitat_sim.RigidState(
-            mn.Quaternion.from_matrix(trans.rotation()), trans.translation
-        )
+        rigid_state = habitat_sim.RigidState(mn.Quaternion.from_matrix(trans.rotation()), trans.translation)
 
-        target_rigid_state = self.base_vel_ctrl.integrate_transform(
-            1 / ctrl_freq, rigid_state
-        )
-        end_pos = self._sim.step_filter(
-            rigid_state.translation, target_rigid_state.translation
-        )
+        target_rigid_state = self.base_vel_ctrl.integrate_transform(1 / ctrl_freq, rigid_state)
+        end_pos = self._sim.step_filter(rigid_state.translation, target_rigid_state.translation)
 
-        target_trans = mn.Matrix4.from_(
-            target_rigid_state.rotation.to_matrix(), end_pos
-        )
+        target_trans = mn.Matrix4.from_(target_rigid_state.rotation.to_matrix(), end_pos)
         self._sim.robot.sim_obj.transformation = target_trans
 
         if not self._config.get("ALLOW_DYN_SLIDE", True):
@@ -280,9 +268,7 @@ class BaseVelAction(SimulatorTaskAction):
             # If so we have to revert back to the previous transform
             self._sim.internal_step(-1)
             colls = self._sim.get_collisions()
-            did_coll, _ = rearrange_collision(
-                colls, self._sim.snapped_obj_id, False
-            )
+            did_coll, _ = rearrange_collision(colls, self._sim.snapped_obj_id, False)
             if did_coll:
                 # Don't allow the step, revert back.
                 self._set_robot_state(self._sim, before_trans_state)
@@ -331,9 +317,7 @@ class ArmEEAction(SimulatorTaskAction):
 
     def reset(self, *args, **kwargs):
         super().reset()
-        cur_ee = self._sim.ik_helper.calc_fk(
-            np.array(self._sim.robot.arm_joint_pos)
-        )
+        cur_ee = self._sim.ik_helper.calc_fk(np.array(self._sim.robot.arm_joint_pos))
 
         self.ee_target = cur_ee
 
@@ -370,12 +354,8 @@ class ArmEEAction(SimulatorTaskAction):
         self.set_desired_ee_pos(ee_pos)
 
         if self._config.get("RENDER_EE_TARGET", False):
-            global_pos = self._sim.robot.base_transformation.transform_point(
-                self.ee_target
-            )
-            self._sim.viz_ids["ee_target"] = self._sim.visualize_position(
-                global_pos, self._sim.viz_ids["ee_target"]
-            )
+            global_pos = self._sim.robot.base_transformation.transform_point(self.ee_target)
+            self._sim.viz_ids["ee_target"] = self._sim.visualize_position(global_pos, self._sim.viz_ids["ee_target"])
 
         if should_step:
             return self._sim.step(HabitatSimActions.ARM_EE)

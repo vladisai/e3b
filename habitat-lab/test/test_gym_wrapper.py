@@ -41,9 +41,7 @@ def test_gym_wrapper_contract(config_file, overrides, expected_action_dim):
     config = baselines_get_config(config_file, overrides)
     env_class = get_env_class(config.ENV_NAME)
 
-    env = habitat_baselines.utils.env_utils.make_env_fn(
-        env_class=env_class, config=config
-    )
+    env = habitat_baselines.utils.env_utils.make_env_fn(env_class=env_class, config=config)
     env = HabGymWrapper(env)
     env = HabRenderWrapper(env)
     assert isinstance(env.action_space, spaces.Box)
@@ -66,9 +64,7 @@ def test_gym_wrapper_contract(config_file, overrides, expected_action_dim):
     env.close()
 
 
-@pytest.mark.parametrize(
-    "config_file", ["habitat_baselines/config/rearrange/rl_pick.yaml"]
-)
+@pytest.mark.parametrize("config_file", ["habitat_baselines/config/rearrange/rl_pick.yaml"])
 def test_full_gym_wrapper(config_file):
     """
     Test the Gym wrapper and its Render wrapper work

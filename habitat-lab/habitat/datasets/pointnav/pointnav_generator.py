@@ -62,8 +62,7 @@ def is_compatible_episode(
         return False, 0
     distances_ratio = d_separation / euclid_dist
     if distances_ratio < geodesic_to_euclid_ratio and (
-        np.random.rand()
-        > _ratio_sample_rate(distances_ratio, geodesic_to_euclid_ratio)
+        np.random.rand() > _ratio_sample_rate(distances_ratio, geodesic_to_euclid_ratio)
     ):
         return False, 0
     if sim.island_radius(s) < ISLAND_RADIUS_LIMIT:

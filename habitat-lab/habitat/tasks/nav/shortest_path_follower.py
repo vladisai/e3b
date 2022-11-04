@@ -69,9 +69,7 @@ class ShortestPathFollower:
         else:
             return action
 
-    def get_next_action(
-        self, goal_pos: Union[List[float], np.ndarray]
-    ) -> Optional[Union[int, np.ndarray]]:
+    def get_next_action(self, goal_pos: Union[List[float], np.ndarray]) -> Optional[Union[int, np.ndarray]]:
         """Returns the next action along the shortest path."""
         self._build_follower()
         assert self._follower is not None

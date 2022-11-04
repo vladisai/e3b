@@ -94,14 +94,10 @@ if __name__ == "__main__":
         buffered_minutes_per_100_steps = 8
         if do_capture_step_range:
             slurm_job_termination_minutes = buffered_start_minutes + int(
-                (capture_start_step + num_steps_to_capture)
-                * buffered_minutes_per_100_steps
-                / 100
+                (capture_start_step + num_steps_to_capture) * buffered_minutes_per_100_steps / 100
             )
         else:
-            slurm_job_termination_minutes = (
-                nsys_capture_delay_seconds + nsys_capture_duration_seconds
-            ) * 60 + 5
+            slurm_job_termination_minutes = (nsys_capture_delay_seconds + nsys_capture_duration_seconds) * 60 + 5
 
         # If capture_all_tasks==True, we capture profiles for all tasks. Beware
         # large profile storage requirement in this case. If False, only one
@@ -145,10 +141,7 @@ if __name__ == "__main__":
         capture_range_args = '--capture-range=nvtx -p "habitat_capture_range" --stop-on-range-end=true'
     else:
         capture_range_args = (
-            "--delay="
-            + str(nsys_capture_delay_seconds)
-            + " --duration="
-            + str(nsys_capture_duration_seconds)
+            "--delay=" + str(nsys_capture_delay_seconds) + " --duration=" + str(nsys_capture_duration_seconds)
         )
 
     task_capture_str = (
@@ -220,15 +213,9 @@ srun bash capture_profile_slurm_task.sh
 """
         )
 
-    profile_output_filepath = (
-        profile_output_folder + "/" + profile_output_filename_base + ".qdrep"
-    )
+    profile_output_filepath = profile_output_folder + "/" + profile_output_filename_base + ".qdrep"
     if not do_slurm and os.path.exists(profile_output_filepath):
-        print(
-            "warning: {} already exists and will be overwritten.".format(
-                profile_output_filepath
-            )
-        )
+        print("warning: {} already exists and will be overwritten.".format(profile_output_filepath))
 
     if not os.path.exists(profile_output_folder):
         os.makedirs(profile_output_folder)
@@ -252,6 +239,4 @@ srun bash capture_profile_slurm_task.sh
             f.write(task_capture_str)
         print("wrote capture_profile.sh")
 
-        print(
-            "\nTo start capture, do:\nchmod +x capture_profile.sh\n./capture_profile.sh"
-        )
+        print("\nTo start capture, do:\nchmod +x capture_profile.sh\n./capture_profile.sh")

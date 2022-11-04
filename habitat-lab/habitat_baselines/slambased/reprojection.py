@@ -46,9 +46,7 @@ def get_direction(p_init, p_fin, ang_th=0.2, pos_th=0.1):
     else:
         needed_angle = torch.atan2(pos_diff[1], pos_diff[0])
         current_angle = torch.atan2(p_init[2, 0], p_init[0, 0])
-    to_rotate = angle_to_pi_2_minus_pi_2(
-        -np.pi / 2.0 + needed_angle - current_angle
-    )
+    to_rotate = angle_to_pi_2_minus_pi_2(-np.pi / 2.0 + needed_angle - current_angle)
     if torch.abs(to_rotate).item() < ang_th:
         return 0
     return to_rotate
@@ -68,9 +66,7 @@ def reproject_local_to_global(xyz_local, p):
     elif dim == 4:
         xyz = xyz_local
     else:
-        raise ValueError(
-            "3d point cloud dim is neighter 3, or 4 (homogeneous)"
-        )
+        raise ValueError("3d point cloud dim is neighter 3, or 4 (homogeneous)")
     # print(xyz.shape, P.shape)
     xyz_global = torch.mm(p.squeeze(), xyz.t())
     return xyz_global.t()
@@ -83,9 +79,7 @@ def project2d_pcl_into_worldmap(zx, map_size, cell_size):
         [[1.0 / cell_size, 0, shift], [0, 1.0 / cell_size, shift], [0, 0, 1]],
         device=device,
     )
-    world_coords_h = torch.cat(
-        [zx.view(-1, 2), torch.ones((len(zx), 1), device=device)], dim=1
-    )
+    world_coords_h = torch.cat([zx.view(-1, 2), torch.ones((len(zx), 1), device=device)], dim=1)
     world_coords = torch.mm(topdown2index, world_coords_h.t())
     return world_coords.t()[:, :2]
 
@@ -140,9 +134,7 @@ def add_rot_wps(p):
     planned_points2[1:, 0, 2] = planned_tps_norm[: p.size(0) - 1, 0, 2]
     planned_points2[1:, 2, 0] = planned_tps_norm[: p.size(0) - 1, 2, 0]
     planned_points2[1:, 2, 2] = planned_tps_norm[: p.size(0) - 1, 2, 2]
-    out = torch.stack(
-        (planned_points2.unsqueeze(0), planned_tps_norm.unsqueeze(0)), dim=0
-    ).squeeze()
+    out = torch.stack((planned_points2.unsqueeze(0), planned_tps_norm.unsqueeze(0)), dim=0).squeeze()
     out = out.permute(1, 0, 2, 3).contiguous().view(-1, 4, 4)
     return out
 
@@ -170,9 +162,7 @@ def planned_path2tps(path, cell_size, map_size, agent_h, add_rot=False):
             [0, 0, 0, 1],
         ]
     )
-    planned_tps = torch.bmm(
-        p.inverse().unsqueeze(0).expand(num_pts, 4, 4), planned_tps
-    )
+    planned_tps = torch.bmm(p.inverse().unsqueeze(0).expand(num_pts, 4, 4), planned_tps)
     if add_rot:
         return add_rot_wps(planned_tps)
     return planned_tps
@@ -197,10 +187,7 @@ def habitat_goalpos_to_tp(ro_phi, p_curr):
         p_curr.to(device),
         torch.cat(
             [
-                offset
-                * torch.tensor(
-                    [1.0, 1.0, 1.0], dtype=torch.float32, device=device
-                ),
+                offset * torch.tensor([1.0, 1.0, 1.0], dtype=torch.float32, device=device),
                 torch.tensor([1.0], device=device),
             ]
         ).reshape(4, 1),
@@ -216,9 +203,7 @@ def habitat_goalpos_to_mapgoal_pos(offset, p_curr, cell_size, map_size):
     goal_tp = habitat_goalpos_to_tp(offset, p_curr)
     goal_tp1 = torch.eye(4).to(device)
     goal_tp1[:, 3:] = goal_tp
-    projected_p = project_tps_into_worldmap(
-        goal_tp1.view(1, 4, 4), cell_size, map_size
-    )
+    projected_p = project_tps_into_worldmap(goal_tp1.view(1, 4, 4), cell_size, map_size)
     return projected_p
 
 
@@ -228,10 +213,7 @@ def homogenize_p(tps):
     return torch.cat(
         [
             tps.float(),
-            torch.tensor([0, 0, 0, 1.0])
-            .view(1, 1, 4)
-            .expand(tps.size(0), 1, 4)
-            .to(device),
+            torch.tensor([0, 0, 0, 1.0]).view(1, 1, 4).expand(tps.size(0), 1, 4).to(device),
         ],
         dim=1,
     )
@@ -252,20 +234,14 @@ def project_tps_into_worldmap(tps, cell_size, map_size, do_floor=True):
         tps[:, :, 3:].view(-1, 4, 1),
     )
     shift = int(floor(get_map_size_in_cells(map_size, cell_size) / 2.0))
-    topdown2index = torch.tensor(
-        [[1.0 / cell_size, 0, shift], [0, 1.0 / cell_size, shift], [0, 0, 1]]
-    ).to(device)
-    world_coords_h = torch.cat(
-        [world_coords, torch.ones((len(world_coords), 1, 1)).to(device)], dim=1
-    )
+    topdown2index = torch.tensor([[1.0 / cell_size, 0, shift], [0, 1.0 / cell_size, shift], [0, 0, 1]]).to(device)
+    world_coords_h = torch.cat([world_coords, torch.ones((len(world_coords), 1, 1)).to(device)], dim=1)
     world_coords = torch.bmm(
         topdown2index.unsqueeze(0).expand(world_coords_h.size(0), 3, 3),
         world_coords_h,
     )[:, :2, 0]
     if do_floor:
-        return (
-            torch.floor(world_coords.flip(1)) + 1
-        )  # for having revesrve (z,x) ordering
+        return torch.floor(world_coords.flip(1)) + 1  # for having revesrve (z,x) ordering
     return world_coords.flip(1)
 
 
@@ -277,19 +253,11 @@ def project_tps_into_worldmap_numpy(tps, slam_to_world, cell_size, map_size):
     # tps is expected in [n,4,4] format
     topdown_p = np.array([[slam_to_world, 0, 0, 0], [0, 0, slam_to_world, 0]])
     try:
-        world_coords = np.matmul(
-            topdown_p.reshape(1, 2, 4), tps[:, :, 3:].reshape(-1, 4, 1)
-        )
+        world_coords = np.matmul(topdown_p.reshape(1, 2, 4), tps[:, :, 3:].reshape(-1, 4, 1))
     except BaseException:
         return []
     shift = int(floor(get_map_size_in_cells(map_size, cell_size) / 2.0))
-    topdown2index = np.array(
-        [[1.0 / cell_size, 0, shift], [0, 1.0 / cell_size, shift], [0, 0, 1]]
-    )
-    world_coords_h = np.concatenate(
-        [world_coords, np.ones((len(world_coords), 1, 1))], axis=1
-    )
+    topdown2index = np.array([[1.0 / cell_size, 0, shift], [0, 1.0 / cell_size, shift], [0, 0, 1]])
+    world_coords_h = np.concatenate([world_coords, np.ones((len(world_coords), 1, 1))], axis=1)
     world_coords = np.matmul(topdown2index, world_coords_h)[:, :2, 0]
-    return (
-        world_coords[:, ::-1].astype(np.int32) + 1
-    )  # for having revesrve (z,x) ordering
+    return world_coords[:, ::-1].astype(np.int32) + 1  # for having revesrve (z,x) ordering

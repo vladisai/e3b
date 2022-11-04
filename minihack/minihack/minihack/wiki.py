@@ -54,12 +54,7 @@ class TextProcessor:
 
         # First find nouns in phrase
         result = self.nlp(input_str)
-        nouns = [
-            word.text
-            for sent in result.sentences
-            for word in sent.words
-            if word.upos in {"NOUN", "PROPN"}
-        ]
+        nouns = [word.text for sent in result.sentences for word in sent.words if word.upos in {"NOUN", "PROPN"}]
         if not nouns:
             return input_str
         # Pick last noun in input
@@ -110,9 +105,7 @@ class NetHackWiki:
                 self.wiki = json.load(json_file)
         elif os.path.isfile(raw_wiki_file_name):
             raw_json = load_json(raw_wiki_file_name)
-            self.wiki = process_json(
-                raw_json, ignore_inpage_anchors=ignore_inpage_anchors
-            )
+            self.wiki = process_json(raw_json, ignore_inpage_anchors=ignore_inpage_anchors)
             if save_processed_json:
                 with open(processed_wiki_file_name, "w+") as json_file:
                     json.dump(self.wiki, json_file)
@@ -206,15 +199,10 @@ def process_json(wiki_json: List[dict], ignore_inpage_anchors) -> dict:
         redirect_anchors = [
             anchor
             for anchor in page["anchors"]
-            if anchor.get("title")
-            and href_normalise(anchor["href"])
-            != href_normalise(anchor["title"])
+            if anchor.get("title") and href_normalise(anchor["href"]) != href_normalise(anchor["title"])
         ]
         redirects.update(
-            {
-                href_normalise(anchor["href"]): href_normalise(anchor["title"])
-                for anchor in redirect_anchors
-            }
+            {href_normalise(anchor["href"]): href_normalise(anchor["title"]) for anchor in redirect_anchors}
         )
         unique_anchors: dict = defaultdict(int)
         for anchor in relevant_page_info["anchors"]:

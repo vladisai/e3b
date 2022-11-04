@@ -31,9 +31,7 @@ class TargetPointGoalGPSAndCompassSensor(PointGoalSensor):
         rotation_world_agent = agent_state.rotation
 
         target_position = self._sim.get_target_objs_start()[0]
-        return self._compute_pointgoal(
-            agent_position, rotation_world_agent, target_position
-        )
+        return self._compute_pointgoal(agent_position, rotation_world_agent, target_position)
 
 
 class MultiObjSensor(PointGoalSensor):
@@ -487,13 +485,7 @@ class RobotCollisions(Measure):
 
     def reset_metric(self, *args, episode, task, observations, **kwargs):
         self._accum_coll_info = CollisionDetails()
-        self.update_metric(
-            *args,
-            episode=episode,
-            task=task,
-            observations=observations,
-            **kwargs
-        )
+        self.update_metric(*args, episode=episode, task=task, observations=observations, **kwargs)
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
         cur_coll_info = self._task.get_cur_collision_info()
@@ -525,13 +517,7 @@ class RobotForce(Measure):
         self._prev_force = None
         self._cur_force = None
         self._add_force = None
-        self.update_metric(
-            *args,
-            episode=episode,
-            task=task,
-            observations=observations,
-            **kwargs
-        )
+        self.update_metric(*args, episode=episode, task=task, observations=observations, **kwargs)
 
     @property
     def add_force(self):
@@ -582,22 +568,11 @@ class ForceTerminate(Measure):
             ],
         )
 
-        self.update_metric(
-            *args,
-            episode=episode,
-            task=task,
-            observations=observations,
-            **kwargs
-        )
+        self.update_metric(*args, episode=episode, task=task, observations=observations, **kwargs)
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
-        accum_force = task.measurements.measures[
-            RobotForce.cls_uuid
-        ].get_metric()
-        if (
-            self._config.MAX_ACCUM_FORCE > 0
-            and accum_force > self._config.MAX_ACCUM_FORCE
-        ):
+        accum_force = task.measurements.measures[RobotForce.cls_uuid].get_metric()
+        if self._config.MAX_ACCUM_FORCE > 0 and accum_force > self._config.MAX_ACCUM_FORCE:
             self._task.should_end = True
             self._metric = True
         else:
@@ -621,13 +596,7 @@ class RearrangeReward(Measure):
             ],
         )
 
-        self.update_metric(
-            *args,
-            episode=episode,
-            task=task,
-            observations=observations,
-            **kwargs
-        )
+        self.update_metric(*args, episode=episode, task=task, observations=observations, **kwargs)
 
     def update_metric(self, *args, episode, task, observations, **kwargs):
         reward = 0.0
@@ -637,9 +606,7 @@ class RearrangeReward(Measure):
         if self._sim.grasp_mgr.is_violating_hold_constraint():
             reward -= self._config.CONSTRAINT_VIOLATE_PEN
 
-        force_terminate = task.measurements.measures[
-            ForceTerminate.cls_uuid
-        ].get_metric()
+        force_terminate = task.measurements.measures[ForceTerminate.cls_uuid].get_metric()
         if force_terminate:
             reward -= self._config.FORCE_END_PEN
 

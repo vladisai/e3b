@@ -61,10 +61,7 @@ class PPO(nn.Module):
         raise NotImplementedError
 
     def get_advantages(self, rollouts: RolloutStorage) -> Tensor:
-        advantages = (
-            rollouts.buffers["returns"][:-1]  # type: ignore
-            - rollouts.buffers["value_preds"][:-1]
-        )
+        advantages = rollouts.buffers["returns"][:-1] - rollouts.buffers["value_preds"][:-1]  # type: ignore
         if not self.use_normalized_advantage:
             return advantages
 
@@ -79,17 +76,10 @@ class PPO(nn.Module):
 
         for _e in range(self.ppo_epoch):
             profiling_wrapper.range_push("PPO.update epoch")
-            data_generator = rollouts.recurrent_generator(
-                advantages, self.num_mini_batch
-            )
+            data_generator = rollouts.recurrent_generator(advantages, self.num_mini_batch)
 
             for batch in data_generator:
-                (
-                    values,
-                    action_log_probs,
-                    dist_entropy,
-                    _,
-                ) = self._evaluate_actions(
+                (values, action_log_probs, dist_entropy, _,) = self._evaluate_actions(
                     batch["observations"],
                     batch["recurrent_hidden_states"],
                     batch["prev_actions"],
@@ -99,25 +89,16 @@ class PPO(nn.Module):
 
                 ratio = torch.exp(action_log_probs - batch["action_log_probs"])
                 surr1 = ratio * batch["advantages"]
-                surr2 = (
-                    torch.clamp(
-                        ratio, 1.0 - self.clip_param, 1.0 + self.clip_param
-                    )
-                    * batch["advantages"]
-                )
+                surr2 = torch.clamp(ratio, 1.0 - self.clip_param, 1.0 + self.clip_param) * batch["advantages"]
                 action_loss = -(torch.min(surr1, surr2).mean())
 
                 if self.use_clipped_value_loss:
-                    value_pred_clipped = batch["value_preds"] + (
-                        values - batch["value_preds"]
-                    ).clamp(-self.clip_param, self.clip_param)
-                    value_losses = (values - batch["returns"]).pow(2)
-                    value_losses_clipped = (
-                        value_pred_clipped - batch["returns"]
-                    ).pow(2)
-                    value_loss = 0.5 * torch.max(
-                        value_losses, value_losses_clipped
+                    value_pred_clipped = batch["value_preds"] + (values - batch["value_preds"]).clamp(
+                        -self.clip_param, self.clip_param
                     )
+                    value_losses = (values - batch["returns"]).pow(2)
+                    value_losses_clipped = (value_pred_clipped - batch["returns"]).pow(2)
+                    value_loss = 0.5 * torch.max(value_losses, value_losses_clipped)
                 else:
                     value_loss = 0.5 * (batch["returns"] - values).pow(2)
 
@@ -125,11 +106,7 @@ class PPO(nn.Module):
                 dist_entropy = dist_entropy.mean()
 
                 self.optimizer.zero_grad()
-                total_loss = (
-                    value_loss * self.value_loss_coef
-                    + action_loss
-                    - dist_entropy * self.entropy_coef
-                )
+                total_loss = value_loss * self.value_loss_coef + action_loss - dist_entropy * self.entropy_coef
 
                 self.before_backward(total_loss)
                 total_loss.backward()
@@ -153,15 +130,11 @@ class PPO(nn.Module):
 
         return value_loss_epoch, action_loss_epoch, dist_entropy_epoch
 
-    def _evaluate_actions(
-        self, observations, rnn_hidden_states, prev_actions, masks, action
-    ):
+    def _evaluate_actions(self, observations, rnn_hidden_states, prev_actions, masks, action):
         r"""Internal method that calls Policy.evaluate_actions.  This is used instead of calling
         that directly so that that call can be overrided with inheritance
         """
-        return self.actor_critic.evaluate_actions(
-            observations, rnn_hidden_states, prev_actions, masks, action
-        )
+        return self.actor_critic.evaluate_actions(observations, rnn_hidden_states, prev_actions, masks, action)
 
     def before_backward(self, loss: Tensor) -> None:
         pass
@@ -170,9 +143,7 @@ class PPO(nn.Module):
         pass
 
     def before_step(self) -> None:
-        nn.utils.clip_grad_norm_(
-            self.actor_critic.parameters(), self.max_grad_norm
-        )
+        nn.utils.clip_grad_norm_(self.actor_critic.parameters(), self.max_grad_norm)
 
     def after_step(self) -> None:
         pass

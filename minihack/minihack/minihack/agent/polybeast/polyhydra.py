@@ -45,19 +45,14 @@ if torch.__version__.startswith("1.5") or torch.__version__.startswith("1.6"):
 os.environ["OMP_NUM_THREADS"] = "1"
 
 logging.basicConfig(
-    format=(
-        "[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] "
-        "%(message)s"
-    ),
+    format=("[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] " "%(message)s"),
     level=0,
 )
 
 
 def pipes_basename():
     logdir = Path(os.getcwd())
-    name = ".".join(
-        [logdir.parents[1].name, logdir.parents[0].name, logdir.name]
-    )
+    name = ".".join([logdir.parents[1].name, logdir.parents[0].name, logdir.name])
     return "unix:/tmp/poly.%s" % name
 
 
@@ -107,9 +102,7 @@ def symlink_latest(savedir, symlink):
 def main(flags: DictConfig):
     if os.path.exists("config.yaml"):
         # this ignores the local config.yaml and replaces it completely with saved one
-        logging.info(
-            "loading existing configuration, we're continuing a previous run"
-        )
+        logging.info("loading existing configuration, we're continuing a previous run")
         new_flags = OmegaConf.load("config.yaml")
         cli_conf = OmegaConf.from_cli()
         # however, you can override parameters from the cli still
@@ -126,9 +119,7 @@ def main(flags: DictConfig):
         if is_env_registered(flags.env):
             flags.env = get_env_shortcut(flags.env)
         else:
-            raise KeyError(
-                f"Could not find an environement with a name: {flags.env}."
-            )
+            raise KeyError(f"Could not find an environement with a name: {flags.env}.")
 
     # set flags for polybeast_env
     env_flags = get_environment_flags(flags)
@@ -138,9 +129,7 @@ def main(flags: DictConfig):
         p.start()
         env_processes.append(p)
 
-    symlink_latest(
-        flags.savedir, os.path.join(hydra.utils.get_original_cwd(), "latest")
-    )
+    symlink_latest(flags.savedir, os.path.join(hydra.utils.get_original_cwd(), "latest"))
 
     lrn_flags = get_learner_flags(flags)
     run_learner(lrn_flags)

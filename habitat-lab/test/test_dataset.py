@@ -175,17 +175,12 @@ def test_get_splits_func(num_episodes: int, num_splits: int):
     assert sum(len(split.episodes) for split in splits) == num_episodes
     splits = dataset.get_splits(num_splits, allow_uneven_splits=False)
     assert len(splits) == num_splits
-    assert (
-        sum(map(lambda s: s.num_episodes, splits))
-        == (num_episodes // num_splits) * num_splits
-    )
+    assert sum(map(lambda s: s.num_episodes, splits)) == (num_episodes // num_splits) * num_splits
 
 
 def test_sample_episodes():
     dataset = _construct_dataset(1000)
-    ep_iter = dataset.get_episode_iterator(
-        num_episode_sample=1000, cycle=False
-    )
+    ep_iter = dataset.get_episode_iterator(num_episode_sample=1000, cycle=False)
     assert len(list(ep_iter)) == 1000
 
     ep_iter = dataset.get_episode_iterator(num_episode_sample=0, cycle=False)
@@ -207,9 +202,7 @@ def test_sample_episodes():
 
 def test_iterator_cycle():
     dataset = _construct_dataset(100)
-    ep_iter = dataset.get_episode_iterator(
-        cycle=True, shuffle=False, group_by_scene=False
-    )
+    ep_iter = dataset.get_episode_iterator(cycle=True, shuffle=False, group_by_scene=False)
     for i in range(200):
         episode = next(ep_iter)
         assert episode.episode_id == dataset.episodes[i % 100].episode_id
@@ -232,12 +225,8 @@ def test_iterator_shuffle():
     assert first_round_episodes != second_round_episodes
 
     # both rounds should be grouped by scenes
-    first_round_scene_groups = [
-        k for k, g in groupby(first_round_episodes, key=lambda x: x.scene_id)
-    ]
-    second_round_scene_groups = [
-        k for k, g in groupby(second_round_episodes, key=lambda x: x.scene_id)
-    ]
+    first_round_scene_groups = [k for k, g in groupby(first_round_episodes, key=lambda x: x.scene_id)]
+    second_round_scene_groups = [k for k, g in groupby(second_round_episodes, key=lambda x: x.scene_id)]
     assert len(first_round_scene_groups) == len(second_round_scene_groups)
     assert len(first_round_scene_groups) == len(set(first_round_scene_groups))
 
@@ -247,9 +236,7 @@ def test_iterator_scene_switching_episodes():
     max_repeat = 25
     dataset = _construct_dataset(total_ep)
 
-    episode_iter = dataset.get_episode_iterator(
-        max_scene_repeat_episodes=max_repeat, shuffle=False, cycle=True
-    )
+    episode_iter = dataset.get_episode_iterator(max_scene_repeat_episodes=max_repeat, shuffle=False, cycle=True)
     episodes = sorted(dataset.episodes, key=lambda x: x.scene_id)
 
     for _ in range(max_repeat):
@@ -259,33 +246,23 @@ def test_iterator_scene_switching_episodes():
         ), "episodes before max_repeat reached should be identical"
 
     episode = next(episode_iter)
-    assert (
-        episode.scene_id != episodes.pop(0).scene_id
-    ), "After max_repeat episodes a scene switch doesn't happen."
+    assert episode.scene_id != episodes.pop(0).scene_id, "After max_repeat episodes a scene switch doesn't happen."
 
     remaining_episodes = list(islice(episode_iter, total_ep - max_repeat - 1))
-    assert len(remaining_episodes) == len(
-        episodes
-    ), "Remaining episodes should be identical."
+    assert len(remaining_episodes) == len(episodes), "Remaining episodes should be identical."
 
     assert len({e.scene_id for e in remaining_episodes}) == len(
         set(map(lambda ep: ep.scene_id, remaining_episodes))
     ), "Next episodes should still include all scenes."
 
     cycled_episodes = list(islice(episode_iter, 4 * total_ep))
-    assert (
-        len(set(map(lambda x: x.episode_id, cycled_episodes))) == total_ep
-    ), "Some episodes leaked after cycling."
+    assert len(set(map(lambda x: x.episode_id, cycled_episodes))) == total_ep, "Some episodes leaked after cycling."
 
-    grouped_episodes = [
-        list(g) for k, g in groupby(cycled_episodes, key=lambda x: x.scene_id)
-    ]
+    grouped_episodes = [list(g) for k, g in groupby(cycled_episodes, key=lambda x: x.scene_id)]
     assert (
         len(sum(grouped_episodes, [])) == 4 * total_ep
     ), "Cycled episode iterator returned unexpected number of episodes."
-    assert (
-        len(grouped_episodes) == 4 * total_ep / max_repeat
-    ), "The number of scene switches is unexpected."
+    assert len(grouped_episodes) == 4 * total_ep / max_repeat, "The number of scene switches is unexpected."
 
     assert all(
         len(group) == max_repeat for group in grouped_episodes
@@ -296,19 +273,11 @@ def test_iterator_scene_switching_episodes_without_shuffle_cycle():
     total_ep = 1000
     max_repeat = 25
     dataset = _construct_dataset(total_ep)
-    episode_iter = dataset.get_episode_iterator(
-        max_scene_repeat_episodes=max_repeat, shuffle=False, cycle=False
-    )
+    episode_iter = dataset.get_episode_iterator(max_scene_repeat_episodes=max_repeat, shuffle=False, cycle=False)
 
-    grouped_episodes = [
-        list(g) for k, g in groupby(episode_iter, key=lambda x: x.scene_id)
-    ]
-    assert (
-        len(sum(grouped_episodes, [])) == total_ep
-    ), "The episode iterator returned unexpected number of episodes."
-    assert (
-        len(grouped_episodes) == total_ep / max_repeat
-    ), "The number of scene switches is unexpected."
+    grouped_episodes = [list(g) for k, g in groupby(episode_iter, key=lambda x: x.scene_id)]
+    assert len(sum(grouped_episodes, [])) == total_ep, "The episode iterator returned unexpected number of episodes."
+    assert len(grouped_episodes) == total_ep / max_repeat, "The number of scene switches is unexpected."
 
     assert all(
         len(group) == max_repeat for group in grouped_episodes
@@ -342,16 +311,11 @@ def test_iterator_scene_switching_steps():
     ), "After max_repeat_steps episodes a scene switch doesn't happen."
 
     remaining_episodes = list(islice(episode_iter, total_ep - 2))
-    assert len(remaining_episodes) == len(
-        episodes
-    ), "Remaining episodes numbers aren't equal."
+    assert len(remaining_episodes) == len(episodes), "Remaining episodes numbers aren't equal."
 
     assert len({e.scene_id for e in remaining_episodes}) == len(
         list(groupby(remaining_episodes, lambda ep: ep.scene_id))
-    ), (
-        "Next episodes should still be grouped by scene (before next "
-        "switching)."
-    )
+    ), ("Next episodes should still be grouped by scene (before next " "switching).")
 
 
 def test_preserve_order():

@@ -58,11 +58,7 @@ def _load_test_data():
         if not PointNavDatasetV1.check_config_paths_exist(config.DATASET):
             pytest.skip("Please download Habitat test data to data folder.")
 
-        datasets.append(
-            habitat.make_dataset(
-                id_dataset=config.DATASET.TYPE, config=config.DATASET
-            )
-        )
+        datasets.append(habitat.make_dataset(id_dataset=config.DATASET.TYPE, config=config.DATASET))
 
         config.defrost()
         config.SIMULATOR.SCENE = datasets[-1].episodes[0].scene_id
@@ -89,9 +85,7 @@ def _vec_env_test_fn(configs, datasets, multiprocessing_start_method, gpu2gpu):
         envs.reset()
 
         for _ in range(2 * configs[0].ENVIRONMENT.MAX_EPISODE_STEPS):
-            observations = envs.step(
-                sample_non_stop_action(envs.action_spaces[0], num_envs)
-            )
+            observations = envs.step(sample_non_stop_action(envs.action_spaces[0], num_envs))
             assert len(observations) == num_envs
 
 
@@ -121,18 +115,14 @@ def test_vectorized_envs(multiprocessing_start_method, gpu2gpu):
         p.join()
         assert p.exitcode == 0
     else:
-        _vec_env_test_fn(
-            configs, datasets, multiprocessing_start_method, gpu2gpu
-        )
+        _vec_env_test_fn(configs, datasets, multiprocessing_start_method, gpu2gpu)
 
 
 def test_with_scope():
     configs, datasets = _load_test_data()
     num_envs = len(configs)
     env_fn_args = tuple(zip(configs, datasets, range(num_envs)))
-    with habitat.VectorEnv(
-        env_fn_args=env_fn_args, multiprocessing_start_method="forkserver"
-    ) as envs:
+    with habitat.VectorEnv(env_fn_args=env_fn_args, multiprocessing_start_method="forkserver") as envs:
         envs.reset()
 
     assert envs._is_closed
@@ -142,9 +132,7 @@ def test_number_of_episodes():
     configs, datasets = _load_test_data()
     num_envs = len(configs)
     env_fn_args = tuple(zip(configs, datasets, range(num_envs)))
-    with habitat.VectorEnv(
-        env_fn_args=env_fn_args, multiprocessing_start_method="forkserver"
-    ) as envs:
+    with habitat.VectorEnv(env_fn_args=env_fn_args, multiprocessing_start_method="forkserver") as envs:
         assert envs.number_of_episodes == [10000, 10000, 10000, 10000]
 
 
@@ -156,9 +144,7 @@ def test_threaded_vectorized_env():
         envs.reset()
 
         for _ in range(2 * configs[0].ENVIRONMENT.MAX_EPISODE_STEPS):
-            observations = envs.step(
-                sample_non_stop_action(envs.action_spaces[0], num_envs)
-            )
+            observations = envs.step(sample_non_stop_action(envs.action_spaces[0], num_envs))
             assert len(observations) == num_envs
 
 
@@ -201,17 +187,13 @@ def test_env(gpu2gpu):
             env.step(sample_non_stop_action(env.action_space))
 
         # check for steps limit on environment
-        assert env.episode_over is True, (
-            "episode should be over after " "max_episode_steps"
-        )
+        assert env.episode_over is True, "episode should be over after " "max_episode_steps"
 
         env.reset()
 
         env.step(action={"action": StopAction.name})
         # check for STOP action
-        assert (
-            env.episode_over is True
-        ), "episode should be over after STOP action"
+        assert env.episode_over is True, "episode should be over after STOP action"
 
 
 def make_rl_env(config, dataset, rank: int = 0):
@@ -241,18 +223,12 @@ def test_rl_vectorized_envs(gpu2gpu):
 
     num_envs = len(configs)
     env_fn_args = tuple(zip(configs, datasets, range(num_envs)))
-    with habitat.VectorEnv(
-        make_env_fn=make_rl_env, env_fn_args=env_fn_args
-    ) as envs:
+    with habitat.VectorEnv(make_env_fn=make_rl_env, env_fn_args=env_fn_args) as envs:
         envs.reset()
 
         for i in range(2 * configs[0].ENVIRONMENT.MAX_EPISODE_STEPS):
-            outputs = envs.step(
-                sample_non_stop_action(envs.action_spaces[0], num_envs)
-            )
-            observations, rewards, dones, infos = [
-                list(x) for x in zip(*outputs)
-            ]
+            outputs = envs.step(sample_non_stop_action(envs.action_spaces[0], num_envs))
+            observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
             assert len(observations) == num_envs
             assert len(rewards) == num_envs
             assert len(dones) == num_envs
@@ -270,9 +246,7 @@ def test_rl_vectorized_envs(gpu2gpu):
             ), "vector env render is broken"
 
             if (i + 1) % configs[0].ENVIRONMENT.MAX_EPISODE_STEPS == 0:
-                assert all(
-                    dones
-                ), "dones should be true after max_episode steps"
+                assert all(dones), "dones should be true after max_episode steps"
 
 
 @pytest.mark.parametrize("gpu2gpu", [False, True])
@@ -314,17 +288,13 @@ def test_rl_env(gpu2gpu):
         env.reset()
 
         for _ in range(config.ENVIRONMENT.MAX_EPISODE_STEPS):
-            observation, reward, done, info = env.step(
-                action=sample_non_stop_action(env.action_space)
-            )
+            observation, reward, done, info = env.step(action=sample_non_stop_action(env.action_space))
 
         # check for steps limit on environment
         assert done is True, "episodes should be over after max_episode_steps"
 
         env.reset()
-        observation, reward, done, info = env.step(
-            action={"action": StopAction.name}
-        )
+        observation, reward, done, info = env.step(action={"action": StopAction.name})
         assert done is True, "done should be true after STOP action"
 
 
@@ -378,9 +348,7 @@ def test_close_with_paused():
     configs, datasets = _load_test_data()
     num_envs = len(configs)
     env_fn_args = tuple(zip(configs, datasets, range(num_envs)))
-    with habitat.VectorEnv(
-        env_fn_args=env_fn_args, multiprocessing_start_method="forkserver"
-    ) as envs:
+    with habitat.VectorEnv(env_fn_args=env_fn_args, multiprocessing_start_method="forkserver") as envs:
         envs.reset()
 
         envs.pause_at(3)
@@ -452,9 +420,7 @@ def test_set_episodes(set_method):
         elif set_method == "iter":
             env.episode_iterator = iter([target_episode] + all_episodes)
         else:
-            raise RuntimeError(
-                f"Test does not support setting episodes with {set_method}"
-            )
+            raise RuntimeError(f"Test does not support setting episodes with {set_method}")
 
         env.reset()
         assert env.current_episode is target_episode

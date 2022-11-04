@@ -42,30 +42,22 @@ def test_sim_trajectory():
                 state = sim.get_agent_state()
                 assert (
                     np.allclose(
-                        np.array(
-                            test_trajectory["positions"][i], dtype=np.float32
-                        ),
+                        np.array(test_trajectory["positions"][i], dtype=np.float32),
                         state.position,
                     )
                     is True
                 ), "mismatch in position " "at step {}".format(i)
                 assert (
                     np.allclose(
-                        np.array(
-                            test_trajectory["rotations"][i], dtype=np.float32
-                        ),
+                        np.array(test_trajectory["rotations"][i], dtype=np.float32),
                         np.array([*state.rotation.imag, state.rotation.real]),
                     )
                     is True
                 ), "mismatch in rotation " "at step {}".format(i)
 
                 max_search_radius = 2.0
-                dist_to_obs = sim.distance_to_closest_obstacle(
-                    state.position, max_search_radius
-                )
-                assert np.isclose(
-                    dist_to_obs, test_trajectory["distances_to_obstacles"][i]
-                )
+                dist_to_obs = sim.distance_to_closest_obstacle(state.position, max_search_radius)
+                assert np.isclose(dist_to_obs, test_trajectory["distances_to_obstacles"][i])
 
             assert sim.action_space.contains(action)
 
@@ -113,10 +105,5 @@ def test_sim_geodesic_distance():
 
             assert np.isclose(
                 sim.geodesic_distance(test_case["start"], test_case["ends"]),
-                np.min(
-                    [
-                        sim.geodesic_distance(test_case["start"], end)
-                        for end in test_case["ends"]
-                    ]
-                ),
+                np.min([sim.geodesic_distance(test_case["start"], end) for end in test_case["ends"]]),
             ), "Geodesic distance for multi target setup isn't equal to separate single target calls."

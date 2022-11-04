@@ -15,9 +15,7 @@
 import yaml
 import os
 
-env_name_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "env_names.yaml"
-)
+env_name_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "env_names.yaml")
 with open(env_name_path, "r") as stream:
     env_short_to_full = yaml.safe_load(stream)
 

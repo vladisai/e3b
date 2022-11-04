@@ -30,9 +30,7 @@ SENTENCE_SPLIT_REGEX = re.compile(r"([^\w-]+)")
 DEFAULT_PHYSICS_CONFIG_PATH = "data/default.physics_config.json"
 
 
-def tokenize(
-    sentence, regex=SENTENCE_SPLIT_REGEX, keep=("'s"), remove=(",", "?")
-) -> List[str]:
+def tokenize(sentence, regex=SENTENCE_SPLIT_REGEX, keep=("'s"), remove=(",", "?")) -> List[str]:
     sentence = sentence.lower()
 
     for token in keep:
@@ -80,17 +78,9 @@ class VocabDict:
         self.itos = self.word_list
         self.num_vocab = len(self.word_list)
 
-        self.UNK_INDEX = (
-            self.word2idx_dict[self.UNK_TOKEN]
-            if self.UNK_TOKEN in self.word2idx_dict
-            else None
-        )
+        self.UNK_INDEX = self.word2idx_dict[self.UNK_TOKEN] if self.UNK_TOKEN in self.word2idx_dict else None
 
-        self.PAD_INDEX = (
-            self.word2idx_dict[self.PAD_TOKEN]
-            if self.PAD_TOKEN in self.word2idx_dict
-            else None
-        )
+        self.PAD_INDEX = self.word2idx_dict[self.PAD_TOKEN] if self.PAD_TOKEN in self.word2idx_dict else None
 
     def idx2word(self, n_w):
         return self.word_list[n_w]
@@ -135,10 +125,7 @@ class VocabDict:
         keep=("'s"),
         remove=(",", "?"),
     ) -> List[int]:
-        inds = [
-            self.word2idx(w)
-            for w in tokenize(sentence, regex=regex, keep=keep, remove=remove)
-        ]
+        inds = [self.word2idx(w) for w in tokenize(sentence, regex=regex, keep=keep, remove=remove)]
         return inds
 
 
@@ -193,9 +180,7 @@ def get_action_shortest_path(
     shortest_path = []
     step_count = 0
     action = follower.get_next_action(goal_position)
-    while (
-        action is not HabitatSimActions.STOP and step_count < max_episode_steps
-    ):
+    while action is not HabitatSimActions.STOP and step_count < max_episode_steps:
         state = sim.get_agent_state()
         shortest_path.append(
             ShortestPathPoint(

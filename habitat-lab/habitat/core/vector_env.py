@@ -65,9 +65,7 @@ ACTION_SPACE_NAME = "action_space"
 OBSERVATION_SPACE_NAME = "observation_space"
 
 
-def _make_env_fn(
-    config: Config, dataset: Optional[habitat.Dataset] = None, rank: int = 0
-) -> Env:
+def _make_env_fn(config: Config, dataset: Optional[habitat.Dataset] = None, rank: int = 0) -> Env:
     """Constructor for default habitat :ref:`env.Env`.
 
     :param config: configuration for environment.
@@ -91,10 +89,7 @@ class _ReadWrapper:
 
     def __call__(self) -> Any:
         if not self.is_waiting:
-            raise RuntimeError(
-                f"Tried to read from process {self.rank}"
-                " but there is nothing waiting to be read"
-            )
+            raise RuntimeError(f"Tried to read from process {self.rank}" " but there is nothing waiting to be read")
         res = self.read_fn()
         self.is_waiting = False
 
@@ -113,8 +108,7 @@ class _WriteWrapper:
     def __call__(self, data: Any) -> None:
         if self.read_wrapper.is_waiting:
             raise RuntimeError(
-                f"Tried to write to process {self.read_wrapper.rank}"
-                " but the last write has not been read"
+                f"Tried to write to process {self.read_wrapper.rank}" " but the last write has not been read"
             )
         self.write_fn(data)
         self.read_wrapper.is_waiting = True
@@ -178,10 +172,7 @@ class VectorEnv:
         self._auto_reset_done = auto_reset_done
         self._mp_ctx = mp.get_context(multiprocessing_start_method)
         self._workers = []
-        (
-            self._connection_read_fns,
-            self._connection_write_fns,
-        ) = self._spawn_workers(
+        (self._connection_read_fns, self._connection_write_fns,) = self._spawn_workers(
             env_fn_args,
             make_env_fn,
             workers_ignore_signals=workers_ignore_signals,
@@ -191,19 +182,13 @@ class VectorEnv:
 
         for write_fn in self._connection_write_fns:
             write_fn((CALL_COMMAND, (OBSERVATION_SPACE_NAME, None)))
-        self.observation_spaces = [
-            read_fn() for read_fn in self._connection_read_fns
-        ]
+        self.observation_spaces = [read_fn() for read_fn in self._connection_read_fns]
         for write_fn in self._connection_write_fns:
             write_fn((CALL_COMMAND, (ACTION_SPACE_NAME, None)))
-        self.action_spaces = [
-            read_fn() for read_fn in self._connection_read_fns
-        ]
+        self.action_spaces = [read_fn() for read_fn in self._connection_read_fns]
         for write_fn in self._connection_write_fns:
             write_fn((CALL_COMMAND, (NUMBER_OF_EPISODE_NAME, None)))
-        self.number_of_episodes = [
-            read_fn() for read_fn in self._connection_read_fns
-        ]
+        self.number_of_episodes = [read_fn() for read_fn in self._connection_read_fns]
         self._paused: List[Tuple] = []
 
     @property
@@ -244,12 +229,8 @@ class VectorEnv:
                         observations, reward, done, info = env.step(**data)
                         if auto_reset_done and done:
                             observations = env.reset()
-                        with profiling_wrapper.RangeContext(
-                            "worker write after step"
-                        ):
-                            connection_write_fn(
-                                (observations, reward, done, info)
-                            )
+                        with profiling_wrapper.RangeContext("worker write after step"):
+                            connection_write_fn((observations, reward, done, info))
                     elif isinstance(env, habitat.Env):  # type: ignore
                         # habitat.Env
                         observations = env.step(**data)
@@ -303,15 +284,10 @@ class VectorEnv:
         workers_ignore_signals: bool = False,
     ) -> Tuple[List[_ReadWrapper], List[_WriteWrapper]]:
         parent_connections, worker_connections = zip(
-            *[
-                [ConnectionWrapper(c) for c in self._mp_ctx.Pipe(duplex=True)]
-                for _ in range(self._num_envs)
-            ]
+            *[[ConnectionWrapper(c) for c in self._mp_ctx.Pipe(duplex=True)] for _ in range(self._num_envs)]
         )
         self._workers = []
-        for worker_conn, parent_conn, env_args in zip(
-            worker_connections, parent_connections, env_fn_args
-        ):
+        for worker_conn, parent_conn, env_args in zip(worker_connections, parent_connections, env_fn_args):
             ps = self._mp_ctx.Process(
                 target=self._worker_env,
                 args=(
@@ -330,14 +306,8 @@ class VectorEnv:
             ps.start()
             worker_conn.close()
 
-        read_fns = [
-            _ReadWrapper(p.recv, rank)
-            for rank, p in enumerate(parent_connections)
-        ]
-        write_fns = [
-            _WriteWrapper(p.send, read_fn)
-            for p, read_fn in zip(parent_connections, read_fns)
-        ]
+        read_fns = [_ReadWrapper(p.recv, rank) for rank, p in enumerate(parent_connections)]
+        write_fns = [_WriteWrapper(p.send, read_fn) for p, read_fn in zip(parent_connections, read_fns)]
 
         return read_fns, write_fns
 
@@ -395,9 +365,7 @@ class VectorEnv:
         results = [self._connection_read_fns[index_env]()]
         return results
 
-    def async_step_at(
-        self, index_env: int, action: Union[int, str, Dict[str, Any]]
-    ) -> None:
+    def async_step_at(self, index_env: int, action: Union[int, str, Dict[str, Any]]) -> None:
         # Backward compatibility
         if isinstance(action, (int, np.integer, str)):
             action = {"action": {"action": action}}
@@ -419,9 +387,7 @@ class VectorEnv:
         self.async_step_at(index_env, action)
         return self.wait_step_at(index_env)
 
-    def async_step(
-        self, data: Sequence[Union[int, str, Dict[str, Any]]]
-    ) -> None:
+    def async_step(self, data: Sequence[Union[int, str, Dict[str, Any]]]) -> None:
         r"""Asynchronously step in the environments.
 
         :param data: list of size _num_envs containing keyword arguments to
@@ -435,13 +401,9 @@ class VectorEnv:
     @profiling_wrapper.RangeContext("wait_step")
     def wait_step(self) -> List[Any]:
         r"""Wait until all the asynchronized environments have synchronized."""
-        return [
-            self.wait_step_at(index_env) for index_env in range(self.num_envs)
-        ]
+        return [self.wait_step_at(index_env) for index_env in range(self.num_envs)]
 
-    def step(
-        self, data: Sequence[Union[int, str, Dict[str, Any]]]
-    ) -> List[Any]:
+    def step(self, data: Sequence[Union[int, str, Dict[str, Any]]]) -> List[Any]:
         r"""Perform actions in the vectorized environments.
 
         :param data: list of size _num_envs containing keyword arguments to
@@ -513,9 +475,7 @@ class VectorEnv:
         :param function_args: optional function args.
         :return: result of calling the function.
         """
-        self._connection_write_fns[index](
-            (CALL_COMMAND, (function_name, function_args))
-        )
+        self._connection_write_fns[index]((CALL_COMMAND, (function_name, function_args)))
         result = self._connection_read_fns[index]()
         return result
 
@@ -537,18 +497,14 @@ class VectorEnv:
             function_args_list = [None] * len(function_names)
         assert len(function_names) == len(function_args_list)
         func_args = zip(function_names, function_args_list)
-        for write_fn, func_args_on in zip(
-            self._connection_write_fns, func_args
-        ):
+        for write_fn, func_args_on in zip(self._connection_write_fns, func_args):
             write_fn((CALL_COMMAND, func_args_on))
         results = []
         for read_fn in self._connection_read_fns:
             results.append(read_fn())
         return results
 
-    def render(
-        self, mode: str = "human", *args, **kwargs
-    ) -> Union[np.ndarray, None]:
+    def render(self, mode: str = "human", *args, **kwargs) -> Union[np.ndarray, None]:
         r"""Render observations from all environments in a tiled image."""
         for write_fn in self._connection_write_fns:
             write_fn((RENDER_COMMAND, (args, {"mode": "rgb", **kwargs})))
@@ -571,9 +527,7 @@ class VectorEnv:
     def _valid_start_methods(self) -> Set[str]:
         return {"forkserver", "spawn", "fork"}
 
-    def _warn_cuda_tensors(
-        self, action: Dict[str, Any], prefix: Optional[str] = None
-    ):
+    def _warn_cuda_tensors(self, action: Dict[str, Any], prefix: Optional[str] = None):
         if torch is None:
             return
 
@@ -615,9 +569,7 @@ class ThreadedVectorEnv(VectorEnv):
         make_env_fn: Callable[..., Env] = _make_env_fn,
         workers_ignore_signals: bool = False,
     ) -> Tuple[List[_ReadWrapper], List[_WriteWrapper]]:
-        queues: Iterator[Tuple[Any, ...]] = zip(
-            *[(Queue(), Queue()) for _ in range(self._num_envs)]
-        )
+        queues: Iterator[Tuple[Any, ...]] = zip(*[(Queue(), Queue()) for _ in range(self._num_envs)])
         parent_read_queues, parent_write_queues = queues
         self._workers = []
         for parent_read_queue, parent_write_queue, env_args in zip(
@@ -637,12 +589,6 @@ class ThreadedVectorEnv(VectorEnv):
             thread.daemon = True
             thread.start()
 
-        read_fns = [
-            _ReadWrapper(q.get, rank)
-            for rank, q in enumerate(parent_read_queues)
-        ]
-        write_fns = [
-            _WriteWrapper(q.put, read_wrapper)
-            for q, read_wrapper in zip(parent_write_queues, read_fns)
-        ]
+        read_fns = [_ReadWrapper(q.get, rank) for rank, q in enumerate(parent_read_queues)]
+        write_fns = [_WriteWrapper(q.put, read_wrapper) for q, read_wrapper in zip(parent_write_queues, read_fns)]
         return read_fns, write_fns

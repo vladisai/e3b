@@ -33,9 +33,7 @@ class RearrangePickTaskV1(RearrangeTask):
 
         fname = data_path.split("/")[-1].split(".")[0]
 
-        self.cache = CacheHelper(
-            "start_pos", cache_name, {}, verbose=False, rel_dir=fname
-        )
+        self.cache = CacheHelper("start_pos", cache_name, {}, verbose=False, rel_dir=fname)
         self.start_states = self.cache.load()
         self.prev_colls = None
         self.force_set_idx = None
@@ -69,9 +67,7 @@ class RearrangePickTaskV1(RearrangeTask):
         attempt = 0
         while attempt < timeout:
             attempt += 1
-            start_pos = orig_start_pos + np.random.normal(
-                0, self._config.BASE_NOISE, size=(3,)
-            )
+            start_pos = orig_start_pos + np.random.normal(0, self._config.BASE_NOISE, size=(3,))
 
             rel_targ = targ_pos - start_pos
             angle_to_obj = get_angle(forward[[0, 2]], rel_targ[[0, 2]])
@@ -80,9 +76,7 @@ class RearrangePickTaskV1(RearrangeTask):
 
             targ_dist = np.linalg.norm((start_pos - orig_start_pos)[[0, 2]])
 
-            is_navigable = is_easy_init or sim.pathfinder.is_navigable(
-                start_pos
-            )
+            is_navigable = is_easy_init or sim.pathfinder.is_navigable(start_pos)
 
             if targ_dist > dist_thresh or not is_navigable:
                 continue
@@ -147,15 +141,10 @@ class RearrangePickTaskV1(RearrangeTask):
         self.prev_colls = 0
         episode_id = sim.ep_info["episode_id"]
 
-        if (
-            episode_id in self.start_states
-            and not self._config.FORCE_REGENERATE
-        ):
+        if episode_id in self.start_states and not self._config.FORCE_REGENERATE:
             start_pos, start_rot, sel_idx = self.start_states[episode_id]
         else:
-            start_pos, start_rot, sel_idx = self._gen_start_pos(
-                sim, self._config.EASY_INIT
-            )
+            start_pos, start_rot, sel_idx = self._gen_start_pos(sim, self._config.EASY_INIT)
             self.start_states[episode_id] = (start_pos, start_rot, sel_idx)
             self.cache.save(self.start_states)
 

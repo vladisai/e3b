@@ -45,12 +45,8 @@ class VLNEpisode(NavigationEpisode):
         instruction: single natural language instruction guide to goal.
         trajectory_id: id of ground truth trajectory path.
     """
-    reference_path: List[List[float]] = attr.ib(
-        default=None, validator=not_none_validator
-    )
-    instruction: InstructionData = attr.ib(
-        default=None, validator=not_none_validator
-    )
+    reference_path: List[List[float]] = attr.ib(default=None, validator=not_none_validator)
+    instruction: InstructionData = attr.ib(default=None, validator=not_none_validator)
     trajectory_id: int = attr.ib(default=None, validator=not_none_validator)
 
 
@@ -63,12 +59,7 @@ class InstructionSensor(Sensor):
     def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
         return self.uuid
 
-    def _get_observation(
-        self,
-        observations: Dict[str, Observations],
-        episode: VLNEpisode,
-        **kwargs
-    ):
+    def _get_observation(self, observations: Dict[str, Observations], episode: VLNEpisode, **kwargs):
         return {
             "text": episode.instruction.instruction_text,
             "tokens": episode.instruction.instruction_tokens,

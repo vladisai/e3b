@@ -44,26 +44,17 @@ def tile_images(images: List[np.ndarray]) -> np.ndarray:
     new_height = int(np.ceil(np.sqrt(n_images)))
     new_width = int(np.ceil(float(n_images) / new_height))
     # pad with empty images to complete the rectangle
-    np_images = np.array(
-        images
-        + [images[0] * 0 for _ in range(n_images, new_height * new_width)]
-    )
+    np_images = np.array(images + [images[0] * 0 for _ in range(n_images, new_height * new_width)])
     # img_HWhwc
-    out_image = np_images.reshape(
-        new_height, new_width, height, width, n_channels
-    )
+    out_image = np_images.reshape(new_height, new_width, height, width, n_channels)
     # img_HhWwc
     out_image = out_image.transpose(0, 2, 1, 3, 4)
     # img_Hh_Ww_c
-    out_image = out_image.reshape(
-        new_height * height, new_width * width, n_channels
-    )
+    out_image = out_image.reshape(new_height * height, new_width * width, n_channels)
     return out_image
 
 
-def not_none_validator(
-    self: Any, attribute: attr.Attribute, value: Optional[Any]
-) -> None:
+def not_none_validator(self: Any, attribute: attr.Attribute, value: Optional[Any]) -> None:
     if value is None:
         raise ValueError(f"Argument '{attribute.name}' must be set")
 
@@ -95,9 +86,7 @@ class Singleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(
-                *args, **kwargs
-            )
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
@@ -128,11 +117,7 @@ class DatasetFloatJSONEncoder(json.JSONEncoder):
         if isinstance(obj, quaternion.quaternion):
             return quaternion_to_list(obj)
 
-        return (
-            obj.__getstate__()
-            if hasattr(obj, "__getstate__")
-            else obj.__dict__
-        )
+        return obj.__getstate__() if hasattr(obj, "__getstate__") else obj.__dict__
 
     # Overriding method to inject own `_repr` function for floats with needed
     # precision.
@@ -161,10 +146,7 @@ class DatasetFloatJSONEncoder(json.JSONEncoder):
                 return _repr(o)
 
             if not allow_nan:
-                raise ValueError(
-                    "Out of range float values are not JSON compliant: "
-                    + repr(o)
-                )
+                raise ValueError("Out of range float values are not JSON compliant: " + repr(o))
 
             return text
 

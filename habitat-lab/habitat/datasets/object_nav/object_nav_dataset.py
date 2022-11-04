@@ -41,9 +41,7 @@ class ObjectNavDatasetV1(PointNavDatasetV1):
 
         goals_by_category = {}
         for i, ep in enumerate(dataset["episodes"]):
-            dataset["episodes"][i]["object_category"] = ep["goals"][0][
-                "object_category"
-            ]
+            dataset["episodes"][i]["object_category"] = ep["goals"][0]["object_category"]
             ep = ObjectGoalNavEpisode(**ep)
 
             goals_key = ep.goals_key
@@ -86,31 +84,21 @@ class ObjectNavDatasetV1(PointNavDatasetV1):
 
         return g
 
-    def from_json(
-        self, json_str: str, scenes_dir: Optional[str] = None
-    ) -> None:
+    def from_json(self, json_str: str, scenes_dir: Optional[str] = None) -> None:
         deserialized = json.loads(json_str)
         if CONTENT_SCENES_PATH_FIELD in deserialized:
             self.content_scenes_path = deserialized[CONTENT_SCENES_PATH_FIELD]
 
         if "category_to_task_category_id" in deserialized:
-            self.category_to_task_category_id = deserialized[
-                "category_to_task_category_id"
-            ]
+            self.category_to_task_category_id = deserialized["category_to_task_category_id"]
 
         if "category_to_scene_annotation_category_id" in deserialized:
-            self.category_to_scene_annotation_category_id = deserialized[
-                "category_to_scene_annotation_category_id"
-            ]
+            self.category_to_scene_annotation_category_id = deserialized["category_to_scene_annotation_category_id"]
 
         if "category_to_mp3d_category_id" in deserialized:
-            self.category_to_scene_annotation_category_id = deserialized[
-                "category_to_mp3d_category_id"
-            ]
+            self.category_to_scene_annotation_category_id = deserialized["category_to_mp3d_category_id"]
 
-        assert len(self.category_to_task_category_id) == len(
-            self.category_to_scene_annotation_category_id
-        )
+        assert len(self.category_to_task_category_id) == len(self.category_to_scene_annotation_category_id)
 
         assert set(self.category_to_task_category_id.keys()) == set(
             self.category_to_scene_annotation_category_id.keys()
@@ -131,9 +119,7 @@ class ObjectNavDatasetV1(PointNavDatasetV1):
 
             if scenes_dir is not None:
                 if episode.scene_id.startswith(DEFAULT_SCENE_PATH_PREFIX):
-                    episode.scene_id = episode.scene_id[
-                        len(DEFAULT_SCENE_PATH_PREFIX) :
-                    ]
+                    episode.scene_id = episode.scene_id[len(DEFAULT_SCENE_PATH_PREFIX) :]
 
                 episode.scene_id = os.path.join(scenes_dir, episode.scene_id)
 

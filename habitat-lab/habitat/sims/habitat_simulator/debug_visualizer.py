@@ -48,19 +48,11 @@ class DebugVisualizer:
         Point the debug camera at a target.
         """
         agent = self.sim.get_agent(0)
-        camera_pos = (
-            look_from
-            if look_from is not None
-            else agent.scene_node.translation
-        )
+        camera_pos = look_from if look_from is not None else agent.scene_node.translation
         if look_up is None:
             # pick a valid "up" vector.
             look_dir = look_at - camera_pos
-            look_up = (
-                mn.Vector3(0, 1.0, 0)
-                if look_dir[0] != 0 or look_dir[2] != 0
-                else mn.Vector3(1.0, 0, 0)
-            )
+            look_up = mn.Vector3(0, 1.0, 0) if look_dir[0] != 0 or look_dir[2] != 0 else mn.Vector3(1.0, 0, 0)
         agent.scene_node.rotation = mn.Quaternion.from_matrix(
             mn.Matrix4.look_at(camera_pos, look_at, look_up).rotation()
         )
@@ -176,18 +168,12 @@ class DebugVisualizer:
         import math
 
         # compute the optimal view distance from the camera specs and object size
-        distance = (np.amax(np.array(bb_size)) / aspect) / math.tan(
-            fov / (360 / math.pi)
-        )
+        distance = (np.amax(np.array(bb_size)) / aspect) / math.tan(fov / (360 / math.pi))
         if cam_local_pos is None:
             # default to -Z (forward) of the object
             cam_local_pos = mn.Vector3(0, 0, -1)
         if not peek_all_axis:
-            look_from = (
-                obj_abs_transform.transform_vector(cam_local_pos).normalized()
-                * distance
-                + look_at
-            )
+            look_from = obj_abs_transform.transform_vector(cam_local_pos).normalized() * distance + look_at
             return self.save_observation(
                 prefix="peek_" + obj.handle,
                 look_at=look_at,
@@ -199,11 +185,7 @@ class DebugVisualizer:
             for axis in range(6):
                 axis_vec = mn.Vector3()
                 axis_vec[axis % 3] = 1 if axis // 3 == 0 else -1
-                look_from = (
-                    obj_abs_transform.transform_vector(axis_vec).normalized()
-                    * distance
-                    + look_at
-                )
+                look_from = obj_abs_transform.transform_vector(axis_vec).normalized() * distance + look_at
                 self.get_observation(look_at, look_from, axis_obs)
             # stitch images together
             stitched_image = None
@@ -214,9 +196,7 @@ class DebugVisualizer:
             for ix, obs in enumerate(axis_obs):
                 image = vut.observation_to_image(obs["rgb"], "color")
                 if stitched_image is None:
-                    stitched_image = Image.new(
-                        image.mode, (image.size[0] * 3, image.size[1] * 2)
-                    )
+                    stitched_image = Image.new(image.mode, (image.size[0] * 3, image.size[1] * 2))
                 location = (
                     image.size[0] * (ix % 3),
                     image.size[1] * (0 if ix // 3 == 0 else 1),
@@ -252,6 +232,4 @@ class DebugVisualizer:
 
         file_path = output_path + prefix + date_time
         logger.info(f"DebugVisualizer: Saving debug video to {file_path}")
-        vut.make_video(
-            obs_cache, self.default_sensor_uuid, "color", file_path, fps=fps
-        )
+        vut.make_video(obs_cache, self.default_sensor_uuid, "color", file_path, fps=fps)

@@ -40,8 +40,7 @@ class Timings:
         n = self._counts[name]
 
         mean = self._means[name] + (x - self._means[name]) / (n + 1)
-        var = (n * self._vars[name] + n * (self._means[name] - mean)**2 +
-               (x - mean)**2) / (n + 1)
+        var = (n * self._vars[name] + n * (self._means[name] - mean) ** 2 + (x - mean) ** 2) / (n + 1)
 
         self._means[name] = mean
         self._vars[name] = var
@@ -56,14 +55,18 @@ class Timings:
     def stds(self):
         return {k: v**0.5 for k, v in self._vars.items()}
 
-    def summary(self, prefix=''):
+    def summary(self, prefix=""):
         means = self.means()
         stds = self.stds()
         total = sum(means.values())
 
         result = prefix
         for k in sorted(means, key=means.get, reverse=True):
-            result += f'\n    %s: %.6fms +- %.6fms (%.2f%%) ' % (
-                k, 1000 * means[k], 1000 * stds[k], 100 * means[k] / total)
-        result += '\nTotal: %.6fms' % (1000 * total)
+            result += f"\n    %s: %.6fms +- %.6fms (%.2f%%) " % (
+                k,
+                1000 * means[k],
+                1000 * stds[k],
+                100 * means[k] / total,
+            )
+        result += "\nTotal: %.6fms" % (1000 * total)
         return result

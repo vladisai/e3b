@@ -22,11 +22,7 @@ import shutil
 import glob
 
 
-_ACTIONS = tuple(
-    [nethack.MiscAction.MORE]
-    + list(nethack.CompassDirection)
-    + list(nethack.CompassDirectionLonger)
-)
+_ACTIONS = tuple([nethack.MiscAction.MORE] + list(nethack.CompassDirection) + list(nethack.CompassDirectionLonger))
 
 
 @contextlib.contextmanager
@@ -64,13 +60,7 @@ def get_action(env, action_mode, is_raw_env):
                     action = env._actions.index(ch)
                 break
             except ValueError:
-                print(
-                    (
-                        "Selected action '%s' is not in action list. "
-                        "Please try again."
-                    )
-                    % chr(ch)
-                )
+                print(("Selected action '%s' is not in action list. " "Please try again.") % chr(ch))
                 continue
     return action
 
@@ -110,8 +100,7 @@ def play(
                 import PIL.Image
             except ModuleNotFoundError:
                 raise ModuleNotFoundError(
-                    "To safe GIF files of trajectories, please install Pillow:"
-                    " pip install Pillow"
+                    "To safe GIF files of trajectories, please install Pillow:" " pip install Pillow"
                 )
 
         env = gym.make(
@@ -230,8 +219,7 @@ def main():
         "-d",
         "--debug",
         action="store_true",
-        help="Enables debug mode, which will drop stack into "
-        "an ipdb shell if an exception is raised.",
+        help="Enables debug mode, which will drop stack into " "an ipdb shell if an exception is raised.",
     )
     parser.add_argument(
         "-m",
@@ -253,8 +241,7 @@ def main():
         "--ngames",
         type=int,
         default=1,
-        help="Number of games to be played before exiting. "
-        "NetHack will auto-restart if > 1.",
+        help="Number of games to be played before exiting. " "NetHack will auto-restart if > 1.",
     )
     parser.add_argument(
         "--max-steps",
@@ -265,18 +252,14 @@ def main():
     parser.add_argument(
         "--seeds",
         default=None,
-        help="Seeds to send to NetHack. Can be a dict or int. "
-        "Defaults to None (no seeding).",
+        help="Seeds to send to NetHack. Can be a dict or int. " "Defaults to None (no seeding).",
     )
     parser.add_argument(
         "--savedir",
         default="nle_data/play_data",
-        help="Directory path where data will be saved. "
-        "Defaults to 'nle_data/play_data'.",
+        help="Directory path where data will be saved. " "Defaults to 'nle_data/play_data'.",
     )
-    parser.add_argument(
-        "--no-render", action="store_true", help="Disables env.render()."
-    )
+    parser.add_argument("--no-render", action="store_true", help="Disables env.render().")
     parser.add_argument(
         "--render_mode",
         type=str,
@@ -324,9 +307,7 @@ def main():
             flags.seeds = ast.literal_eval(flags.seeds)
 
         if flags.savedir == "args":
-            flags.savedir = "{}_{}_{}.zip".format(
-                time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env
-            )
+            flags.savedir = "{}_{}_{}.zip".format(time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env)
 
         play(**vars(flags))
 

@@ -47,9 +47,7 @@ GLYPH_TYPE_STRATEGIES = {
     "full": Targets(glyphs=True),
     "group_id": Targets(groups=True, subgroup_ids=True),
     "color_char": Targets(colors=True, chars=True, specials=True),
-    "all": Targets(
-        groups=True, subgroup_ids=True, colors=True, chars=True, specials=True
-    ),
+    "all": Targets(groups=True, subgroup_ids=True, colors=True, chars=True, specials=True),
     "all_cat": Targets(
         groups=1,
         subgroup_ids=3,
@@ -64,9 +62,7 @@ GLYPH_TYPE_STRATEGIES = {
 class GlyphEmbedding(nn.Module):
     """Take the glyph information and return an embedding vector."""
 
-    def __init__(
-        self, glyph_type, dimension, device=None, use_index_select=None
-    ):
+    def __init__(self, glyph_type, dimension, device=None, use_index_select=None):
         super(GlyphEmbedding, self).__init__()
         logging.debug("Emdedding on device: %s ", device)
         self.glyph_type = glyph_type
@@ -80,23 +76,17 @@ class GlyphEmbedding(nn.Module):
         self.strategy = strategy
 
         self._unit_dim = dimension // strategy.count_matrices()
-        self._remainder_dim = (
-            self.dim - self._unit_dim * strategy.count_matrices()
-        )
+        self._remainder_dim = self.dim - self._unit_dim * strategy.count_matrices()
 
         if self.requires_id_pairs_table:
-            self.register_buffer(
-                "_id_pairs_table", torch.from_numpy(id_pairs_table())
-            )
+            self.register_buffer("_id_pairs_table", torch.from_numpy(id_pairs_table()))
         else:
             self._id_pairs_table = None
 
         # Build our custom embedding matrices
         embed = {}
         if strategy.glyphs:
-            embed["glyphs"] = nn.Embedding(
-                nh.MAX_GLYPH, self._dim(strategy.glyphs)
-            )
+            embed["glyphs"] = nn.Embedding(nh.MAX_GLYPH, self._dim(strategy.glyphs))
         if strategy.colors:
             embed["colors"] = nn.Embedding(16, self._dim(strategy.colors))
         if strategy.chars:
@@ -105,25 +95,17 @@ class GlyphEmbedding(nn.Module):
             embed["specials"] = nn.Embedding(256, self._dim(strategy.specials))
         if strategy.groups:
             num_groups = self.id_pairs_table.select(1, 1).max().item() + 1
-            embed["groups"] = nn.Embedding(
-                num_groups, self._dim(strategy.groups)
-            )
+            embed["groups"] = nn.Embedding(num_groups, self._dim(strategy.groups))
         if strategy.subgroup_ids:
-            num_subgroup_ids = (
-                self.id_pairs_table.select(1, 0).max().item() + 1
-            )
-            embed["subgroup_ids"] = nn.Embedding(
-                num_subgroup_ids, self._dim(strategy.subgroup_ids)
-            )
+            num_subgroup_ids = self.id_pairs_table.select(1, 0).max().item() + 1
+            embed["subgroup_ids"] = nn.Embedding(num_subgroup_ids, self._dim(strategy.subgroup_ids))
 
         self.embeddings = nn.ModuleDict(embed)
         self.targets = list(embed.keys())
         self.GlyphTuple = namedtuple("GlyphTuple", self.targets)
 
         if strategy.do_linear_layer and strategy.count_matrices() > 1:
-            self.linear = nn.Linear(
-                strategy.count_matrices() * self.dim, self.dim
-            )
+            self.linear = nn.Linear(strategy.count_matrices() * self.dim, self.dim)
 
         if device is not None:
             self.to(device)
@@ -190,9 +172,7 @@ class GlyphEmbedding(nn.Module):
 
     def glyphs_to_idgroup(self, glyphs):
         T, B, H, W = glyphs.shape
-        ids_groups = self.id_pairs_table.index_select(
-            0, glyphs.view(-1).long()
-        )
+        ids_groups = self.id_pairs_table.index_select(0, glyphs.view(-1).long())
         ids = ids_groups.select(1, 0).view(T * B, H, W).long()
         groups = ids_groups.select(1, 1).view(T * B, H, W).long()
         return (ids, groups)

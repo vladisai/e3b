@@ -64,9 +64,7 @@ def _make_habitat_gym_env(
     config = baselines_get_config(cfg_file_path, override_options)
     env_class = get_env_class(config.ENV_NAME)
 
-    env = habitat_baselines.utils.env_utils.make_env_fn(
-        env_class=env_class, config=config
-    )
+    env = habitat_baselines.utils.env_utils.make_env_fn(env_class=env_class, config=config)
     env = HabGymWrapper(env)
     if use_render_mode:
         env = HabRenderWrapper(env)

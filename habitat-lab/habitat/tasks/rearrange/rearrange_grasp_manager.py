@@ -55,9 +55,7 @@ class RearrangeGraspManager:
         """Reset the grasp manager by re-defining the collision group and dropping any grasped object."""
         # Setup the collision groups. UserGroup7 is the held object group, it
         # can interact with anything except for the robot.
-        CollisionGroupHelper.set_mask_for_group(
-            CollisionGroups.UserGroup7, ~CollisionGroups.Robot
-        )
+        CollisionGroupHelper.set_mask_for_group(CollisionGroups.UserGroup7, ~CollisionGroups.Robot)
 
         self.desnap(True)
         self._leave_info = None
@@ -69,16 +67,12 @@ class RearrangeGraspManager:
         """
         ee_pos = self._sim.robot.ee_transform.translation
         if self._snapped_obj_id is not None and (
-            np.linalg.norm(ee_pos - self.snap_rigid_obj.translation)
-            >= self._config.HOLD_THRESH
+            np.linalg.norm(ee_pos - self.snap_rigid_obj.translation) >= self._config.HOLD_THRESH
         ):
             return True
         if self._snapped_marker_id is not None:
             marker = self._sim.get_marker(self._snapped_marker_id)
-            if (
-                np.linalg.norm(ee_pos - marker.get_current_position())
-                >= self._config.HOLD_THRESH
-            ):
+            if np.linalg.norm(ee_pos - marker.get_current_position()) >= self._config.HOLD_THRESH:
                 return True
 
         return False
@@ -86,10 +80,7 @@ class RearrangeGraspManager:
     @property
     def is_grasped(self) -> bool:
         """Returns whether or not an object is current grasped."""
-        return (
-            self._snapped_obj_id is not None
-            or self._snapped_marker_id is not None
-        )
+        return self._snapped_obj_id is not None or self._snapped_marker_id is not None
 
     def update(self) -> None:
         """Reset the collision group of the grasped object if its distance to the end effector exceeds a threshold.
@@ -100,11 +91,7 @@ class RearrangeGraspManager:
             ee_pos = self._sim.robot.ee_transform.translation
             dist = np.linalg.norm(ee_pos - self._leave_info[0])
             if dist >= self._leave_info[1]:
-                rigid_obj = (
-                    self._sim.get_rigid_object_manager().get_object_by_id(
-                        self._leave_info[2]
-                    )
-                )
+                rigid_obj = self._sim.get_rigid_object_manager().get_object_by_id(self._leave_info[2])
                 rigid_obj.override_collision_group(CollisionGroups.Default)
             self._leave_info = None
 
@@ -123,9 +110,7 @@ class RearrangeGraspManager:
             obj_bb = get_aabb(self.snap_idx, self._sim)
             if obj_bb is not None:
                 if force:
-                    self.snap_rigid_obj.override_collision_group(
-                        CollisionGroups.Default
-                    )
+                    self.snap_rigid_obj.override_collision_group(CollisionGroups.Default)
                 else:
                     self._leave_info = (
                         self.snap_rigid_obj.translation,
@@ -153,9 +138,7 @@ class RearrangeGraspManager:
     @property
     def snap_rigid_obj(self) -> ManagedRigidObject:
         """The grasped object instance."""
-        return self._sim.get_rigid_object_manager().get_object_by_id(
-            self._snapped_obj_id
-        )
+        return self._sim.get_rigid_object_manager().get_object_by_id(self._snapped_obj_id)
 
     def snap_to_marker(self, marker_name: str) -> None:
         """
@@ -169,9 +152,7 @@ class RearrangeGraspManager:
 
         if len(self._snap_constraints) != 0:
             # We were already grabbing something else.
-            raise ValueError(
-                f"Tried snapping to {marker_name} when already snapped"
-            )
+            raise ValueError(f"Tried snapping to {marker_name} when already snapped")
 
         marker = self._sim.get_marker(marker_name)
         self._snap_constraints = [
@@ -224,9 +205,7 @@ class RearrangeGraspManager:
 
         if len(self._snap_constraints) != 0:
             # We were already grabbing something else.
-            raise ValueError(
-                f"Tried snapping to {snap_obj_id} when already snapped to {self._snapped_obj_id}"
-            )
+            raise ValueError(f"Tried snapping to {snap_obj_id} when already snapped to {self._snapped_obj_id}")
 
         self._snapped_obj_id = snap_obj_id
 
@@ -236,9 +215,7 @@ class RearrangeGraspManager:
 
         # Set collision group to GraspedObject so that it doesn't collide
         # with the links of the robot.
-        self.snap_rigid_obj.override_collision_group(
-            CollisionGroups.UserGroup7
-        )
+        self.snap_rigid_obj.override_collision_group(CollisionGroups.UserGroup7)
 
         self._snap_constraints = [
             self.create_hold_constraint(

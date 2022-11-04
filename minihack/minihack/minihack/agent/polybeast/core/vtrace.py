@@ -70,9 +70,7 @@ def from_logits(
     """V-trace for softmax policies."""
 
     target_action_log_probs = action_log_probs(target_policy_logits, actions)
-    behavior_action_log_probs = action_log_probs(
-        behavior_policy_logits, actions
-    )
+    behavior_action_log_probs = action_log_probs(behavior_policy_logits, actions)
     log_rhos = target_action_log_probs - behavior_action_log_probs
     vtrace_returns = from_importance_weights(
         log_rhos=log_rhos,
@@ -111,12 +109,8 @@ def from_importance_weights(
 
         cs = torch.clamp(rhos, max=1.0)
         # Append bootstrapped value to get [v1, ..., v_t+1]
-        values_t_plus_1 = torch.cat(
-            [values[1:], torch.unsqueeze(bootstrap_value, 0)], dim=0
-        )
-        deltas = clipped_rhos * (
-            rewards + discounts * values_t_plus_1 - values
-        )
+        values_t_plus_1 = torch.cat([values[1:], torch.unsqueeze(bootstrap_value, 0)], dim=0)
+        deltas = clipped_rhos * (rewards + discounts * values_t_plus_1 - values)
 
         acc = torch.zeros_like(bootstrap_value)
         result = []
@@ -130,16 +124,12 @@ def from_importance_weights(
         vs = torch.add(vs_minus_v_xs, values)
 
         # Advantage for policy gradient.
-        vs_t_plus_1 = torch.cat(
-            [vs[1:], torch.unsqueeze(bootstrap_value, 0)], dim=0
-        )
+        vs_t_plus_1 = torch.cat([vs[1:], torch.unsqueeze(bootstrap_value, 0)], dim=0)
         if clip_pg_rho_threshold is not None:
             clipped_pg_rhos = torch.clamp(rhos, max=clip_pg_rho_threshold)
         else:
             clipped_pg_rhos = rhos
-        pg_advantages = clipped_pg_rhos * (
-            rewards + discounts * vs_t_plus_1 - values
-        )
+        pg_advantages = clipped_pg_rhos * (rewards + discounts * vs_t_plus_1 - values)
 
         # Make sure no gradients backpropagated through the returned values.
         return VTraceReturns(vs=vs, pg_advantages=pg_advantages)

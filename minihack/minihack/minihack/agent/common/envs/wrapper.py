@@ -75,9 +75,7 @@ class CropWrapper(gym.Wrapper):
         obs = self.last_observation
         tty_chars_crop = obs["tty_chars_crop"]
         tty_colors_crop = obs["tty_colors_crop"]
-        rendering = self.env.get_tty_rendering(
-            tty_chars_crop, tty_colors_crop, print_guides=True
-        )
+        rendering = self.env.get_tty_rendering(tty_chars_crop, tty_colors_crop, print_guides=True)
         print(rendering)
 
     def step(self, action):
@@ -98,9 +96,7 @@ class CropWrapper(gym.Wrapper):
                 mode="constant",
                 constant_values=self.pad,
             )
-            next_state[key + "_crop"] = obs[
-                y - dh : y + dh + 1, x - dw : x + dw + 1
-            ]
+            next_state[key + "_crop"] = obs[y - dh : y + dh + 1, x - dw : x + dw + 1]
 
         self.last_observation = next_state
 
@@ -158,10 +154,7 @@ class CachedEnvWrapper(gym.Env):
         self._readyqueue = queue.SimpleQueue()
 
         self._threads = [
-            threading.Thread(
-                target=target, args=(self._resetqueue, self._readyqueue)
-            )
-            for _ in range(num_threads)
+            threading.Thread(target=target, args=(self._resetqueue, self._readyqueue)) for _ in range(num_threads)
         ]
         for t in self._threads:
             t.start()

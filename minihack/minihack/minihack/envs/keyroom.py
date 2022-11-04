@@ -51,19 +51,12 @@ class MiniHackKeyDoor(MiniHackNavigation):
                     self.env.step(ord(key_key))  # choose key from the inv
                     self.env.step(dir_key)  # select the door's direction
                     obs, done = self.env.step(ord("y"))  # press y
-                    obs, done = self._perform_known_steps(
-                        obs, done, exceptions=True
-                    )
+                    obs, done = self._perform_known_steps(obs, done, exceptions=True)
                     # Make sure the door is open
                     while True:
                         obs, done = self.env.step(dir_key)
-                        obs, done = self._perform_known_steps(
-                            obs, done, exceptions=True
-                        )
-                        if (
-                            self.get_object_direction("closed door", obs)
-                            is None
-                        ):
+                        obs, done = self._perform_known_steps(obs, done, exceptions=True)
+                        if self.get_object_direction("closed door", obs) is None:
                             break
 
         obs, reward, done, info = super().step(action)
@@ -84,59 +77,44 @@ class MiniHackKeyRoom5x5Fixed(MiniHackKeyDoor):
 
 class MiniHackKeyRoom5x5(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, room_size=5, subroom_size=2, lit=True, **kwargs
-        )
+        super().__init__(*args, room_size=5, subroom_size=2, lit=True, **kwargs)
+
 
 class MiniHackKeyRoom10x10(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, room_size=10, subroom_size=3, lit=True, **kwargs
-        )
+        super().__init__(*args, room_size=10, subroom_size=3, lit=True, **kwargs)
+
 
 class MiniHackKeyRoom6x6(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, room_size=6, subroom_size=2, lit=True, **kwargs
-        )
-        
+        super().__init__(*args, room_size=6, subroom_size=2, lit=True, **kwargs)
+
 
 class MiniHackKeyRoom7x7(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, room_size=7, subroom_size=2, lit=True, **kwargs
-        )
+        super().__init__(*args, room_size=7, subroom_size=2, lit=True, **kwargs)
+
 
 class MiniHackKeyRoom5x5Pet(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, room_size=5, subroom_size=2, lit=True, pet=True, **kwargs
-        )
-        
-        
+        super().__init__(*args, room_size=5, subroom_size=2, lit=True, pet=True, **kwargs)
 
 
 class MiniHackKeyRoom5x5Dark(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, room_size=5, subroom_size=2, lit=False, **kwargs
-        )
+        super().__init__(*args, room_size=5, subroom_size=2, lit=False, **kwargs)
 
 
 class MiniHackKeyRoom15x15(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 400)
-        super().__init__(
-            *args, room_size=15, subroom_size=5, lit=True, **kwargs
-        )
+        super().__init__(*args, room_size=15, subroom_size=5, lit=True, **kwargs)
 
 
 class MiniHackKeyRoom15x15Dark(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 400)
-        super().__init__(
-            *args, room_size=15, subroom_size=5, lit=False, **kwargs
-        )
+        super().__init__(*args, room_size=15, subroom_size=5, lit=False, **kwargs)
 
 
 register(

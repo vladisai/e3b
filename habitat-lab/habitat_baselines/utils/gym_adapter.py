@@ -41,9 +41,7 @@ def smash_observation_space(obs_space, limit_keys):
         # Smash together
         total_dim = sum([shape[0] for shape in obs_shapes])
 
-        return spaces.Box(
-            shape=(total_dim,), low=-1.0, high=1.0, dtype=np.float32
-        )
+        return spaces.Box(shape=(total_dim,), low=-1.0, high=1.0, dtype=np.float32)
     return obs_space
 
 
@@ -88,9 +86,7 @@ class HabGymWrapper(gym.Env):
 
     def __init__(self, env, save_orig_obs: bool = False):
         self._gym_goal_keys = env._rl_config.get("GYM_DESIRED_GOAL_KEYS", [])
-        self._gym_achieved_goal_keys = env._rl_config.get(
-            "GYM_ACHIEVED_GOAL_KEYS", []
-        )
+        self._gym_achieved_goal_keys = env._rl_config.get("GYM_ACHIEVED_GOAL_KEYS", [])
         self._fix_info_dict = env._rl_config.get("GYM_FIX_INFO_DICT", True)
         self._gym_action_keys = env._rl_config.get("GYM_ACTION_KEYS", None)
         self._gym_obs_keys = env._rl_config.get("GYM_OBS_KEYS", None)
@@ -105,10 +101,7 @@ class HabGymWrapper(gym.Env):
             {
                 k: v
                 for k, v in action_space.spaces.items()
-                if (
-                    (self._gym_action_keys is None)
-                    or (k in self._gym_action_keys)
-                )
+                if ((self._gym_action_keys is None) or (k in self._gym_action_keys))
             }
         )
         self._last_obs: Optional[Observations] = None
@@ -116,9 +109,7 @@ class HabGymWrapper(gym.Env):
         self._save_orig_obs = save_orig_obs
         self.orig_obs = None
         if len(action_space.spaces) != 1:
-            raise ValueError(
-                "Cannot convert this action space, more than one action"
-            )
+            raise ValueError("Cannot convert this action space, more than one action")
 
         self.orig_action_name = list(action_space.spaces.keys())[0]
         action_space = action_space.spaces[self.orig_action_name]
@@ -138,27 +129,19 @@ class HabGymWrapper(gym.Env):
             self.action_mapping[name] = (start_i, end_i)
             start_i = end_i
 
-        self.action_space = spaces.Box(
-            shape=(end_i,), low=-1.0, high=1.0, dtype=np.float32
-        )
+        self.action_space = spaces.Box(shape=(end_i,), low=-1.0, high=1.0, dtype=np.float32)
 
-        self.observation_space = smash_observation_space(
-            env.observation_space, self._gym_obs_keys
-        )
+        self.observation_space = smash_observation_space(env.observation_space, self._gym_obs_keys)
 
         dict_space = {
             "observation": self.observation_space,
         }
 
         if len(self._gym_goal_keys) > 0:
-            dict_space["desired_goal"] = smash_observation_space(
-                env.observation_space, self._gym_goal_keys
-            )
+            dict_space["desired_goal"] = smash_observation_space(env.observation_space, self._gym_goal_keys)
 
         if len(self._gym_achieved_goal_keys) > 0:
-            dict_space["achieved_goal"] = smash_observation_space(
-                env.observation_space, self._gym_achieved_goal_keys
-            )
+            dict_space["achieved_goal"] = smash_observation_space(env.observation_space, self._gym_achieved_goal_keys)
 
         if len(dict_space) > 1:
             self.observation_space = spaces.Dict(dict_space)
@@ -188,9 +171,7 @@ class HabGymWrapper(gym.Env):
     def _is_space_flat(self, space_name):
         if isinstance(self.observation_space, spaces.Box):
             return True
-        return isinstance(
-            self.observation_space.spaces[space_name], spaces.Box
-        )
+        return isinstance(self.observation_space.spaces[space_name], spaces.Box)
 
     def _transform_obs(self, obs):
         if self._save_orig_obs:
@@ -201,9 +182,7 @@ class HabGymWrapper(gym.Env):
             observation["desired_goal"] = [obs[k] for k in self._gym_goal_keys]
 
         if len(self._gym_achieved_goal_keys) > 0:
-            observation["achieved_goal"] = [
-                obs[k] for k in self._gym_achieved_goal_keys
-            ]
+            observation["achieved_goal"] = [obs[k] for k in self._gym_achieved_goal_keys]
 
         for k, v in observation.items():
             if self._is_space_flat(k):
@@ -221,9 +200,7 @@ class HabGymWrapper(gym.Env):
     def render(self, mode: str = "rgb_array") -> np.ndarray:
         frame = None
         if mode == "rgb_array":
-            frame = observations_to_image(
-                self._last_obs, self._env._env.get_metrics()
-            )
+            frame = observations_to_image(self._last_obs, self._env._env.get_metrics())
         else:
             raise ValueError(f"Render mode {mode} not currently supported.")
 

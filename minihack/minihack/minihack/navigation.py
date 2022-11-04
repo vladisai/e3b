@@ -29,9 +29,7 @@ class MiniHackNavigation(MiniHack):
         # Actions space - move only by default
         kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
         # Disallowing one-letter menu questions
-        kwargs["allow_all_yn_questions"] = kwargs.pop(
-            "allow_all_yn_questions", False
-        )
+        kwargs["allow_all_yn_questions"] = kwargs.pop("allow_all_yn_questions", False)
         # Perform known steps
         kwargs["allow_all_modes"] = kwargs.pop("allow_all_modes", False)
         # Play with Rogue character by default

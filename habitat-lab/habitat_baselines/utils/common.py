@@ -45,19 +45,11 @@ cv2 = try_cv2_import()
 
 
 class CustomFixedCategorical(torch.distributions.Categorical):  # type: ignore
-    def sample(
-        self, sample_shape: Size = torch.Size()  # noqa: B008
-    ) -> Tensor:
+    def sample(self, sample_shape: Size = torch.Size()) -> Tensor:  # noqa: B008
         return super().sample(sample_shape).unsqueeze(-1)
 
     def log_probs(self, actions: Tensor) -> Tensor:
-        return (
-            super()
-            .log_prob(actions.squeeze(-1))
-            .view(actions.size(0), -1)
-            .sum(-1)
-            .unsqueeze(-1)
-        )
+        return super().log_prob(actions.squeeze(-1)).view(actions.size(0), -1).sum(-1).unsqueeze(-1)
 
     def mode(self):
         return self.probs.argmax(dim=-1, keepdim=True)
@@ -78,9 +70,7 @@ class CategoricalNet(nn.Module):
 
 
 class CustomNormal(torch.distributions.normal.Normal):
-    def sample(
-        self, sample_shape: Size = torch.Size()  # noqa: B008
-    ) -> Tensor:
+    def sample(self, sample_shape: Size = torch.Size()) -> Tensor:  # noqa: B008
         return super().rsample(sample_shape)
 
     def log_probs(self, actions) -> Tensor:
@@ -173,14 +163,8 @@ class ObservationBatchingCache:
         if key in self._pool:
             return self._pool[key]
 
-        cache = torch.empty(
-            num_obs, *sensor.size(), dtype=sensor.dtype, device=sensor.device
-        )
-        if (
-            device is not None
-            and device.type == "cuda"
-            and cache.device.type == "cpu"
-        ):
+        cache = torch.empty(num_obs, *sensor.size(), dtype=sensor.dtype, device=sensor.device)
+        if device is not None and device.type == "cuda" and cache.device.type == "cpu":
             cache = cache.pin_memory()
 
         if cache.device.type == "cpu":
@@ -222,9 +206,7 @@ def batch_obs(
     # Order sensors by size, stack and move the largest first
     sensor_names = sorted(
         obs.keys(),
-        key=lambda name: 1
-        if isinstance(obs[name], numbers.Number)
-        else np.prod(obs[name].shape),  # type: ignore
+        key=lambda name: 1 if isinstance(obs[name], numbers.Number) else np.prod(obs[name].shape),  # type: ignore
         reverse=True,
     )
 
@@ -266,9 +248,7 @@ def batch_obs(
             if isinstance(batch_t[sensor_name], np.ndarray):
                 batch_t[sensor_name] = torch.from_numpy(batch_t[sensor_name])
 
-            batch_t[sensor_name] = batch_t[sensor_name].to(  # type: ignore
-                device, non_blocking=True
-            )
+            batch_t[sensor_name] = batch_t[sensor_name].to(device, non_blocking=True)  # type: ignore
 
     if cache is None:
         for sensor in batch:
@@ -296,9 +276,7 @@ def get_checkpoint_id(ckpt_path: str) -> Optional[int]:
     return None
 
 
-def poll_checkpoint_folder(
-    checkpoint_folder: str, previous_ckpt_ind: int
-) -> Optional[str]:
+def poll_checkpoint_folder(checkpoint_folder: str, previous_ckpt_ind: int) -> Optional[str]:
     r"""Return (previous_ckpt_ind + 1)th checkpoint in checkpoint folder
     (sorted by time of last modification).
 
@@ -310,12 +288,8 @@ def poll_checkpoint_folder(
         return checkpoint path if (previous_ckpt_ind + 1)th checkpoint is found
         else return None.
     """
-    assert os.path.isdir(checkpoint_folder), (
-        f"invalid checkpoint folder " f"path {checkpoint_folder}"
-    )
-    models_paths = list(
-        filter(os.path.isfile, glob.glob(checkpoint_folder + "/*"))
-    )
+    assert os.path.isdir(checkpoint_folder), f"invalid checkpoint folder " f"path {checkpoint_folder}"
+    models_paths = list(filter(os.path.isfile, glob.glob(checkpoint_folder + "/*")))
     models_paths.sort(key=os.path.getmtime)
     ind = previous_ckpt_ind + 1
     if ind < len(models_paths):
@@ -356,21 +330,15 @@ def generate_video(
     for k, v in metrics.items():
         metric_strs.append(f"{k}={v:.2f}")
 
-    video_name = f"episode={episode_id}-ckpt={checkpoint_idx}-" + "-".join(
-        metric_strs
-    )
+    video_name = f"episode={episode_id}-ckpt={checkpoint_idx}-" + "-".join(metric_strs)
     if "disk" in video_option:
         assert video_dir is not None
         images_to_video(images, video_dir, video_name, verbose=verbose)
     if "tensorboard" in video_option:
-        tb_writer.add_video_from_np_images(
-            f"episode{episode_id}", checkpoint_idx, images, fps=fps
-        )
+        tb_writer.add_video_from_np_images(f"episode{episode_id}", checkpoint_idx, images, fps=fps)
 
 
-def tensor_to_depth_images(
-    tensor: Union[torch.Tensor, List]
-) -> List[np.ndarray]:
+def tensor_to_depth_images(tensor: Union[torch.Tensor, List]) -> List[np.ndarray]:
     r"""Converts tensor (or list) of n image tensors to list of n images.
     Args:
         tensor: tensor containing n image tensors
@@ -386,9 +354,7 @@ def tensor_to_depth_images(
     return images
 
 
-def tensor_to_bgr_images(
-    tensor: Union[torch.Tensor, Iterable[torch.Tensor]]
-) -> List[np.ndarray]:
+def tensor_to_bgr_images(tensor: Union[torch.Tensor, Iterable[torch.Tensor]]) -> List[np.ndarray]:
     r"""Converts tensor of n image tensors to list of n BGR images.
     Args:
         tensor: tensor containing n image tensors
@@ -406,9 +372,7 @@ def tensor_to_bgr_images(
     return images
 
 
-def image_resize_shortest_edge(
-    img: Tensor, size: int, channels_last: bool = False
-) -> torch.Tensor:
+def image_resize_shortest_edge(img: Tensor, size: int, channels_last: bool = False) -> torch.Tensor:
     """Resizes an img so that the shortest side is length of size while
         preserving aspect ratio.
 
@@ -438,9 +402,7 @@ def image_resize_shortest_edge(
     scale = size / min(h, w)
     h = int(h * scale)
     w = int(w * scale)
-    img = torch.nn.functional.interpolate(
-        img.float(), size=(h, w), mode="area"
-    ).to(dtype=img.dtype)
+    img = torch.nn.functional.interpolate(img.float(), size=(h, w), mode="area").to(dtype=img.dtype)
     if channels_last:
         if len(img.shape) == 4:
             # NCHW -> NHWC
@@ -453,9 +415,7 @@ def image_resize_shortest_edge(
     return img
 
 
-def center_crop(
-    img: Tensor, size: Union[int, Tuple[int, int]], channels_last: bool = False
-) -> Tensor:
+def center_crop(img: Tensor, size: Union[int, Tuple[int, int]], channels_last: bool = False) -> Tensor:
     """Performs a center crop on an image.
 
     Args:
@@ -482,9 +442,7 @@ def center_crop(
         return img[..., starty : starty + cropy, startx : startx + cropx]
 
 
-def get_image_height_width(
-    img: Union[Box, np.ndarray, torch.Tensor], channels_last: bool = False
-) -> Tuple[int, int]:
+def get_image_height_width(img: Union[Box, np.ndarray, torch.Tensor], channels_last: bool = False) -> Tuple[int, int]:
     if img.shape is None or len(img.shape) < 3 or len(img.shape) > 5:
         raise NotImplementedError()
     if channels_last:
@@ -543,9 +501,7 @@ def valid_sample(sample: Optional[Any]) -> bool:
     )
 
 
-def img_bytes_2_np_array(
-    x: Tuple[int, torch.Tensor, bytes]
-) -> Tuple[int, torch.Tensor, bytes, np.ndarray]:
+def img_bytes_2_np_array(x: Tuple[int, torch.Tensor, bytes]) -> Tuple[int, torch.Tensor, bytes, np.ndarray]:
     """Mapper function to convert image bytes in webdataset sample to numpy
     arrays.
     Args:

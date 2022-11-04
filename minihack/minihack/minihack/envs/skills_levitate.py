@@ -19,9 +19,7 @@ class MiniHackLevitate(MiniHackSkill):
         rwrd_mngr = RewardManager()
         rwrd_mngr.add_message_event(levitation_msg)
 
-        super().__init__(
-            *args, des_file=des_file, reward_manager=rwrd_mngr, **kwargs
-        )
+        super().__init__(*args, des_file=des_file, reward_manager=rwrd_mngr, **kwargs)
 
 
 class MiniHackLevitateBoots(MiniHackLevitate):
@@ -39,22 +37,20 @@ class MiniHackLevitateBootsRestrictedActions(MiniHackLevitate):
         lvl_gen.add_object("levitation boots", "[", cursestate="blessed")
         des_file = lvl_gen.get_des()
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.WEAR, \
-                                                     nethack.Command.FIRE)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.WEAR,
+            nethack.Command.FIRE,
+        )
         kwargs["actions"] = ACTIONS
-        
 
         super().__init__(*args, des_file=des_file, **kwargs)
-        
 
 
 class MiniHackLevitateBootsFixed(MiniHackLevitate):
     def __init__(self, *args, **kwargs):
         lvl_gen = LevelGenerator(w=5, h=5, lit=True)
-        lvl_gen.add_object(
-            "levitation boots", "[", place=(0, 0), cursestate="blessed"
-        )
+        lvl_gen.add_object("levitation boots", "[", place=(0, 0), cursestate="blessed")
         lvl_gen.set_start_pos((2, 2))
         des_file = lvl_gen.get_des()
 
@@ -76,23 +72,21 @@ class MiniHackLevitateRingRestrictedActions(MiniHackLevitate):
         lvl_gen.add_object("levitation", "=", cursestate="blessed")
         des_file = lvl_gen.get_des()
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.PUTON, \
-                                                     nethack.Command.FIRE, \
-                                                     nethack.Command.READ)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.PUTON,
+            nethack.Command.FIRE,
+            nethack.Command.READ,
+        )
         kwargs["actions"] = ACTIONS
-        
 
         super().__init__(*args, des_file=des_file, **kwargs)
-        
 
 
 class MiniHackLevitateRingFixed(MiniHackLevitate):
     def __init__(self, *args, **kwargs):
         lvl_gen = LevelGenerator(w=5, h=5, lit=True)
-        lvl_gen.add_object(
-            "levitation", "=", place=(0, 0), cursestate="blessed"
-        )
+        lvl_gen.add_object("levitation", "=", place=(0, 0), cursestate="blessed")
         lvl_gen.set_start_pos((2, 2))
         des_file = lvl_gen.get_des()
 
@@ -114,22 +108,20 @@ class MiniHackLevitatePotionRestrictedActions(MiniHackLevitate):
         lvl_gen.add_object("levitation", "!", cursestate="blessed")
         des_file = lvl_gen.get_des()
 
-        ACTIONS = tuple(nethack.CompassDirection) + (nethack.Command.PICKUP, \
-                                                     nethack.Command.QUAFF, \
-                                                     nethack.Command.FIRE)
+        ACTIONS = tuple(nethack.CompassDirection) + (
+            nethack.Command.PICKUP,
+            nethack.Command.QUAFF,
+            nethack.Command.FIRE,
+        )
         kwargs["actions"] = ACTIONS
-        
 
         super().__init__(*args, des_file=des_file, **kwargs)
-        
 
 
 class MiniHackLevitatePotionFixed(MiniHackLevitate):
     def __init__(self, *args, **kwargs):
         lvl_gen = LevelGenerator(w=5, h=5, lit=True)
-        lvl_gen.add_object(
-            "levitation", "!", place=(0, 0), cursestate="blessed"
-        )
+        lvl_gen.add_object("levitation", "!", place=(0, 0), cursestate="blessed")
         lvl_gen.set_start_pos((2, 2))
         des_file = lvl_gen.get_des()
 

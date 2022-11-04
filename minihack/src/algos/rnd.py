@@ -31,21 +31,24 @@ from src.utils import get_batch, log, create_env, create_buffers, act
 
 NetHackStateEmbeddingNet = models.NetHackStateEmbeddingNet
 
-def learn(actor_model,
-          model,
-          random_target_network,
-          predictor_network,
-          batch,
-          initial_agent_state, 
-          optimizer,
-          predictor_optimizer,
-          scheduler,
-          flags,
-          frames=None,
-          lock=threading.Lock()):
+
+def learn(
+    actor_model,
+    model,
+    random_target_network,
+    predictor_network,
+    batch,
+    initial_agent_state,
+    optimizer,
+    predictor_optimizer,
+    scheduler,
+    flags,
+    frames=None,
+    lock=threading.Lock(),
+):
     """Performs a learning (optimization) step."""
     with lock:
-        '''
+        """
         if flags.use_fullobs_intrinsic:
             random_embedding = random_target_network(batch, next_state=True)\
                     .reshape(flags.unroll_length, flags.batch_size, 128)        
@@ -54,7 +57,7 @@ def learn(actor_model,
         else:
             random_embedding = random_target_network(batch['partial_obs'][1:].to(device=flags.device))
             predicted_embedding = predictor_network(batch['partial_obs'][1:].to(device=flags.device))
-        '''
+        """
 
         random_embedding, _ = random_target_network(batch, tuple())
         predicted_embedding, _ = predictor_network(batch, tuple())
@@ -64,68 +67,69 @@ def learn(actor_model,
         intrinsic_rewards = torch.norm(predicted_embedding.detach() - random_embedding.detach(), dim=2, p=2)
 
         intrinsic_reward_coef = flags.intrinsic_reward_coef
-        intrinsic_rewards *= intrinsic_reward_coef 
-        
+        intrinsic_rewards *= intrinsic_reward_coef
+
         num_samples = flags.unroll_length * flags.batch_size
-        actions_flat = batch['action'][1:].reshape(num_samples).cpu().detach().numpy()
+        actions_flat = batch["action"][1:].reshape(num_samples).cpu().detach().numpy()
         intrinsic_rewards_flat = intrinsic_rewards.reshape(num_samples).cpu().detach().numpy()
 
-        rnd_loss = flags.rnd_loss_coef * \
-                losses.compute_forward_dynamics_loss(predicted_embedding, random_embedding.detach()) 
-            
+        rnd_loss = flags.rnd_loss_coef * losses.compute_forward_dynamics_loss(
+            predicted_embedding, random_embedding.detach()
+        )
+
         learner_outputs, unused_state = model(batch, initial_agent_state)
 
-        bootstrap_value = learner_outputs['baseline'][-1]
+        bootstrap_value = learner_outputs["baseline"][-1]
 
         batch = {key: tensor[1:] for key, tensor in batch.items()}
-        learner_outputs = {
-            key: tensor[:-1]
-            for key, tensor in learner_outputs.items()
-        }
-        
-        rewards = batch['reward']
-            
+        learner_outputs = {key: tensor[:-1] for key, tensor in learner_outputs.items()}
+
+        rewards = batch["reward"]
+
         if flags.no_reward:
             total_rewards = intrinsic_rewards
-        else:            
+        else:
             total_rewards = rewards + intrinsic_rewards
         clipped_rewards = torch.clamp(total_rewards, -1, 1)
-        
-        discounts = (~batch['done']).float() * flags.discounting
+
+        discounts = (~batch["done"]).float() * flags.discounting
 
         vtrace_returns = vtrace.from_logits(
-            behavior_policy_logits=batch['policy_logits'],
-            target_policy_logits=learner_outputs['policy_logits'],
-            actions=batch['action'],
+            behavior_policy_logits=batch["policy_logits"],
+            target_policy_logits=learner_outputs["policy_logits"],
+            actions=batch["action"],
             discounts=discounts,
             rewards=clipped_rewards,
-            values=learner_outputs['baseline'],
-            bootstrap_value=bootstrap_value)
+            values=learner_outputs["baseline"],
+            bootstrap_value=bootstrap_value,
+        )
 
-        pg_loss = losses.compute_policy_gradient_loss(learner_outputs['policy_logits'],
-                                               batch['action'],
-                                               vtrace_returns.pg_advantages)
+        pg_loss = losses.compute_policy_gradient_loss(
+            learner_outputs["policy_logits"],
+            batch["action"],
+            vtrace_returns.pg_advantages,
+        )
         baseline_loss = flags.baseline_cost * losses.compute_baseline_loss(
-            vtrace_returns.vs - learner_outputs['baseline'])
-        entropy_loss = flags.entropy_cost * losses.compute_entropy_loss(
-            learner_outputs['policy_logits'])
+            vtrace_returns.vs - learner_outputs["baseline"]
+        )
+        entropy_loss = flags.entropy_cost * losses.compute_entropy_loss(learner_outputs["policy_logits"])
 
         total_loss = pg_loss + baseline_loss + entropy_loss + rnd_loss
 
-        episode_returns = batch['episode_return'][batch['done']]
+        episode_returns = batch["episode_return"][batch["done"]]
         stats = {
-            'mean_episode_return': torch.mean(episode_returns).item(),
-            'total_loss': total_loss.item(),
-            'pg_loss': pg_loss.item(),
-            'baseline_loss': baseline_loss.item(),
-            'entropy_loss': entropy_loss.item(),
-            'rnd_loss': rnd_loss.item(),
-            'mean_rewards': torch.mean(rewards).item(),
-            'mean_intrinsic_rewards': torch.mean(intrinsic_rewards).item(),
-            'mean_total_rewards': torch.mean(total_rewards).item(),
+            "mean_episode_return": torch.mean(episode_returns).item(),
+            "total_loss": total_loss.item(),
+            "pg_loss": pg_loss.item(),
+            "baseline_loss": baseline_loss.item(),
+            "entropy_loss": entropy_loss.item(),
+            "rnd_loss": rnd_loss.item(),
+            "mean_rewards": torch.mean(rewards).item(),
+            "mean_intrinsic_rewards": torch.mean(intrinsic_rewards).item(),
+            "mean_total_rewards": torch.mean(total_rewards).item(),
         }
-        
-#        scheduler.step()
+
+        #        scheduler.step()
         optimizer.zero_grad()
         predictor_optimizer.zero_grad()
         total_loss.backward()
@@ -138,59 +142,53 @@ def learn(actor_model,
         return stats
 
 
-def train(flags):  
-#    if flags.xpid is None:
-#        flags.xpid = 'rnd-%s' % time.strftime('%Y%m%d-%H%M%S')
+def train(flags):
+    #    if flags.xpid is None:
+    #        flags.xpid = 'rnd-%s' % time.strftime('%Y%m%d-%H%M%S')
 
-
-    xpid = ''
-    xpid += f'env_{flags.env}'
-    xpid += f'model_{flags.model}'
-    xpid += f'-lr_{flags.learning_rate}'
-    xpid += f'-entropy_{flags.entropy_cost}'
-    xpid += f'-intweight_{flags.intrinsic_reward_coef}'
-    xpid += f'-seed_{flags.seed}'
+    xpid = ""
+    xpid += f"env_{flags.env}"
+    xpid += f"model_{flags.model}"
+    xpid += f"-lr_{flags.learning_rate}"
+    xpid += f"-entropy_{flags.entropy_cost}"
+    xpid += f"-intweight_{flags.intrinsic_reward_coef}"
+    xpid += f"-seed_{flags.seed}"
 
     flags.xpid = xpid
-    
+
     plogger = file_writer.FileWriter(
         xpid=flags.xpid,
         xp_args=flags.__dict__,
         rootdir=flags.savedir,
     )
 
-    checkpointpath = os.path.expandvars(
-        os.path.expanduser('%s/%s/%s' % (flags.savedir, flags.xpid,
-                                         'model.tar')))
+    checkpointpath = os.path.expandvars(os.path.expanduser("%s/%s/%s" % (flags.savedir, flags.xpid, "model.tar")))
 
     T = flags.unroll_length
     B = flags.batch_size
 
     flags.device = None
     if not flags.disable_cuda and torch.cuda.is_available():
-        log.info('Using CUDA.')
-        flags.device = torch.device('cuda')
+        log.info("Using CUDA.")
+        flags.device = torch.device("cuda")
     else:
-        log.info('Not using CUDA.')
-        flags.device = torch.device('cpu')
+        log.info("Not using CUDA.")
+        flags.device = torch.device("cpu")
 
     env = create_env(flags)
     if flags.num_input_frames > 1:
-        env = FrameStack(env, flags.num_input_frames)  
+        env = FrameStack(env, flags.num_input_frames)
 
-
-    if 'MiniHack' in flags.env:
+    if "MiniHack" in flags.env:
         model = models.NetHackPolicyNet(env.observation_space, env.action_space.n, flags.use_lstm)
         random_target_network = NetHackStateEmbeddingNet(env.observation_space, False).to(flags.device)
         predictor_network = NetHackStateEmbeddingNet(env.observation_space, False).to(flags.device)
 
-    elif 'Vizdoom' in flags.env:
+    elif "Vizdoom" in flags.env:
         model = models.MarioDoomPolicyNet(env.observation_space.shape, env.action_space.n)
         state_embedding_model = models.MarioDoomStateEmbeddingNet(env.observation_space.shape).to(flags.device)
 
-
-        
-    '''
+    """
     if 'MiniGrid' in flags.env: 
         if flags.use_fullobs_policy:
             model = FullObsMinigridPolicyNet(env.observation_space.shape, env.action_space.n)                        
@@ -206,12 +204,12 @@ def train(flags):
         model = MarioDoomPolicyNet(env.observation_space.shape, env.action_space.n)
         random_target_network = MarioDoomStateEmbeddingNet(env.observation_space.shape).to(device=flags.device) 
         predictor_network = MarioDoomStateEmbeddingNet(env.observation_space.shape).to(device=flags.device) 
-    '''
-    
+    """
+
     buffers = create_buffers(env.observation_space, model.num_actions, flags)
-    
+
     model.share_memory()
-    
+
     initial_agent_state_buffers = []
     for _ in range(flags.num_buffers):
         state = model.initial_state(batch_size=1)
@@ -220,7 +218,7 @@ def train(flags):
         initial_agent_state_buffers.append(state)
 
     actor_processes = []
-    ctx = mp.get_context('fork')
+    ctx = mp.get_context("fork")
     free_queue = ctx.SimpleQueue()
     full_queue = ctx.SimpleQueue()
 
@@ -229,20 +227,32 @@ def train(flags):
     for i in range(flags.num_actors):
         actor = ctx.Process(
             target=act,
-            args=(i, free_queue, full_queue, model, None, buffers, 
-                episode_state_count_dict, 
-                initial_agent_state_buffers, flags))
+            args=(
+                i,
+                free_queue,
+                full_queue,
+                model,
+                None,
+                buffers,
+                episode_state_count_dict,
+                initial_agent_state_buffers,
+                flags,
+            ),
+        )
         actor.start()
         actor_processes.append(actor)
 
-
-    if 'MiniHack' in flags.env:
-        learner_model = models.NetHackPolicyNet(env.observation_space, env.action_space.n, flags.use_lstm, hidden_dim=flags.hidden_dim).to(flags.device)
-    elif 'Vizdoom' in flags.env:
+    if "MiniHack" in flags.env:
+        learner_model = models.NetHackPolicyNet(
+            env.observation_space,
+            env.action_space.n,
+            flags.use_lstm,
+            hidden_dim=flags.hidden_dim,
+        ).to(flags.device)
+    elif "Vizdoom" in flags.env:
         learner_model = models.MarioDoomPolicyNet(env.observation_space.shape, env.action_space.n).to(flags.device)
 
-        
-    '''
+    """
     if 'MiniGrid' in flags.env: 
         if flags.use_fullobs_policy:
             learner_model = FullObsMinigridPolicyNet(env.observation_space.shape, env.action_space.n)\
@@ -253,45 +263,45 @@ def train(flags):
     else:
         learner_model = MarioDoomPolicyNet(env.observation_space.shape, env.action_space.n)\
             .to(device=flags.device)
-    '''
+    """
 
     optimizer = torch.optim.RMSprop(
         learner_model.parameters(),
         lr=flags.learning_rate,
         momentum=flags.momentum,
         eps=flags.epsilon,
-        alpha=flags.alpha)
-    
+        alpha=flags.alpha,
+    )
+
     predictor_optimizer = torch.optim.RMSprop(
         predictor_network.parameters(),
         lr=flags.learning_rate,
         momentum=flags.momentum,
         eps=flags.epsilon,
-        alpha=flags.alpha)
-    
+        alpha=flags.alpha,
+    )
 
     def lr_lambda(epoch):
         return 1 - min(epoch * T * B, flags.total_frames) / flags.total_frames
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-    logger = logging.getLogger('logfile')
+    logger = logging.getLogger("logfile")
     stat_keys = [
-        'total_loss',
-        'mean_episode_return',
-        'pg_loss',
-        'baseline_loss',
-        'entropy_loss',
-        'rnd_loss',
-        'mean_rewards',
-        'mean_intrinsic_rewards',
-        'mean_total_rewards',
+        "total_loss",
+        "mean_episode_return",
+        "pg_loss",
+        "baseline_loss",
+        "entropy_loss",
+        "rnd_loss",
+        "mean_rewards",
+        "mean_intrinsic_rewards",
+        "mean_total_rewards",
     ]
 
-    logger.info('# Step\t%s', '\t'.join(stat_keys))
+    logger.info("# Step\t%s", "\t".join(stat_keys))
 
     frames, stats = 0, {}
-
 
     def batch_and_learn(i, lock=threading.Lock()):
         """Thread target for the learning process."""
@@ -299,12 +309,28 @@ def train(flags):
         timings = prof.Timings()
         while frames < flags.total_frames:
             timings.reset()
-            batch, agent_state = get_batch(free_queue, full_queue, buffers, 
-                initial_agent_state_buffers, flags, timings)
-            stats = learn(model, learner_model, random_target_network, predictor_network,
-                          batch, agent_state, optimizer, predictor_optimizer, scheduler, 
-                          flags, frames=frames)
-            timings.time('learn')
+            batch, agent_state = get_batch(
+                free_queue,
+                full_queue,
+                buffers,
+                initial_agent_state_buffers,
+                flags,
+                timings,
+            )
+            stats = learn(
+                model,
+                learner_model,
+                random_target_network,
+                predictor_network,
+                batch,
+                agent_state,
+                optimizer,
+                predictor_optimizer,
+                scheduler,
+                flags,
+                frames=frames,
+            )
+            timings.time("learn")
             with lock:
                 to_log = dict(frames=frames)
                 to_log.update({k: stats[k] for k in stat_keys})
@@ -312,34 +338,34 @@ def train(flags):
                 frames += T * B
 
         if i == 0:
-            log.info('Batch and learn: %s', timings.summary())
+            log.info("Batch and learn: %s", timings.summary())
 
     for m in range(flags.num_buffers):
         free_queue.put(m)
 
-    threads = []    
+    threads = []
     for i in range(flags.num_threads):
-        thread = threading.Thread(
-            target=batch_and_learn, name='batch-and-learn-%d' % i, args=(i,))
+        thread = threading.Thread(target=batch_and_learn, name="batch-and-learn-%d" % i, args=(i,))
         thread.start()
         threads.append(thread)
-
 
     def checkpoint(frames):
         if flags.disable_checkpoint:
             return
-        checkpointpath = os.path.expandvars(os.path.expanduser(
-            '%s/%s/%s' % (flags.savedir, flags.xpid,'model.tar')))
-        log.info('Saving checkpoint to %s', checkpointpath)
-        torch.save({
-            'model_state_dict': model.state_dict(),
-            'random_target_network_state_dict': random_target_network.state_dict(),
-            'predictor_network_state_dict': predictor_network.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'predictor_optimizer_state_dict': predictor_optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
-            'flags': vars(flags),
-        }, checkpointpath)
+        checkpointpath = os.path.expandvars(os.path.expanduser("%s/%s/%s" % (flags.savedir, flags.xpid, "model.tar")))
+        log.info("Saving checkpoint to %s", checkpointpath)
+        torch.save(
+            {
+                "model_state_dict": model.state_dict(),
+                "random_target_network_state_dict": random_target_network.state_dict(),
+                "predictor_network_state_dict": predictor_network.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "predictor_optimizer_state_dict": predictor_optimizer.state_dict(),
+                "scheduler_state_dict": scheduler.state_dict(),
+                "flags": vars(flags),
+            },
+            checkpointpath,
+        )
 
     timer = timeit.default_timer
     try:
@@ -349,29 +375,34 @@ def train(flags):
             start_time = timer()
             time.sleep(5)
 
-            if timer() - last_checkpoint_time > flags.save_interval * 60:  
+            if timer() - last_checkpoint_time > flags.save_interval * 60:
                 checkpoint(frames)
                 last_checkpoint_time = timer()
 
             fps = (frames - start_frames) / (timer() - start_time)
-            
-            if stats.get('episode_returns', None):
-                mean_return = 'Return per episode: %.1f. ' % stats[
-                    'mean_episode_return']
-            else:
-                mean_return = ''
 
-            total_loss = stats.get('total_loss', float('inf'))
+            if stats.get("episode_returns", None):
+                mean_return = "Return per episode: %.1f. " % stats["mean_episode_return"]
+            else:
+                mean_return = ""
+
+            total_loss = stats.get("total_loss", float("inf"))
             if stats:
-                log.info('After %i frames: loss %f @ %.1f fps. Mean Return %.1f. \n Stats \n %s', \
-                        frames, total_loss, fps, stats['mean_episode_return'], pprint.pformat(stats))
+                log.info(
+                    "After %i frames: loss %f @ %.1f fps. Mean Return %.1f. \n Stats \n %s",
+                    frames,
+                    total_loss,
+                    fps,
+                    stats["mean_episode_return"],
+                    pprint.pformat(stats),
+                )
 
     except KeyboardInterrupt:
-        return  
+        return
     else:
         for thread in threads:
             thread.join()
-        log.info('Learning finished after %d frames.', frames)
+        log.info("Learning finished after %d frames.", frames)
     finally:
         for _ in range(flags.num_actors):
             free_queue.put(None)

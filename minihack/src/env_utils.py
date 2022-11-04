@@ -4,8 +4,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-import gym 
-import torch 
+import gym
+import torch
 from collections import deque, defaultdict
 from gym import spaces
 import numpy as np
@@ -21,8 +21,8 @@ def _format_observation_vizdoom(obs):
 
 def _format_observations_nethack(observation, keys=("glyphs", "blstats", "message")):
     observations = {}
-    if 'state_visits' in observation.keys():
-        keys += ('state_visits',)
+    if "state_visits" in observation.keys():
+        keys += ("state_visits",)
 
     for key in keys:
         entry = observation[key]
@@ -30,7 +30,6 @@ def _format_observations_nethack(observation, keys=("glyphs", "blstats", "messag
         entry = entry.view((1, 1) + entry.shape)  # (...) -> (T,B,...).
         observations[key] = entry
     return observations
-
 
 
 class Environment:
@@ -43,7 +42,7 @@ class Environment:
         self.env_seed = env_seed
 
     def get_partial_obs(self):
-        return self.gym_env.env.env.gen_obs()['image']
+        return self.gym_env.env.env.gen_obs()["image"]
 
     def initial(self):
         initial_reward = torch.zeros(1, 1)
@@ -75,25 +74,25 @@ class Environment:
                 episode_return=self.episode_return,
                 episode_step=self.episode_step,
             )
-        
+
     def step(self, action):
         if not isinstance(action, int):
             action = action.item()
-            
+
         frame, reward, done, _ = self.gym_env.step(action)
 
         self.episode_step += 1
         episode_step = self.episode_step
 
         self.episode_return += reward
-        episode_return = self.episode_return 
+        episode_return = self.episode_return
 
         if done and reward > 0:
-            self.episode_win[0][0] = 1 
+            self.episode_win[0][0] = 1
         else:
-            self.episode_win[0][0] = 0 
-        episode_win = self.episode_win 
-        
+            self.episode_win[0][0] = 0
+        episode_win = self.episode_win
+
         if done:
             if self.fix_seed:
                 self.gym_env.seed(seed=self.env_seed)
@@ -105,33 +104,31 @@ class Environment:
         if type(frame) is dict:
             frame = _format_observations_nethack(frame)
             reward = torch.tensor(reward).view(1, 1)
-            done = torch.tensor(done).view(1, 1)        
+            done = torch.tensor(done).view(1, 1)
             carried_col, carried_obj = torch.LongTensor([[5]]), torch.LongTensor([[1]])
 
-            
             frame.update(
                 reward=reward,
                 done=done,
                 episode_return=episode_return,
-                episode_step = episode_step,
+                episode_step=episode_step,
             )
             return frame
-                
+
         else:
             frame = _format_observation_vizdoom(frame)
             reward = torch.tensor(reward).view(1, 1)
             done = torch.tensor(done).view(1, 1).bool()
-            
+
             return dict(
                 frame=frame,
                 reward=reward,
                 done=done,
                 episode_return=episode_return,
-                episode_step = episode_step,
-                episode_win = episode_win,
+                episode_step=episode_step,
+                episode_win=episode_win,
             )
 
-            
     def close(self):
         self.gym_env.close()
 
@@ -152,7 +149,8 @@ class FrameStack(gym.Wrapper):
             low=0,
             high=255,
             shape=(shp[:-1] + (shp[-1] * k,)),
-            dtype=env.observation_space.dtype)
+            dtype=env.observation_space.dtype,
+        )
 
     def reset(self):
         ob = self.env.reset()

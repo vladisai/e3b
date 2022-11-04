@@ -106,12 +106,8 @@ class MultitaskCNN(nn.Module):
 
         if self.only_encoder:
             if pretrained:
-                logger.info(
-                    "Loading CNN weights from {}".format(checkpoint_path)
-                )
-                checkpoint = torch.load(
-                    checkpoint_path, map_location={"cuda:0": "cpu"}
-                )
+                logger.info("Loading CNN weights from {}".format(checkpoint_path))
+                checkpoint = torch.load(checkpoint_path, map_location={"cuda:0": "cpu"})
                 self.load_state_dict(checkpoint)
 
                 if freeze_encoder:
@@ -120,11 +116,7 @@ class MultitaskCNN(nn.Module):
         else:
             for m in self.modules():
                 if isinstance(m, nn.Conv2d):
-                    n = (
-                        m.kernel_size[0]
-                        * m.kernel_size[1]
-                        * (m.out_channels + m.in_channels)
-                    )
+                    n = m.kernel_size[0] * m.kernel_size[1] * (m.out_channels + m.in_channels)
                     m.weight.data.normal_(0, math.sqrt(2.0 / n))
                 elif isinstance(m, nn.BatchNorm2d):
                     m.weight.data.fill_(1)
@@ -168,9 +160,7 @@ class MultitaskCNN(nn.Module):
             align_corners=True,
         )
         score_seg += score_pool2_seg
-        out_seg = F.interpolate(
-            score_seg, x.size()[2:], mode="bilinear", align_corners=True
-        )
+        out_seg = F.interpolate(score_seg, x.size()[2:], mode="bilinear", align_corners=True)
 
         score_depth = F.interpolate(
             encoder_output_depth,
@@ -186,11 +176,7 @@ class MultitaskCNN(nn.Module):
             align_corners=True,
         )
         score_depth += score_pool2_depth
-        out_depth = torch.sigmoid(
-            F.interpolate(
-                score_depth, x.size()[2:], mode="bilinear", align_corners=True
-            )
-        )
+        out_depth = torch.sigmoid(F.interpolate(score_depth, x.size()[2:], mode="bilinear", align_corners=True))
 
         score_ae = F.interpolate(
             encoder_output_ae,
@@ -206,11 +192,7 @@ class MultitaskCNN(nn.Module):
             align_corners=True,
         )
         score_ae += score_pool2_ae
-        out_ae = torch.sigmoid(
-            F.interpolate(
-                score_ae, x.size()[2:], mode="bilinear", align_corners=True
-            )
-        )
+        out_ae = torch.sigmoid(F.interpolate(score_ae, x.size()[2:], mode="bilinear", align_corners=True))
 
         return out_seg, out_depth, out_ae
 
@@ -288,9 +270,7 @@ class VqaLstmCnnAttentionModel(nn.Module):
             "freeze_encoder": freeze_encoder,
         }
         self.cnn = MultitaskCNN(**cnn_kwargs)  # type:ignore
-        self.cnn_fc_layer = nn.Sequential(
-            nn.Linear(32 * 12 * 12, 64), nn.ReLU(), nn.Dropout(p=0.5)
-        )
+        self.cnn_fc_layer = nn.Sequential(nn.Linear(32 * 12 * 12, 64), nn.ReLU(), nn.Dropout(p=0.5))
 
         q_rnn_kwargs = {
             "token_to_idx": q_vocab,
@@ -315,21 +295,13 @@ class VqaLstmCnnAttentionModel(nn.Module):
         }
         self.classifier = build_mlp(**classifier_kwargs)  # type:ignore
 
-        self.att = nn.Sequential(
-            nn.Tanh(), nn.Dropout(p=0.5), nn.Linear(128, 1)
-        )
+        self.att = nn.Sequential(nn.Tanh(), nn.Dropout(p=0.5), nn.Linear(128, 1))
 
-    def forward(
-        self, images: Tensor, questions: Tensor
-    ) -> Tuple[Tensor, Tensor]:
+    def forward(self, images: Tensor, questions: Tensor) -> Tuple[Tensor, Tensor]:
 
         N, T, _, _, _ = images.size()
         # bs x 5 x 3 x 256 x 256
-        img_feats = self.cnn(
-            images.contiguous().view(
-                -1, images.size(2), images.size(3), images.size(4)
-            )
-        )
+        img_feats = self.cnn(images.contiguous().view(-1, images.size(2), images.size(3), images.size(4)))
 
         img_feats = self.cnn_fc_layer(img_feats)
 
@@ -423,9 +395,7 @@ class NavPlannerControllerModel(nn.Module):
         )
 
         controller_kwargs = {
-            "input_dim": planner_rnn_image_feat_dim
-            + planner_rnn_action_embed_dim
-            + planner_rnn_hidden_dim,
+            "input_dim": planner_rnn_image_feat_dim + planner_rnn_action_embed_dim + planner_rnn_hidden_dim,
             "hidden_dims": controller_fc_dims,
             "output_dim": 2,
             "add_sigmoid": 0,
@@ -479,21 +449,13 @@ class NavPlannerControllerModel(nn.Module):
             .repeat(1, 1, planner_states.size(2))
         )
 
-        controller_hidden_in = planner_states.gather(
-            1, planner_hidden_index.long()
-        )
+        controller_hidden_in = planner_states.gather(1, planner_hidden_index.long())
 
-        controller_hidden_in = controller_hidden_in.view(
-            N_c * T_c, controller_hidden_in.size(2)
-        )
+        controller_hidden_in = controller_hidden_in.view(N_c * T_c, controller_hidden_in.size(2))
 
-        controller_img_feats = controller_img_feats.contiguous().view(
-            N_c * T_c, -1
-        )
+        controller_img_feats = controller_img_feats.contiguous().view(N_c * T_c, -1)
 
-        controller_actions_embed = self.planner_nav_rnn.action_embed(
-            controller_actions_in.long()
-        ).view(N_c * T_c, -1)
+        controller_actions_embed = self.planner_nav_rnn.action_embed(controller_actions_in.long()).view(N_c * T_c, -1)
 
         controller_in = torch.cat(
             [
@@ -522,9 +484,7 @@ class NavPlannerControllerModel(nn.Module):
 
         return planner_scores, planner_hidden
 
-    def controller_step(
-        self, img_feats: Tensor, actions_in: Tensor, hidden_in: Tensor
-    ) -> Tensor:
+    def controller_step(self, img_feats: Tensor, actions_in: Tensor, hidden_in: Tensor) -> Tensor:
 
         img_feats = self.cnn_fc_layer(img_feats)
         actions_embed = self.planner_nav_rnn.action_embed(actions_in)
@@ -578,28 +538,16 @@ class NavRnn(nn.Module):
         rnn_input_dim = 0
         if self.image_input is True:
             rnn_input_dim += image_feat_dim
-            logger.info(
-                "Adding input to {}: image, rnn dim: {}".format(
-                    self.rnn_type, rnn_input_dim
-                )
-            )
+            logger.info("Adding input to {}: image, rnn dim: {}".format(self.rnn_type, rnn_input_dim))
 
         if self.question_input is True:
             rnn_input_dim += question_embed_dim
-            logger.info(
-                "Adding input to {}: question, rnn dim: {}".format(
-                    self.rnn_type, rnn_input_dim
-                )
-            )
+            logger.info("Adding input to {}: question, rnn dim: {}".format(self.rnn_type, rnn_input_dim))
 
         if self.action_input is True:
             self.action_embed = nn.Embedding(num_actions, action_embed_dim)
             rnn_input_dim += action_embed_dim
-            logger.info(
-                "Adding input to {}: action, rnn dim: {}".format(
-                    self.rnn_type, rnn_input_dim
-                )
-            )
+            logger.info("Adding input to {}: action, rnn dim: {}".format(self.rnn_type, rnn_input_dim))
 
         self.rnn = getattr(nn, self.rnn_type)(
             rnn_input_dim,
@@ -608,31 +556,19 @@ class NavRnn(nn.Module):
             dropout=rnn_dropout,
             batch_first=True,
         )
-        logger.info(
-            "Building {} with hidden dim: {}".format(
-                self.rnn_type, rnn_hidden_dim
-            )
-        )
+        logger.info("Building {} with hidden dim: {}".format(self.rnn_type, rnn_hidden_dim))
 
         self.decoder = nn.Linear(self.rnn_hidden_dim, self.num_actions)
 
-    def init_hidden(
-        self, bsz: int
-    ) -> Union[Tuple[Tensor, Tensor], Tensor, None]:
+    def init_hidden(self, bsz: int) -> Union[Tuple[Tensor, Tensor], Tensor, None]:
         weight = next(self.parameters()).data
         if self.rnn_type == "LSTM":
             return (
-                weight.new(
-                    self.rnn_num_layers, bsz, self.rnn_hidden_dim
-                ).zero_(),
-                weight.new(
-                    self.rnn_num_layers, bsz, self.rnn_hidden_dim
-                ).zero_(),
+                weight.new(self.rnn_num_layers, bsz, self.rnn_hidden_dim).zero_(),
+                weight.new(self.rnn_num_layers, bsz, self.rnn_hidden_dim).zero_(),
             )
         elif self.rnn_type == "GRU":
-            return weight.new(
-                self.rnn_num_layers, bsz, self.rnn_hidden_dim
-            ).zero_()
+            return weight.new(self.rnn_num_layers, bsz, self.rnn_hidden_dim).zero_()
         else:
             return None
 
@@ -665,20 +601,12 @@ class NavRnn(nn.Module):
             if len(input_feats) == 0:
                 input_feats = self.action_embed(actions_in)
             else:
-                input_feats = torch.cat(
-                    [input_feats, self.action_embed(actions_in.long())], 2
-                )
+                input_feats = torch.cat([input_feats, self.action_embed(actions_in.long())], 2)
 
-        packed_input_feats = pack_padded_sequence(
-            input_feats, action_lengths, batch_first=True
-        )
+        packed_input_feats = pack_padded_sequence(input_feats, action_lengths, batch_first=True)
         packed_output, hidden_state = self.rnn(packed_input_feats)
         rnn_output, _ = pad_packed_sequence(packed_output, batch_first=True)
-        output = self.decoder(
-            rnn_output.contiguous().view(
-                rnn_output.size(0) * rnn_output.size(1), rnn_output.size(2)
-            )
-        )
+        output = self.decoder(rnn_output.contiguous().view(rnn_output.size(0) * rnn_output.size(1), rnn_output.size(2)))
 
         if self.return_states:
             return rnn_output, output, hidden_state
@@ -714,15 +642,9 @@ class NavRnn(nn.Module):
                 input_feats = self.action_embed(actions_in)
             else:
                 actions_in = actions_in.long()
-                input_feats = torch.cat(
-                    [input_feats, self.action_embed(actions_in)], 2
-                )
+                input_feats = torch.cat([input_feats, self.action_embed(actions_in)], 2)
 
         output, hidden = self.rnn(input_feats, hidden)
-        output = self.decoder(
-            output.contiguous().view(
-                output.size(0) * output.size(1), output.size(2)
-            )
-        )
+        output = self.decoder(output.contiguous().view(output.size(0) * output.size(1), output.size(2)))
 
         return output, hidden

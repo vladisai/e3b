@@ -137,8 +137,7 @@ def test_collisions():
                 collisions = env.get_metrics()["collisions"]["count"]
                 loc = env.sim.get_agent_state().position
                 if (
-                    np.linalg.norm(loc - prev_loc)
-                    < 0.9 * config.SIMULATOR.FORWARD_STEP_SIZE
+                    np.linalg.norm(loc - prev_loc) < 0.9 * config.SIMULATOR.FORWARD_STEP_SIZE
                     and action["action"] == MoveForwardAction.name
                 ):
                     # Check to see if the new method of doing collisions catches
@@ -246,9 +245,7 @@ def test_pointgoal_with_gps_compass_sensor():
             assert np.allclose(
                 pointgoal_with_gps_compass,
                 quaternion_rotate_vector(
-                    quaternion.from_rotation_vector(
-                        compass * np.array([0, 1, 0])
-                    ).inverse(),
+                    quaternion.from_rotation_vector(compass * np.array([0, 1, 0])).inverse(),
                     pointgoal - gps,
                 ),
                 atol=1e-5,
@@ -307,12 +304,8 @@ def test_imagegoal_sensor():
         for _ in range(10):
             new_obs = env.step(sample_non_stop_action(env.action_space))
             # check to see if taking non-stop actions will affect static image_goal
-            assert not np.allclose(
-                previous_episode_obs["imagegoal"], new_obs["imagegoal"]
-            )
-            assert np.allclose(
-                previous_episode_obs["rgb"].shape, new_obs["imagegoal"].shape
-            )
+            assert not np.allclose(previous_episode_obs["imagegoal"], new_obs["imagegoal"])
+            assert np.allclose(previous_episode_obs["rgb"].shape, new_obs["imagegoal"].shape)
 
 
 def test_get_observations_at():
@@ -405,9 +398,7 @@ def smoke_test_sensor(config, N_STEPS=100):
         no_noise_obs = env.reset()
         assert no_noise_obs is not None
 
-        actions = [
-            sample_non_stop_action(env.action_space) for _ in range(N_STEPS)
-        ]
+        actions = [sample_non_stop_action(env.action_space) for _ in range(N_STEPS)]
         for action in actions:
             assert env.step(action) is not None
 
@@ -432,17 +423,13 @@ def test_smoke_not_pinhole_sensors(sensors, cuda):
     config.defrost()
     config.SIMULATOR.HABITAT_SIM_V0.GPU_GPU = cuda
 
-    config.SIMULATOR.SCENE = (
-        "data/scene_datasets/habitat-test-scenes/skokloster-castle.glb"
-    )
+    config.SIMULATOR.SCENE = "data/scene_datasets/habitat-test-scenes/skokloster-castle.glb"
     config.SIMULATOR.AGENT_0.SENSORS = sensors
     config.freeze()
     smoke_test_sensor(config)
 
 
-@pytest.mark.parametrize(
-    "sensor", ["RGB_SENSOR", "DEPTH_SENSOR", "SEMANTIC_SENSOR"]
-)
+@pytest.mark.parametrize("sensor", ["RGB_SENSOR", "DEPTH_SENSOR", "SEMANTIC_SENSOR"])
 @pytest.mark.parametrize("sensor_subtype", ["ORTHOGRAPHIC", "PINHOLE"])
 @pytest.mark.parametrize("cuda", [True, False])
 def test_smoke_pinhole_sensors(sensor, sensor_subtype, cuda):
@@ -452,9 +439,7 @@ def test_smoke_pinhole_sensors(sensor, sensor_subtype, cuda):
     config = get_config()
     config.defrost()
     config.SIMULATOR.HABITAT_SIM_V0.GPU_GPU = cuda
-    config.SIMULATOR.SCENE = (
-        "data/scene_datasets/habitat-test-scenes/skokloster-castle.glb"
-    )
+    config.SIMULATOR.SCENE = "data/scene_datasets/habitat-test-scenes/skokloster-castle.glb"
     config.SIMULATOR.AGENT_0.SENSORS = [sensor]
     getattr(config.SIMULATOR, sensor).SENSOR_SUBTYPE = sensor_subtype
     config.freeze()
@@ -467,9 +452,7 @@ def test_noise_models_rgbd():
 
     config = get_config()
     config.defrost()
-    config.SIMULATOR.SCENE = (
-        "data/scene_datasets/habitat-test-scenes/skokloster-castle.glb"
-    )
+    config.SIMULATOR.SCENE = "data/scene_datasets/habitat-test-scenes/skokloster-castle.glb"
     config.SIMULATOR.AGENT_0.SENSORS = ["RGB_SENSOR", "DEPTH_SENSOR"]
     config.freeze()
     if not os.path.exists(config.SIMULATOR.SCENE):
@@ -498,9 +481,7 @@ def test_noise_models_rgbd():
         no_noise_obs = [env.reset()]
         no_noise_states = [env.sim.get_agent_state()]
 
-        actions = [
-            sample_non_stop_action(env.action_space) for _ in range(N_STEPS)
-        ]
+        actions = [sample_non_stop_action(env.action_space) for _ in range(N_STEPS)]
         for action in actions:
             no_noise_obs.append(env.step(action))
             no_noise_states.append(env.sim.get_agent_state())
@@ -526,18 +507,12 @@ def test_noise_models_rgbd():
 
         obs = env.reset()
         assert np.linalg.norm(
-            obs["rgb"].astype(np.float)
-            - no_noise_obs[0]["rgb"].astype(np.float)
-        ) > 1.5e-2 * np.linalg.norm(
-            no_noise_obs[0]["rgb"].astype(np.float)
-        ), "No RGB noise detected."
+            obs["rgb"].astype(np.float) - no_noise_obs[0]["rgb"].astype(np.float)
+        ) > 1.5e-2 * np.linalg.norm(no_noise_obs[0]["rgb"].astype(np.float)), "No RGB noise detected."
 
         assert np.linalg.norm(
-            obs["depth"].astype(np.float)
-            - no_noise_obs[0]["depth"].astype(np.float)
-        ) > 1.5e-2 * np.linalg.norm(
-            no_noise_obs[0]["depth"].astype(np.float)
-        ), "No Depth noise detected."
+            obs["depth"].astype(np.float) - no_noise_obs[0]["depth"].astype(np.float)
+        ) > 1.5e-2 * np.linalg.norm(no_noise_obs[0]["depth"].astype(np.float)), "No Depth noise detected."
 
         images = []
         state = env.sim.get_agent_state()
@@ -547,22 +522,16 @@ def test_noise_models_rgbd():
             prev_state = state
             obs = env.step(action)
             state = env.sim.get_agent_state()
-            position_change = np.linalg.norm(
-                np.array(state.position) - np.array(prev_state.position), ord=2
-            )
+            position_change = np.linalg.norm(np.array(state.position) - np.array(prev_state.position), ord=2)
 
             if action["action"][:5] == "TURN_":
                 angle_diff = abs(
-                    angle_between_quaternions(
-                        state.rotation, prev_state.rotation
-                    )
+                    angle_between_quaternions(state.rotation, prev_state.rotation)
                     - np.deg2rad(config.SIMULATOR.TURN_ANGLE)
                 )
                 angle_diffs.append(angle_diff)
             else:
-                pos_diffs.append(
-                    abs(position_change - config.SIMULATOR.FORWARD_STEP_SIZE)
-                )
+                pos_diffs.append(abs(position_change - config.SIMULATOR.FORWARD_STEP_SIZE))
 
             if DEMO_MODE:
                 images.append(observations_to_image(obs, {}))
@@ -570,9 +539,5 @@ def test_noise_models_rgbd():
         if DEMO_MODE:
             images_to_video(images, "data/video/test_noise", "test_noise")
 
-        assert (
-            np.mean(angle_diffs) > 0.025
-        ), "No turn action actuation noise detected."
-        assert (
-            np.mean(pos_diffs) > 0.025
-        ), "No forward action actuation noise detected."
+        assert np.mean(angle_diffs) > 0.025, "No turn action actuation noise detected."
+        assert np.mean(pos_diffs) > 0.025, "No forward action actuation noise detected."

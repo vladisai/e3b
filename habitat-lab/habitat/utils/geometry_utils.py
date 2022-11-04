@@ -13,9 +13,7 @@ import quaternion
 EPSILON = 1e-8
 
 
-def angle_between_quaternions(
-    q1: quaternion.quaternion, q2: quaternion.quaternion
-) -> float:
+def angle_between_quaternions(q1: quaternion.quaternion, q2: quaternion.quaternion) -> float:
     r"""Returns the angle (in radians) between two quaternions. This angle will
     always be positive.
     """
@@ -25,9 +23,7 @@ def angle_between_quaternions(
     return 2 * np.arctan2(np.linalg.norm(dq[1:]), np.abs(dq[0]))
 
 
-def quaternion_from_two_vectors(
-    v0: np.ndarray, v1: np.ndarray
-) -> quaternion.quaternion:
+def quaternion_from_two_vectors(v0: np.ndarray, v1: np.ndarray) -> quaternion.quaternion:
     r"""Computes the quaternion representation of v1 using v0 as the origin."""
     v0 = v0 / np.linalg.norm(v0)
     v1 = v1 / np.linalg.norm(v1)
@@ -60,9 +56,7 @@ def quaternion_from_coeff(coeffs: List[float]) -> quaternion.quaternion:
     return quat
 
 
-def quaternion_rotate_vector(
-    quat: quaternion.quaternion, v: np.ndarray
-) -> np.ndarray:
+def quaternion_rotate_vector(quat: quaternion.quaternion, v: np.ndarray) -> np.ndarray:
     r"""Rotates a vector by a quaternion
     Args:
         quaternion: The quaternion to rotate by
@@ -90,12 +84,8 @@ def agent_state_target2ref(
         and need to be transformed to the local coordinate system defined by ref_agent_state.
     """
 
-    assert (
-        len(ref_agent_state[1]) == 3
-    ), "Only support Cartesian format currently."
-    assert (
-        len(target_agent_state[1]) == 3
-    ), "Only support Cartesian format currently."
+    assert len(ref_agent_state[1]) == 3, "Only support Cartesian format currently."
+    assert len(target_agent_state[1]) == 3, "Only support Cartesian format currently."
 
     ref_rotation, ref_position = ref_agent_state
     target_rotation, target_position = target_agent_state
@@ -111,8 +101,6 @@ def agent_state_target2ref(
 
     rotation_in_ref_coordinate = ref_rotation.inverse() * target_rotation
 
-    position_in_ref_coordinate = quaternion_rotate_vector(
-        ref_rotation.inverse(), target_position - ref_position
-    )
+    position_in_ref_coordinate = quaternion_rotate_vector(ref_rotation.inverse(), target_position - ref_position)
 
     return (rotation_in_ref_coordinate, position_in_ref_coordinate)

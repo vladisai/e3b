@@ -41,9 +41,7 @@ def example_pointnav_draw_target_birdseye_view():
         agent_radius_px=25,
     )
 
-    imageio.imsave(
-        os.path.join(IMAGE_DIR, "pointnav_target_image.png"), target_image
-    )
+    imageio.imsave(os.path.join(IMAGE_DIR, "pointnav_target_image.png"), target_image)
 
 
 def example_pointnav_draw_target_birdseye_view_agent_on_border():
@@ -73,30 +71,20 @@ def example_pointnav_draw_target_birdseye_view_agent_on_border():
                 agent_radius_px=25,
             )
             imageio.imsave(
-                os.path.join(
-                    IMAGE_DIR, "pointnav_target_image_edge_%d.png" % ii
-                ),
+                os.path.join(IMAGE_DIR, "pointnav_target_image_edge_%d.png" % ii),
                 target_image,
             )
 
 
 def example_get_topdown_map():
     config = habitat.get_config(config_paths="configs/tasks/pointnav.yaml")
-    dataset = habitat.make_dataset(
-        id_dataset=config.DATASET.TYPE, config=config.DATASET
-    )
+    dataset = habitat.make_dataset(id_dataset=config.DATASET.TYPE, config=config.DATASET)
     with habitat.Env(config=config, dataset=dataset) as env:
         env.reset()
-        top_down_map = maps.get_topdown_map_from_sim(
-            env.sim, map_resolution=1024
-        )
-        recolor_map = np.array(
-            [[255, 255, 255], [128, 128, 128], [0, 0, 0]], dtype=np.uint8
-        )
+        top_down_map = maps.get_topdown_map_from_sim(env.sim, map_resolution=1024)
+        recolor_map = np.array([[255, 255, 255], [128, 128, 128], [0, 0, 0]], dtype=np.uint8)
         top_down_map = recolor_map[top_down_map]
-        imageio.imsave(
-            os.path.join(IMAGE_DIR, "top_down_map.png"), top_down_map
-        )
+        imageio.imsave(os.path.join(IMAGE_DIR, "top_down_map.png"), top_down_map)
 
 
 def main():

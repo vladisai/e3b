@@ -36,17 +36,13 @@ NUM_EPISODES = 10
 def check_json_serializaiton(dataset: habitat.Dataset):
     start_time = time.time()
     json_str = str(dataset.to_json())
-    logger.info(
-        "JSON conversion finished. {} sec".format((time.time() - start_time))
-    )
+    logger.info("JSON conversion finished. {} sec".format((time.time() - start_time)))
     decoded_dataset = dataset.__class__()
     decoded_dataset.from_json(json_str)
     assert len(decoded_dataset.episodes) > 0
     episode = decoded_dataset.episodes[0]
     assert isinstance(episode, Episode)
-    assert (
-        decoded_dataset.to_json() == json_str
-    ), "JSON dataset encoding/decoding isn't consistent"
+    assert decoded_dataset.to_json() == json_str, "JSON dataset encoding/decoding isn't consistent"
 
 
 def test_single_pointnav_dataset():
@@ -54,14 +50,10 @@ def test_single_pointnav_dataset():
     if not PointNavDatasetV1.check_config_paths_exist(dataset_config):
         pytest.skip("Test skipped as dataset files are missing.")
     scenes = PointNavDatasetV1.get_scenes_to_load(config=dataset_config)
-    assert (
-        len(scenes) > 0
-    ), "Expected dataset contains separate episode file per scene."
+    assert len(scenes) > 0, "Expected dataset contains separate episode file per scene."
     dataset = PointNavDatasetV1(config=dataset_config)
     assert len(dataset.episodes) > 0, "The dataset shouldn't be empty."
-    assert (
-        len(dataset.scene_ids) == 2
-    ), "The test dataset scenes number is wrong."
+    assert len(dataset.scene_ids) == 2, "The test dataset scenes number is wrong."
     check_json_serializaiton(dataset)
 
 
@@ -70,27 +62,17 @@ def test_multiple_files_scene_path():
     if not PointNavDatasetV1.check_config_paths_exist(dataset_config):
         pytest.skip("Test skipped as dataset files are missing.")
     scenes = PointNavDatasetV1.get_scenes_to_load(config=dataset_config)
-    assert (
-        len(scenes) > 0
-    ), "Expected dataset contains separate episode file per scene."
+    assert len(scenes) > 0, "Expected dataset contains separate episode file per scene."
     dataset_config.defrost()
     dataset_config.CONTENT_SCENES = scenes[:PARTIAL_LOAD_SCENES]
-    dataset_config.SCENES_DIR = os.path.join(
-        os.getcwd(), DEFAULT_SCENE_PATH_PREFIX
-    )
+    dataset_config.SCENES_DIR = os.path.join(os.getcwd(), DEFAULT_SCENE_PATH_PREFIX)
     dataset_config.freeze()
-    partial_dataset = make_dataset(
-        id_dataset=dataset_config.TYPE, config=dataset_config
-    )
-    assert (
-        len(partial_dataset.scene_ids) == PARTIAL_LOAD_SCENES
-    ), "Number of loaded scenes doesn't correspond."
+    partial_dataset = make_dataset(id_dataset=dataset_config.TYPE, config=dataset_config)
+    assert len(partial_dataset.scene_ids) == PARTIAL_LOAD_SCENES, "Number of loaded scenes doesn't correspond."
     print(partial_dataset.episodes[0].scene_id)
     assert os.path.exists(
         partial_dataset.episodes[0].scene_id
-    ), "Scene file {} doesn't exist using absolute path".format(
-        partial_dataset.episodes[0].scene_id
-    )
+    ), "Scene file {} doesn't exist using absolute path".format(partial_dataset.episodes[0].scene_id)
 
 
 def test_multiple_files_pointnav_dataset():
@@ -98,18 +80,12 @@ def test_multiple_files_pointnav_dataset():
     if not PointNavDatasetV1.check_config_paths_exist(dataset_config):
         pytest.skip("Test skipped as dataset files are missing.")
     scenes = PointNavDatasetV1.get_scenes_to_load(config=dataset_config)
-    assert (
-        len(scenes) > 0
-    ), "Expected dataset contains separate episode file per scene."
+    assert len(scenes) > 0, "Expected dataset contains separate episode file per scene."
     dataset_config.defrost()
     dataset_config.CONTENT_SCENES = scenes[:PARTIAL_LOAD_SCENES]
     dataset_config.freeze()
-    partial_dataset = make_dataset(
-        id_dataset=dataset_config.TYPE, config=dataset_config
-    )
-    assert (
-        len(partial_dataset.scene_ids) == PARTIAL_LOAD_SCENES
-    ), "Number of loaded scenes doesn't correspond."
+    partial_dataset = make_dataset(id_dataset=dataset_config.TYPE, config=dataset_config)
+    assert len(partial_dataset.scene_ids) == PARTIAL_LOAD_SCENES, "Number of loaded scenes doesn't correspond."
     check_json_serializaiton(partial_dataset)
 
 
@@ -123,39 +99,21 @@ def test_dataset_splitting(split):
         pytest.skip("Test skipped as dataset files are missing.")
 
     scenes = PointNavDatasetV1.get_scenes_to_load(config=dataset_config)
-    assert (
-        len(scenes) > 0
-    ), "Expected dataset contains separate episode file per scene."
+    assert len(scenes) > 0, "Expected dataset contains separate episode file per scene."
 
     dataset_config.CONTENT_SCENES = scenes[:PARTIAL_LOAD_SCENES]
-    full_dataset = make_dataset(
-        id_dataset=dataset_config.TYPE, config=dataset_config
-    )
-    full_episodes = {
-        (ep.scene_id, ep.episode_id) for ep in full_dataset.episodes
-    }
+    full_dataset = make_dataset(id_dataset=dataset_config.TYPE, config=dataset_config)
+    full_episodes = {(ep.scene_id, ep.episode_id) for ep in full_dataset.episodes}
 
     dataset_config.CONTENT_SCENES = scenes[: PARTIAL_LOAD_SCENES // 2]
-    split1_dataset = make_dataset(
-        id_dataset=dataset_config.TYPE, config=dataset_config
-    )
-    split1_episodes = {
-        (ep.scene_id, ep.episode_id) for ep in split1_dataset.episodes
-    }
+    split1_dataset = make_dataset(id_dataset=dataset_config.TYPE, config=dataset_config)
+    split1_episodes = {(ep.scene_id, ep.episode_id) for ep in split1_dataset.episodes}
 
-    dataset_config.CONTENT_SCENES = scenes[
-        PARTIAL_LOAD_SCENES // 2 : PARTIAL_LOAD_SCENES
-    ]
-    split2_dataset = make_dataset(
-        id_dataset=dataset_config.TYPE, config=dataset_config
-    )
-    split2_episodes = {
-        (ep.scene_id, ep.episode_id) for ep in split2_dataset.episodes
-    }
+    dataset_config.CONTENT_SCENES = scenes[PARTIAL_LOAD_SCENES // 2 : PARTIAL_LOAD_SCENES]
+    split2_dataset = make_dataset(id_dataset=dataset_config.TYPE, config=dataset_config)
+    split2_episodes = {(ep.scene_id, ep.episode_id) for ep in split2_dataset.episodes}
 
-    assert full_episodes == split1_episodes.union(
-        split2_episodes
-    ), "Split dataset is not equal to full dataset"
+    assert full_episodes == split1_episodes.union(split2_episodes), "Split dataset is not equal to full dataset"
     assert (
         len(split1_episodes.intersection(split2_episodes)) == 0
     ), "Intersection of split datasets is not the empty set"
@@ -164,10 +122,7 @@ def test_dataset_splitting(split):
 def check_shortest_path(env, episode):
     def check_state(agent_state, position, rotation):
         assert (
-            angle_between_quaternions(
-                agent_state.rotation, quaternion_from_coeff(rotation)
-            )
-            < 1e-5
+            angle_between_quaternions(agent_state.rotation, quaternion_from_coeff(rotation)) < 1e-5
         ), "Agent's rotation diverges from the shortest path."
 
         assert np.allclose(
@@ -175,9 +130,7 @@ def check_shortest_path(env, episode):
         ), "Agent's position position diverges from the shortest path's one."
 
     assert len(episode.goals) == 1, "Episode has no goals or more than one."
-    assert (
-        len(episode.shortest_paths) == 1
-    ), "Episode has no shortest paths or more than one."
+    assert len(episode.shortest_paths) == 1, "Episode has no shortest paths or more than one."
 
     env.episode_iterator = iter([episode])
     env.reset()
@@ -228,6 +181,4 @@ def test_pointnav_episode_generator():
 
         dataset = habitat.Dataset()
         dataset.episodes = episodes
-        assert (
-            dataset.to_json()
-        ), "Generated episodes aren't json serializable."
+        assert dataset.to_json(), "Generated episodes aren't json serializable."

@@ -47,19 +47,12 @@ def _generate_fn(scene):
     sim = habitat.sims.make_sim("Sim-v0", config=cfg.SIMULATOR)
 
     dset = habitat.datasets.make_dataset("PointNav-v1")
-    dset.episodes = list(
-        generate_pointnav_episode(
-            sim, NUM_EPISODES_PER_SCENE, is_gen_shortest_path=False
-        )
-    )
+    dset.episodes = list(generate_pointnav_episode(sim, NUM_EPISODES_PER_SCENE, is_gen_shortest_path=False))
     for ep in dset.episodes:
         ep.scene_id = ep.scene_id[len("./data/scene_datasets/") :]
 
     scene_key = scene.split("/")[-1].split(".")[0]
-    out_file = (
-        f"./data/datasets/pointnav/gibson/v2/train_large/content/"
-        f"{scene_key}.json.gz"
-    )
+    out_file = f"./data/datasets/pointnav/gibson/v2/train_large/content/" f"{scene_key}.json.gz"
     os.makedirs(osp.dirname(out_file), exist_ok=True)
     with gzip.open(out_file, "wt") as f:
         f.write(dset.to_json())
@@ -67,19 +60,13 @@ def _generate_fn(scene):
 
 def generate_gibson_large_dataset():
     # Load train / val statistics
-    with open(
-        osp.join(osp.dirname(__file__), "gibson_dset_with_qual.json"), "r"
-    ) as f:
+    with open(osp.join(osp.dirname(__file__), "gibson_dset_with_qual.json"), "r") as f:
         dataset_statistics = json.load(f)
 
     gibson_large_scene_keys = []
     for k, v in dataset_statistics.items():
         qual = v["qual"]
-        if (
-            v["split_full+"] == "train"
-            and qual is not None
-            and qual >= QUAL_THRESH
-        ):
+        if v["split_full+"] == "train" and qual is not None and qual >= QUAL_THRESH:
             gibson_large_scene_keys.append(k)
 
     scenes = glob.glob("./data/scene_datasets/gibson/*.glb")

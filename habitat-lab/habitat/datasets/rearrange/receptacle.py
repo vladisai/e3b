@@ -37,13 +37,9 @@ class Receptacle(ABC):
         :param up: The "up" direction of the receptacle in local AABB space. Used for optionally culling receptacles in un-supportive states such as inverted surfaces.
         """
         self.name = name
-        self.up = (
-            up if up is not None else mn.Vector3.y_axis(1.0)
-        )  # default local Y up
+        self.up = up if up is not None else mn.Vector3.y_axis(1.0)  # default local Y up
         nonzero_indices = np.nonzero(self.up)
-        assert (
-            len(nonzero_indices) == 1
-        ), "The 'up' vector must be aligned with a primary axis for an AABB."
+        assert len(nonzero_indices) == 1, "The 'up' vector must be aligned with a primary axis for an AABB."
         self.up_axis = nonzero_indices[0]
         self.parent_object_handle = parent_object_handle
         self.parent_link = parent_link
@@ -56,9 +52,7 @@ class Receptacle(ABC):
         return self.parent_link is not None
 
     @abstractmethod
-    def sample_uniform_local(
-        self, sample_region_scale: float = 1.0
-    ) -> mn.Vector3:
+    def sample_uniform_local(self, sample_region_scale: float = 1.0) -> mn.Vector3:
         """
         Sample a uniform random point within Receptacle in local space.
 
@@ -71,9 +65,7 @@ class Receptacle(ABC):
         Isolates boilerplate necessary to extract receptacle global transform of the Receptacle at the current state.
         """
 
-    def sample_uniform_global(
-        self, sim: habitat_sim.Simulator, sample_region_scale: float
-    ) -> mn.Vector3:
+    def sample_uniform_global(self, sim: habitat_sim.Simulator, sample_region_scale: float) -> mn.Vector3:
         """
         Sample a uniform random point in the local Receptacle volume and then transform it into global space.
 
@@ -82,9 +74,7 @@ class Receptacle(ABC):
         local_sample = self.sample_uniform_local(sample_region_scale)
         return self.get_global_transform(sim).transform_point(local_sample)
 
-    def add_receptacle_visualization(
-        self, sim: habitat_sim.Simulator
-    ) -> List[habitat_sim.physics.ManagedRigidObject]:
+    def add_receptacle_visualization(self, sim: habitat_sim.Simulator) -> List[habitat_sim.physics.ManagedRigidObject]:
         """
         Add one or more visualization objects to the simulation to represent the Receptacle. Return and forget the added objects for external management.
         """
@@ -117,17 +107,13 @@ class AABBReceptacle(Receptacle):
         self.bounds = bounds
         self.rotation = rotation if rotation is not None else mn.Quaternion()
 
-    def sample_uniform_local(
-        self, sample_region_scale: float = 1.0
-    ) -> mn.Vector3:
+    def sample_uniform_local(self, sample_region_scale: float = 1.0) -> mn.Vector3:
         """
         Sample a uniform random point in the local AABB.
 
         :param sample_region_scale: defines a XZ scaling of the sample region around its center. For example to constrain object spawning toward the center of a receptacle.
         """
-        scaled_region = mn.Range3D.from_center(
-            self.bounds.center(), sample_region_scale * self.bounds.size() / 2
-        )
+        scaled_region = mn.Range3D.from_center(self.bounds.center(), sample_region_scale * self.bounds.size() / 2)
 
         # NOTE: does not scale the "up" direction
         sample_range = [scaled_region.min, scaled_region.max]
@@ -147,19 +133,10 @@ class AABBReceptacle(Receptacle):
 
             # TODO: add an API query or other method to avoid reconstructing the stage frame here
             stage_config = sim.get_stage_initialization_template()
-            r_frameup_worldup = qf2v(
-                habitat_sim.geo.UP, stage_config.orient_up
-            )
-            v_prime = qtm(r_frameup_worldup).transform_vector(
-                mn.Vector3(habitat_sim.geo.FRONT)
-            )
-            world_to_local = (
-                qf2v(np.array(v_prime), np.array(stage_config.orient_front))
-                * r_frameup_worldup
-            )
-            world_to_local = habitat_sim.utils.common.quat_to_magnum(
-                world_to_local
-            )
+            r_frameup_worldup = qf2v(habitat_sim.geo.UP, stage_config.orient_up)
+            v_prime = qtm(r_frameup_worldup).transform_vector(mn.Vector3(habitat_sim.geo.FRONT))
+            world_to_local = qf2v(np.array(v_prime), np.array(stage_config.orient_front)) * r_frameup_worldup
+            world_to_local = habitat_sim.utils.common.quat_to_magnum(world_to_local)
             local_to_world = world_to_local.inverted()
             l2w4 = mn.Matrix4.from_(local_to_world.to_matrix(), mn.Vector3())
 
@@ -178,13 +155,9 @@ class AABBReceptacle(Receptacle):
         else:
             ao_mgr = sim.get_articulated_object_manager()
             obj = ao_mgr.get_object_by_handle(self.parent_object_handle)
-            return obj.get_link_scene_node(
-                self.parent_link
-            ).absolute_transformation()
+            return obj.get_link_scene_node(self.parent_link).absolute_transformation()
 
-    def add_receptacle_visualization(
-        self, sim: habitat_sim.Simulator
-    ) -> List[habitat_sim.physics.ManagedRigidObject]:
+    def add_receptacle_visualization(self, sim: habitat_sim.Simulator) -> List[habitat_sim.physics.ManagedRigidObject]:
         """
         Add a wireframe box object to the simulation to represent the AABBReceptacle and return it for external management.
         """
@@ -214,9 +187,7 @@ class AABBReceptacle(Receptacle):
 
         # handle local frame and rotation for global receptacles
         if self.parent_object_handle is None:
-            box_obj.transformation = self.get_global_transform(sim).__matmul__(
-                box_obj.transformation
-            )
+            box_obj.transformation = self.get_global_transform(sim).__matmul__(box_obj.transformation)
         return [box_obj]
 
 
@@ -294,24 +265,12 @@ def parse_receptacles_from_user_config(
             # this is a receptacle, parse it
             assert sub_config.has_value("position")
             assert sub_config.has_value("scale")
-            up = (
-                None
-                if not sub_config.has_value("up")
-                else sub_config.get("up")
-            )
+            up = None if not sub_config.has_value("up") else sub_config.get("up")
 
-            receptacle_name = (
-                sub_config.get("name")
-                if sub_config.has_value("name")
-                else sub_config_key
-            )
+            receptacle_name = sub_config.get("name") if sub_config.has_value("name") else sub_config_key
 
             # optional rotation for global receptacles, defaults to identity
-            rotation = (
-                mn.Quaternion()
-                if not sub_config.has_value("rotation")
-                else sub_config.get("rotation")
-            )
+            rotation = mn.Quaternion() if not sub_config.has_value("rotation") else sub_config.get("rotation")
 
             # setup parent specific metadata for ArticulatedObjects
             parent_link_ix = None
@@ -323,9 +282,7 @@ def parse_receptacles_from_user_config(
                 # search for a matching link
                 for link_ix, link_name in enumerate(valid_link_names):
                     if link_name == parent_link_name:
-                        parent_link_ix = (
-                            link_ix - 1
-                        )  # starting from -1 (base link)
+                        parent_link_ix = link_ix - 1  # starting from -1 (base link)
                         break
                 assert (
                     parent_link_ix is not None
@@ -336,9 +293,7 @@ def parse_receptacles_from_user_config(
                 ), "ArticulatedObject parent link name defined in config, but no valid_link_names provided. Mistake?"
 
             # apply AO uniform instance scaling
-            receptacle_position = ao_uniform_scaling * sub_config.get(
-                "position"
-            )
+            receptacle_position = ao_uniform_scaling * sub_config.get("position")
             receptacle_scale = ao_uniform_scaling * sub_config.get("scale")
 
             # TODO: adding more receptacle types will require additional logic here
@@ -381,11 +336,7 @@ def find_receptacles(
     for obj_handle in obj_mgr.get_object_handles():
         obj = obj_mgr.get_object_by_handle(obj_handle)
         user_attr = obj.user_attributes
-        receptacles.extend(
-            parse_receptacles_from_user_config(
-                user_attr, parent_object_handle=obj_handle
-            )
-        )
+        receptacles.extend(parse_receptacles_from_user_config(user_attr, parent_object_handle=obj_handle))
 
     # articulated object receptacles
     for obj_handle in ao_mgr.get_object_handles():
@@ -395,10 +346,7 @@ def find_receptacles(
             parse_receptacles_from_user_config(
                 user_attr,
                 parent_object_handle=obj_handle,
-                valid_link_names=[
-                    obj.get_link_name(link)
-                    for link in range(-1, obj.num_links)
-                ],
+                valid_link_names=[obj.get_link_name(link) for link in range(-1, obj.num_links)],
                 ao_uniform_scaling=obj.global_scale,
             )
         )

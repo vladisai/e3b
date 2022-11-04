@@ -36,9 +36,7 @@ NUM_CHARS = 128
 class RLLibGlyphEmbedding(GlyphEmbedding):
     def glyphs_to_idgroup(self, glyphs):
         B, H, W = glyphs.shape
-        ids_groups = self.id_pairs_table.index_select(
-            0, glyphs.contiguous().view(-1).long()
-        )
+        ids_groups = self.id_pairs_table.index_select(0, glyphs.contiguous().view(-1).long())
         ids = ids_groups.select(1, 0).view(B, H, W).long()
         groups = ids_groups.select(1, 1).view(B, H, W).long()
         return (ids, groups)
@@ -65,9 +63,7 @@ class RLLibGlyphEmbedding(GlyphEmbedding):
 
 
 class NetHackNet(nn.Module):
-    AgentOutput = collections.namedtuple(
-        "AgentOutput", "action policy_logits baseline"
-    )
+    AgentOutput = collections.namedtuple("AgentOutput", "action policy_logits baseline")
 
     def __init__(self):
         super(NetHackNet, self).__init__()
@@ -105,9 +101,7 @@ class NetHackNet(nn.Module):
 
         curr_mean = self.reward_sum / self.reward_count
         new_m2 = torch.sum((reward_batch - new_mean) ** 2) + (
-            (self.reward_count * new_count)
-            / (self.reward_count + new_count)
-            * (new_mean - curr_mean) ** 2
+            (self.reward_count * new_count) / (self.reward_count + new_count) * (new_mean - curr_mean) ** 2
         )
 
         self.reward_count += new_count
@@ -128,21 +122,17 @@ class Crop(nn.Module):
         self.width_target = width_target
         self.height_target = height_target
 
-        width_grid = self._step_to_range(
-            2 / (self.width - 1), self.width_target
-        )[None, :].expand(self.height_target, -1)
-        height_grid = self._step_to_range(
-            2 / (self.height - 1), height_target
-        )[:, None].expand(-1, self.width_target)
+        width_grid = self._step_to_range(2 / (self.width - 1), self.width_target)[None, :].expand(
+            self.height_target, -1
+        )
+        height_grid = self._step_to_range(2 / (self.height - 1), height_target)[:, None].expand(-1, self.width_target)
 
         # "clone" necessary, https://github.com/pytorch/pytorch/issues/34880
         self.register_buffer("width_grid", width_grid.clone())
         self.register_buffer("height_grid", height_grid.clone())
 
     def _step_to_range(self, step, num_steps):
-        return torch.tensor(
-            [step * (i - num_steps // 2) for i in range(num_steps)]
-        )
+        return torch.tensor([step * (i - num_steps // 2) for i in range(num_steps)])
 
     def forward(self, inputs, coordinates):
         """Calculates centered crop around given x,y coordinates.
@@ -185,11 +175,7 @@ class Crop(nn.Module):
             dim=3,
         )
 
-        crop = (
-            torch.round(F.grid_sample(inputs, grid, align_corners=True))
-            .squeeze(1)
-            .long()
-        )
+        crop = torch.round(F.grid_sample(inputs, grid, align_corners=True)).squeeze(1).long()
 
         if permute_results:
             # [B x C x H x W] -> [B x H x W x C]
@@ -255,9 +241,7 @@ class BaseNet(NetHackNet):
             for i in range(L)
         ]
 
-        self.extract_representation = nn.Sequential(
-            *interleave(conv_extract, [nn.ELU()] * len(conv_extract))
-        )
+        self.extract_representation = nn.Sequential(*interleave(conv_extract, [nn.ELU()] * len(conv_extract)))
 
         if self.crop_model == "transformer":
             self.extract_crop_representation = TransformerEncoder(
@@ -293,9 +277,7 @@ class BaseNet(NetHackNet):
             self.msg_edim = flags.msg.embedding_dim
         if self.msg_model in ("gru", "lstm", "lt_cnn"):
             # character-based embeddings
-            self.char_lt = nn.Embedding(
-                NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR
-            )
+            self.char_lt = nn.Embedding(NUM_CHARS, self.msg_edim, padding_idx=PAD_CHAR)
         else:
             # forward will set up one-hot inputs for the cnn, no lt needed
             pass
@@ -309,9 +291,7 @@ class BaseNet(NetHackNet):
                 self.conv1 = nn.Conv1d(NUM_CHARS, self.msg_hdim, kernel_size=7)
             elif self.msg_model == "lt_cnn":
                 # replace one-hot inputs with learned embeddings
-                self.conv1 = nn.Conv1d(
-                    self.msg_edim, self.msg_hdim, kernel_size=7
-                )
+                self.conv1 = nn.Conv1d(self.msg_edim, self.msg_hdim, kernel_size=7)
             else:
                 raise NotImplementedError("msg.model == %s", flags.msg.model)
 
@@ -371,9 +351,9 @@ class BaseNet(NetHackNet):
             # CNN over full glyph map
             out_dim += self.H * self.W * self.Y
             if self.crop_model == "transformer":
-                out_dim += self.crop_dim ** 2 * K
+                out_dim += self.crop_dim**2 * K
             elif self.crop_model == "cnn":
-                out_dim += self.crop_dim ** 2 * self.Y
+                out_dim += self.crop_dim**2 * self.Y
             # messaging model
             if self.msg_model != "none":
                 out_dim += self.msg_hdim
@@ -385,10 +365,8 @@ class BaseNet(NetHackNet):
 
             # set up linear layers for projections
             self.project_feature_dim = nn.Linear(self.k_dim, project_hdim)
-            self.project_glyph_dim = nn.Linear(
-                self.H * self.W * self.Y, project_hdim
-            )
-            c__2 = self.crop_dim ** 2
+            self.project_glyph_dim = nn.Linear(self.H * self.W * self.Y, project_hdim)
+            c__2 = self.crop_dim**2
             if self.crop_model == "transformer":
                 self.project_crop_dim = nn.Linear(c__2 * K, project_hdim)
             elif self.crop_model == "cnn":
@@ -434,9 +412,7 @@ class BaseNet(NetHackNet):
         reps = [features_emb]  # either k_dim or project_hdim
 
         # -- [B x H' x W']
-        crop = self.glyph_embedding.GlyphTuple(
-            *[self.crop(g, coordinates) for g in glyphs]
-        )
+        crop = self.glyph_embedding.GlyphTuple(*[self.crop(g, coordinates) for g in glyphs])
         # -- [B x H' x W' x K]
         crop_emb = self.glyph_embedding(crop)
 
@@ -481,9 +457,7 @@ class BaseNet(NetHackNet):
             messages = inputs["message"].long()
             if self.msg_model == "cnn":
                 # convert messages to one-hot, [B x 96 x 256]
-                one_hot = F.one_hot(messages, num_classes=NUM_CHARS).transpose(
-                    1, 2
-                )
+                one_hot = F.one_hot(messages, num_classes=NUM_CHARS).transpose(1, 2)
                 char_rep = self.conv2_6_fc(self.conv1(one_hot.float()))
             elif self.msg_model == "lt_cnn":
                 # [B x E x 256 ]

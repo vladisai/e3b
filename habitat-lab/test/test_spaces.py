@@ -30,20 +30,14 @@ def test_action_space():
         }
     )
     assert space.contains(space.sample())
-    assert space.contains(
-        {"action": "move", "action_args": {"position": 0, "velocity": 1}}
-    )
+    assert space.contains({"action": "move", "action_args": {"position": 0, "velocity": 1}})
     assert space.contains({"action": "move_forward"})
     assert not space.contains([0, 1, 2])
     assert not space.contains({"zero": None})
     assert not space.contains({"action": "bad"})
     assert not space.contains({"action": "move"})
-    assert not space.contains(
-        {"action": "move", "action_args": {"position": 0}}
-    )
-    assert not space.contains(
-        {"action": "move_forward", "action_args": {"position": 0}}
-    )
+    assert not space.contains({"action": "move", "action_args": {"position": 0}})
+    assert not space.contains({"action": "move_forward", "action_args": {"position": 0}})
 
 
 def test_list_space():

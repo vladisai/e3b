@@ -30,15 +30,12 @@ def create_model(flags, device):
         model_cls = RIDENet
     elif model_string == "cnn" or model_string == "transformer":
         raise RuntimeError(
-            "model=%s deprecated, use model=baseline crop_model=%s instead"
-            % (model_string, model_string)
+            "model=%s deprecated, use model=baseline crop_model=%s instead" % (model_string, model_string)
         )
     else:
         raise NotImplementedError("model=%s" % model_string)
 
-    num_actions = len(
-        tasks.ENVS[flags.env](savedir=None, archivefile=None)._actions
-    )
+    num_actions = len(tasks.ENVS[flags.env](savedir=None, archivefile=None)._actions)
 
     model = model_cls(DUNGEON_SHAPE, num_actions, flags, device)
     model.to(device=device)

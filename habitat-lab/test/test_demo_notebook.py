@@ -18,9 +18,7 @@ def test_demo_notebook():
     config.DATASET.SPLIT = "val"
 
     if not PointNavDatasetV1.check_config_paths_exist(config.DATASET):
-        pytest.skip(
-            "Please download the Matterport3D PointNav val dataset and Matterport3D val scenes"
-        )
+        pytest.skip("Please download the Matterport3D PointNav val dataset and Matterport3D val scenes")
     else:
         pytest.main(["--nbval-lax", "notebooks/habitat-lab-demo.ipynb"])
 

@@ -7,19 +7,8 @@ from minihack.envs import register
 class MiniHackRoom(MiniHackNavigation):
     """Environment for "empty" task."""
 
-    def __init__(
-        self,
-        *args,
-        size=5,
-        random=True,
-        n_monster=0,
-        n_trap=0,
-        lit=True,
-        **kwargs
-    ):
-        kwargs["max_episode_steps"] = kwargs.pop(
-            "max_episode_steps", size * 20
-        )
+    def __init__(self, *args, size=5, random=True, n_monster=0, n_trap=0, lit=True, **kwargs):
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", size * 20)
 
         lvl_gen = LevelGenerator(w=size, h=size, lit=lit)
         if random:
@@ -128,9 +117,7 @@ class MiniHackRoom15x15Monster(MiniHackRoom):
 
 class MiniHackRoom15x15Trap(MiniHackRoom):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args, size=15, random=True, n_monster=0, n_trap=15, **kwargs
-        )
+        super().__init__(*args, size=15, random=True, n_monster=0, n_trap=15, **kwargs)
 
 
 class MiniHackRoom15x15Ultimate(MiniHackRoom):

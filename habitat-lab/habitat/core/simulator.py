@@ -97,19 +97,14 @@ class Sensor(metaclass=abc.ABCMeta):
 class Observations(Dict[str, Any]):
     r"""Dictionary containing sensor observations"""
 
-    def __init__(
-        self, sensors: Dict[str, Sensor], *args: Any, **kwargs: Any
-    ) -> None:
+    def __init__(self, sensors: Dict[str, Sensor], *args: Any, **kwargs: Any) -> None:
         """Constructor
 
         :param sensors: list of sensors whose observations are fetched and
             packaged.
         """
 
-        data = [
-            (uuid, sensor.get_observation(*args, **kwargs))
-            for uuid, sensor in sensors.items()
-        ]
+        data = [(uuid, sensor.get_observation(*args, **kwargs)) for uuid, sensor in sensors.items()]
         super().__init__(data)
 
 
@@ -198,9 +193,7 @@ class SensorSuite:
         self.sensors = OrderedDict()
         ordered_spaces: OrderedDict[str, Space] = OrderedDict()
         for sensor in sensors:
-            assert (
-                sensor.uuid not in self.sensors
-            ), "'{}' is duplicated sensor uuid".format(sensor.uuid)
+            assert sensor.uuid not in self.sensors, "'{}' is duplicated sensor uuid".format(sensor.uuid)
             self.sensors[sensor.uuid] = sensor
             ordered_spaces[sensor.uuid] = sensor.observation_space
         self.observation_spaces = spaces.Dict(spaces=ordered_spaces)
@@ -269,9 +262,7 @@ class Simulator:
     def geodesic_distance(
         self,
         position_a: Union[Sequence[float], np.ndarray],
-        position_b: Union[
-            Sequence[float], Sequence[Sequence[float]], np.ndarray
-        ],
+        position_b: Union[Sequence[float], Sequence[Sequence[float]], np.ndarray],
         episode: Optional[Episode] = None,
     ) -> float:
         r"""Calculates geodesic distance between two points.
@@ -346,9 +337,7 @@ class Simulator:
         """
         raise NotImplementedError
 
-    def get_straight_shortest_path_points(
-        self, position_a: List[float], position_b: List[float]
-    ) -> List[List[float]]:
+    def get_straight_shortest_path_points(self, position_a: List[float], position_b: List[float]) -> List[List[float]]:
         r"""Returns points along the geodesic (shortest) path between two
         points irrespective of the angles between the waypoints.
 

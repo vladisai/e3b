@@ -74,11 +74,7 @@ class ActionSpace(gym.spaces.Dict):
         return True
 
     def __repr__(self):
-        return (
-            "ActionSpace("
-            + ", ".join([k + ":" + str(s) for k, s in self.spaces.items()])
-            + ")"
-        )
+        return "ActionSpace(" + ", ".join([k + ":" + str(s) for k, s in self.spaces.items()]) + ")"
 
 
 class ListSpace(Space):
@@ -101,9 +97,7 @@ class ListSpace(Space):
         self.min_seq_length = min_seq_length
         self.max_seq_length = max_seq_length
         self.space = space
-        self.length_select = gym.spaces.Discrete(
-            max_seq_length - min_seq_length
-        )
+        self.length_select = gym.spaces.Discrete(max_seq_length - min_seq_length)
 
     def sample(self):
         seq_length = self.length_select.sample() + self.min_seq_length
@@ -120,6 +114,5 @@ class ListSpace(Space):
 
     def __repr__(self):
         return (
-            f"ListSpace({self.space}, min_seq_length="
-            f"{self.min_seq_length}, max_seq_length={self.max_seq_length})"
+            f"ListSpace({self.space}, min_seq_length=" f"{self.min_seq_length}, max_seq_length={self.max_seq_length})"
         )

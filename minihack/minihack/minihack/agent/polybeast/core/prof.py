@@ -48,11 +48,7 @@ class Timings:
         n = self._counts[name]
 
         mean = self._means[name] + (x - self._means[name]) / (n + 1)
-        var = (
-            n * self._vars[name]
-            + n * (self._means[name] - mean) ** 2
-            + (x - mean) ** 2
-        ) / (n + 1)
+        var = (n * self._vars[name] + n * (self._means[name] - mean) ** 2 + (x - mean) ** 2) / (n + 1)
 
         self._means[name] = mean
         self._vars[name] = var
@@ -65,7 +61,7 @@ class Timings:
         return self._vars
 
     def stds(self):
-        return {k: v ** 0.5 for k, v in self._vars.items()}
+        return {k: v**0.5 for k, v in self._vars.items()}
 
     def summary(self, prefix=""):
         means = self.means()

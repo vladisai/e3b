@@ -36,16 +36,10 @@ except ImportError:
 
 
 def _powerset(s):
-    return [
-        combo
-        for r in range(len(s) + 1)
-        for combo in itertools.combinations(s, r)
-    ]
+    return [combo for r in range(len(s) + 1) for combo in itertools.combinations(s, r)]
 
 
-@pytest.mark.skipif(
-    not baseline_installed, reason="baseline sub-module not installed"
-)
+@pytest.mark.skipif(not baseline_installed, reason="baseline sub-module not installed")
 @pytest.mark.parametrize(
     "test_cfg_path,mode,gpu2gpu,observation_transforms",
     list(
@@ -109,9 +103,7 @@ def test_trainers(test_cfg_path, mode, gpu2gpu, observation_transforms):
         torch.distributed.destroy_process_group()
 
 
-@pytest.mark.skipif(
-    not baseline_installed, reason="baseline sub-module not installed"
-)
+@pytest.mark.skipif(not baseline_installed, reason="baseline sub-module not installed")
 @pytest.mark.parametrize(
     "test_cfg_path,mode",
     [
@@ -123,9 +115,7 @@ def test_trainers(test_cfg_path, mode, gpu2gpu, observation_transforms):
 )
 @pytest.mark.parametrize("camera", ["equirect", "fisheye", "cubemap"])
 @pytest.mark.parametrize("sensor_type", ["RGB", "DEPTH"])
-def test_cubemap_stiching(
-    test_cfg_path: str, mode: str, camera: str, sensor_type: str
-):
+def test_cubemap_stiching(test_cfg_path: str, mode: str, camera: str, sensor_type: str):
     meta_config = get_config(config_paths=test_cfg_path)
     meta_config.defrost()
     config = meta_config.TASK_CONFIG
@@ -155,13 +145,9 @@ def test_cubemap_stiching(
     meta_config.TASK_CONFIG = config
     meta_config.SENSORS = config.SIMULATOR.AGENT_0.SENSORS
     if camera == "equirect":
-        meta_config.RL.POLICY.OBS_TRANSFORMS.CUBE2EQ.SENSOR_UUIDS = tuple(
-            sensor_uuids
-        )
+        meta_config.RL.POLICY.OBS_TRANSFORMS.CUBE2EQ.SENSOR_UUIDS = tuple(sensor_uuids)
     elif camera == "fisheye":
-        meta_config.RL.POLICY.OBS_TRANSFORMS.CUBE2FISH.SENSOR_UUIDS = tuple(
-            sensor_uuids
-        )
+        meta_config.RL.POLICY.OBS_TRANSFORMS.CUBE2FISH.SENSOR_UUIDS = tuple(sensor_uuids)
     meta_config.freeze()
     if camera in ["equirect", "fisheye"]:
         execute_exp(meta_config, mode)
@@ -187,16 +173,10 @@ def test_cubemap_stiching(
         orig_batch = deepcopy(batch)
 
         #  ProjectionTransformer
-        obs_trans_to_eq = baseline_registry.get_obs_transformer(
-            "CubeMap2Equirect"
-        )
+        obs_trans_to_eq = baseline_registry.get_obs_transformer("CubeMap2Equirect")
         cube2equirect = obs_trans_to_eq(sensor_uuids, (256, 512))
-        obs_trans_to_cube = baseline_registry.get_obs_transformer(
-            "Equirect2CubeMap"
-        )
-        equirect2cube = obs_trans_to_cube(
-            cube2equirect.target_uuids, (256, 256)
-        )
+        obs_trans_to_cube = baseline_registry.get_obs_transformer("Equirect2CubeMap")
+        equirect2cube = obs_trans_to_cube(cube2equirect.target_uuids, (256, 256))
 
         # Cubemap to Equirect to Cubemap
         batch_eq = cube2equirect(batch)
@@ -225,9 +205,7 @@ def test_cubemap_stiching(
         raise ValueError(f"Unknown camera name: {camera}")
 
 
-@pytest.mark.skipif(
-    not baseline_installed, reason="baseline sub-module not installed"
-)
+@pytest.mark.skipif(not baseline_installed, reason="baseline sub-module not installed")
 def test_eval_config():
     ckpt_opts = ["VIDEO_OPTION", "[]"]
     eval_opts = ["VIDEO_OPTION", "['disk']"]
@@ -263,18 +241,11 @@ def __do_pause_test(num_envs, envs_to_pause):
             self._running.pop(idx)
 
     envs = PausableShim(num_envs)
-    test_recurrent_hidden_states = (
-        torch.arange(num_envs).view(num_envs, 1, 1).expand(num_envs, 4, 512)
-    )
+    test_recurrent_hidden_states = torch.arange(num_envs).view(num_envs, 1, 1).expand(num_envs, 4, 512)
     not_done_masks = torch.arange(num_envs).view(num_envs, 1)
     current_episode_reward = torch.arange(num_envs).view(num_envs, 1)
     prev_actions = torch.arange(num_envs).view(num_envs, 1)
-    batch = {
-        k: torch.arange(num_envs)
-        .view(num_envs, 1, 1, 1)
-        .expand(num_envs, 3, 256, 256)
-        for k in ["a", "b"]
-    }
+    batch = {k: torch.arange(num_envs).view(num_envs, 1, 1, 1).expand(num_envs, 3, 256, 256) for k in ["a", "b"]}
     rgb_frames = [[idx] for idx in range(num_envs)]
 
     (
@@ -313,9 +284,7 @@ def __do_pause_test(num_envs, envs_to_pause):
         assert v[:, 0, 0, 0].numpy().tolist() == expected
 
 
-@pytest.mark.skipif(
-    not baseline_installed, reason="baseline sub-module not installed"
-)
+@pytest.mark.skipif(not baseline_installed, reason="baseline sub-module not installed")
 def test_pausing():
     random.seed(0)
     for _ in range(100):
@@ -334,18 +303,13 @@ def test_pausing():
     __do_pause_test(num_envs, list(range(num_envs)))
 
 
-@pytest.mark.skipif(
-    not baseline_installed, reason="baseline sub-module not installed"
-)
+@pytest.mark.skipif(not baseline_installed, reason="baseline sub-module not installed")
 @pytest.mark.parametrize(
     "sensor_device,batched_device",
     [("cpu", "cpu"), ("cpu", "cuda"), ("cuda", "cuda")],
 )
 def test_batch_obs(sensor_device, batched_device):
-    if (
-        "cuda" in (sensor_device, batched_device)
-        and not torch.cuda.is_available()
-    ):
+    if "cuda" in (sensor_device, batched_device) and not torch.cuda.is_available():
         pytest.skip("CUDA not avaliable")
 
     sensor_device = torch.device(sensor_device)
@@ -354,12 +318,6 @@ def test_batch_obs(sensor_device, batched_device):
     numpy_if = lambda t: t.numpy() if sensor_device.type == "cpu" else t
 
     cache = ObservationBatchingCache()
-    sensors = [
-        {
-            f"{s}": numpy_if(torch.randn(128, 128, device=sensor_device))
-            for s in range(4)
-        }
-        for _ in range(4)
-    ]
+    sensors = [{f"{s}": numpy_if(torch.randn(128, 128, device=sensor_device)) for s in range(4)} for _ in range(4)]
 
     _ = batch_obs(sensors, device=batched_device, cache=cache)

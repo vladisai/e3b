@@ -57,7 +57,6 @@ def execute_exp(config: Config, run_type: str) -> None:
     assert trainer_init is not None, f"{config.TRAINER_NAME} is not supported"
     trainer = trainer_init(config)
 
-
     if run_type == "train":
         trainer.train()
     elif run_type == "eval":

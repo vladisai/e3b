@@ -53,9 +53,7 @@ class RearrangeSim(HabitatSim):
         self._debug_render = self.habitat_config.get("DEBUG_RENDER", False)
 
         self.art_objs: List[habitat_sim.physics.ManagedArticulatedObject] = []
-        self._start_art_states: Dict[
-            habitat_sim.physics.ManagedArticulatedObject, List[float]
-        ] = {}
+        self._start_art_states: Dict[habitat_sim.physics.ManagedArticulatedObject, List[float]] = {}
         self._prev_obj_names: Optional[List[str]] = None
         self.scene_obj_ids: List[int] = []
         # Used to get data from the RL environment class to sensors.
@@ -77,9 +75,7 @@ class RearrangeSim(HabitatSim):
             RearrangeGraspManager,
         )
 
-        self.grasp_mgr: RearrangeGraspManager = RearrangeGraspManager(
-            self, self.habitat_config
-        )
+        self.grasp_mgr: RearrangeGraspManager = RearrangeGraspManager(self, self.habitat_config)
 
     def _get_target_trans(self):
         """
@@ -90,9 +86,7 @@ class RearrangeSim(HabitatSim):
         target_trans = []
         rom = self.get_rigid_object_manager()
         for target_handle, trans in self.ep_info["targets"].items():
-            targ_idx = self.scene_obj_ids.index(
-                rom.get_object_by_handle(target_handle).object_id
-            )
+            targ_idx = self.scene_obj_ids.index(rom.get_object_by_handle(target_handle).object_id)
             target_trans.append((targ_idx, mn.Matrix4(trans)))
         return target_trans
 
@@ -145,9 +139,7 @@ class RearrangeSim(HabitatSim):
     @property
     def ik_helper(self):
         if not self._is_pb_installed:
-            raise ImportError(
-                "Need to install PyBullet to use IK (`pip install pybullet==3.0.4`)"
-            )
+            raise ImportError("Need to install PyBullet to use IK (`pip install pybullet==3.0.4`)")
         return self._ik_helper
 
     def reconfigure(self, config: Config):
@@ -201,24 +193,16 @@ class RearrangeSim(HabitatSim):
 
         # consume a fixed position from SIMUALTOR.AGENT_0 if configured
         if self.habitat_config.AGENT_0.IS_SET_START_STATE:
-            self.robot.base_pos = mn.Vector3(
-                self.habitat_config.AGENT_0.START_POSITION
-            )
+            self.robot.base_pos = mn.Vector3(self.habitat_config.AGENT_0.START_POSITION)
             agent_rot = self.habitat_config.AGENT_0.START_ROTATION
-            self.robot.sim_obj.rotation = mn.Quaternion(
-                mn.Vector3(agent_rot[:3]), agent_rot[3]
-            )
+            self.robot.sim_obj.rotation = mn.Quaternion(mn.Vector3(agent_rot[:3]), agent_rot[3])
 
             if "RENDER_CAMERA_OFFSET" in self.habitat_config:
-                self.robot.params.cameras[
-                    "robot_third"
-                ].cam_offset_pos = mn.Vector3(
+                self.robot.params.cameras["robot_third"].cam_offset_pos = mn.Vector3(
                     self.habitat_config.RENDER_CAMERA_OFFSET
                 )
             if "RENDER_CAMERA_LOOKAT" in self.habitat_config:
-                self.robot.params.cameras[
-                    "robot_third"
-                ].cam_look_at_pos = mn.Vector3(
+                self.robot.params.cameras["robot_third"].cam_look_at_pos = mn.Vector3(
                     self.habitat_config.RENDER_CAMERA_LOOKAT
                 )
 
@@ -240,11 +224,7 @@ class RearrangeSim(HabitatSim):
         scene_pos = self.get_scene_pos()
         self.target_start_pos = np.array(
             [
-                scene_pos[
-                    self.scene_obj_ids.index(
-                        rom.get_object_by_handle(t_handle).object_id
-                    )
-                ]
+                scene_pos[self.scene_obj_ids.index(rom.get_object_by_handle(t_handle).object_id)]
                 for t_handle, _ in self.ep_info["targets"].items()
             ]
         )
@@ -258,9 +238,7 @@ class RearrangeSim(HabitatSim):
                     np.array(self.robot.params.arm_init_params),
                 )
             # Capture the starting art states
-            self._start_art_states = {
-                ao: ao.joint_positions for ao in self.art_objs
-            }
+            self._start_art_states = {ao: ao.joint_positions for ao in self.art_objs}
 
     def _recompute_navmesh(self):
         """Generates the navmesh on the fly. This must be called
@@ -309,9 +287,7 @@ class RearrangeSim(HabitatSim):
             ao = aom.get_object_by_handle(aoi_handle)
             ao_pose = ao.joint_positions
             for link_ix, joint_state in joint_states.items():
-                joint_position_index = ao.get_link_joint_pos_offset(
-                    int(link_ix)
-                )
+                joint_position_index = ao.get_link_joint_pos_offset(int(link_ix))
                 ao_pose[joint_position_index] = joint_state
             ao.joint_positions = ao_pose
 
@@ -324,31 +300,21 @@ class RearrangeSim(HabitatSim):
         for i, (obj_handle, transform) in enumerate(ep_info["rigid_objs"]):
             if should_add_objects:
                 obj_attr_mgr = self.get_object_template_manager()
-                matching_templates = (
-                    obj_attr_mgr.get_templates_by_handle_substring(obj_handle)
-                )
+                matching_templates = obj_attr_mgr.get_templates_by_handle_substring(obj_handle)
                 assert (
                     len(matching_templates.values()) == 1
                 ), "Duplicate object attributes matched to shortened handle. TODO: relative paths as handles should fix this. For now, try renaming objects to avoid collision."
-                ro = rom.add_object_by_template_handle(
-                    list(matching_templates.keys())[0]
-                )
+                ro = rom.add_object_by_template_handle(list(matching_templates.keys())[0])
             else:
                 ro = rom.get_object_by_id(self.scene_obj_ids[i])
 
             # The saved matrices need to be flipped when reloading.
-            ro.transformation = mn.Matrix4(
-                [[transform[j][i] for j in range(4)] for i in range(4)]
-            )
+            ro.transformation = mn.Matrix4([[transform[j][i] for j in range(4)] for i in range(4)])
 
-            other_obj_handle = (
-                obj_handle.split(".")[0] + f"_:{obj_counts[obj_handle]:04d}"
-            )
+            other_obj_handle = obj_handle.split(".")[0] + f"_:{obj_counts[obj_handle]:04d}"
 
             if other_obj_handle in self.instance_handle_to_ref_handle:
-                ref_handle = self.instance_handle_to_ref_handle[
-                    other_obj_handle
-                ]
+                ref_handle = self.instance_handle_to_ref_handle[other_obj_handle]
                 # self.ref_handle_to_rigid_obj_id[ref_handle] = ro.object_id
                 rel_idx = len(self.scene_obj_ids)
                 self.ref_handle_to_rigid_obj_id[ref_handle] = rel_idx
@@ -365,9 +331,7 @@ class RearrangeSim(HabitatSim):
         if self._debug_render:
             for marker_name, m in self._markers.items():
                 m_T = m.get_current_transform()
-                self.viz_ids[marker_name] = self.visualize_position(
-                    m_T.translation, self.viz_ids[marker_name]
-                )
+                self.viz_ids[marker_name] = self.visualize_position(m_T.translation, self.viz_ids[marker_name])
 
         # TODO: refactor this
         # target_name_pos = [
@@ -397,9 +361,7 @@ class RearrangeSim(HabitatSim):
         robot_T = self.robot.sim_obj.transformation
         art_T = [ao.transformation for ao in self.art_objs]
         rom = self.get_rigid_object_manager()
-        static_T = [
-            rom.get_object_by_id(i).transformation for i in self.scene_obj_ids
-        ]
+        static_T = [rom.get_object_by_id(i).transformation for i in self.scene_obj_ids]
         art_pos = [ao.joint_positions for ao in self.art_objs]
         robot_js = self.robot.sim_obj.joint_positions
 
@@ -460,9 +422,7 @@ class RearrangeSim(HabitatSim):
         if self._should_render_debug:
             self._try_acquire_context()
             for obj_handle, _ in self.ep_info["targets"].items():
-                self.set_object_bb_draw(
-                    False, rom.get_object_by_handle(obj_handle).object_id
-                )
+                self.set_object_bb_draw(False, rom.get_object_by_handle(obj_handle).object_id)
 
         add_back_viz_objs = {}
         for name, viz_id in self.viz_ids.items():
@@ -504,16 +464,12 @@ class RearrangeSim(HabitatSim):
 
             # Always draw the target
             for obj_handle, _ in self.ep_info["targets"].items():
-                self.set_object_bb_draw(
-                    True, rom.get_object_by_handle(obj_handle).object_id
-                )
+                self.set_object_bb_draw(True, rom.get_object_by_handle(obj_handle).object_id)
 
             debug_obs = self.get_sensor_observations()
             obs["robot_third_rgb"] = debug_obs["robot_third_rgb"][:, :, :3]
 
-        if self.habitat_config.HABITAT_SIM_V0.get(
-            "ENABLE_GFX_REPLAY_SAVE", False
-        ):
+        if self.habitat_config.HABITAT_SIM_V0.get("ENABLE_GFX_REPLAY_SAVE", False):
             self.gfx_replay_manager.save_keyframe()
 
         return obs
@@ -538,13 +494,9 @@ class RearrangeSim(HabitatSim):
         if viz_id is None:
             if r not in self._viz_templates:
                 # create and register a new template for this novel sphere scaling
-                template = rom.get_template_by_handle(
-                    rom.get_template_handles("sphere")[0]
-                )
+                template = rom.get_template_by_handle(rom.get_template_handles("sphere")[0])
                 template.scale = mn.Vector3(r, r, r)
-                self._viz_templates[r] = rom.register_template(
-                    template, "ball_new_viz" + str(r)
-                )
+                self._viz_templates[r] = rom.register_template(template, "ball_new_viz" + str(r))
             viz_obj = rom.add_object_by_template_id(self._viz_templates[r])
             make_render_only(viz_obj, self)
         else:
@@ -564,9 +516,7 @@ class RearrangeSim(HabitatSim):
         # optionally step physics and update the robot for benchmarking purposes
         if self.habitat_config.get("STEP_PHYSICS", True):
             self.step_world(dt)
-            if self.robot is not None and self.habitat_config.get(
-                "UPDATE_ROBOT", True
-            ):
+            if self.robot is not None and self.habitat_config.get("UPDATE_ROBOT", True):
                 self.robot.update()
 
     def get_targets(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -579,9 +529,7 @@ class RearrangeSim(HabitatSim):
         """
         targ_idx, targ_trans = list(zip(*self._get_target_trans()))
 
-        a, b = np.array(targ_idx), [
-            np.array(x.translation) for x in targ_trans
-        ]
+        a, b = np.array(targ_idx), [np.array(x.translation) for x in targ_trans]
         return a, np.array(b)
 
     def get_n_targets(self) -> int:
@@ -595,9 +543,4 @@ class RearrangeSim(HabitatSim):
     def get_scene_pos(self) -> np.ndarray:
         """Get the positions of all clutter RigidObjects in the scene as a numpy array."""
         rom = self.get_rigid_object_manager()
-        return np.array(
-            [
-                rom.get_object_by_id(idx).translation
-                for idx in self.scene_obj_ids
-            ]
-        )
+        return np.array([rom.get_object_by_id(idx).translation for idx in self.scene_obj_ids])

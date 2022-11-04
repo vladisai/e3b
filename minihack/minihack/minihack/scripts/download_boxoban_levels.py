@@ -5,17 +5,12 @@ import zipfile
 import pkg_resources
 
 DESTINATION_PATH = pkg_resources.resource_filename("minihack", "dat")
-BOXOBAN_REPO_URL = (
-    "https://github.com/deepmind/boxoban-levels/archive/refs/heads/master.zip"
-)
+BOXOBAN_REPO_URL = "https://github.com/deepmind/boxoban-levels/archive/refs/heads/master.zip"
 
 
 def download_boxoban_levels():
     print("Downloading Boxoban levels...")
-    os.system(
-        f"wget -c --read-timeout=5 --tries=0 "
-        f'"{BOXOBAN_REPO_URL}" -P {DESTINATION_PATH}'
-    )
+    os.system(f"wget -c --read-timeout=5 --tries=0 " f'"{BOXOBAN_REPO_URL}" -P {DESTINATION_PATH}')
     print("Boxoban levels downloaded, unpacking...")
 
     zip_file = os.path.join(DESTINATION_PATH, "master.zip")

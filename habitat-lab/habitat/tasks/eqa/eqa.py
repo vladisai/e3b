@@ -42,9 +42,7 @@ class EQAEpisode(NavigationEpisode):
         question: question related to goal object.
     """
 
-    question: QuestionData = attr.ib(
-        default=None, validator=not_none_validator
-    )
+    question: QuestionData = attr.ib(default=None, validator=not_none_validator)
 
 
 @registry.register_sensor
@@ -59,19 +57,11 @@ class QuestionSensor(Sensor):
     def _get_sensor_type(self, *args: Any, **kwargs: Any) -> SensorTypes:
         return SensorTypes.TOKEN_IDS
 
-    def get_observation(
-        self,
-        observations: Dict[str, Observations],
-        episode: EQAEpisode,
-        *args: Any,
-        **kwargs: Any
-    ):
+    def get_observation(self, observations: Dict[str, Observations], episode: EQAEpisode, *args: Any, **kwargs: Any):
         return episode.question.question_tokens
 
     def _get_observation_space(self, *args: Any, **kwargs: Any) -> Space:
-        return ListSpace(
-            spaces.Discrete(self._dataset.question_vocab.get_size())
-        )
+        return ListSpace(spaces.Discrete(self._dataset.question_vocab.get_size()))
 
 
 @registry.register_measure
@@ -126,19 +116,12 @@ class AnswerAccuracy(Measure):
     def reset_metric(self, episode, *args: Any, **kwargs: Any):
         self._metric = 0
 
-    def update_metric(
-        self, action=None, episode=None, *args: Any, **kwargs: Any
-    ):
+    def update_metric(self, action=None, episode=None, *args: Any, **kwargs: Any):
         if episode is None:
             return
 
         if action["action"] == AnswerAction.name:
-            self._metric = (
-                1
-                if episode.question.answer_token
-                == action["action_args"]["answer_id"]
-                else 0
-            )
+            self._metric = 1 if episode.question.answer_token == action["action_args"]["answer_id"] else 0
 
 
 @registry.register_task(name="EQA-v0")
@@ -171,9 +154,7 @@ class EQATask(NavigationTask):
     answer: Optional[int] = None
     invalid_reason: Optional[str] = None
 
-    def _check_episode_is_active(
-        self, *args, action, episode, action_args=None, **kwargs
-    ) -> bool:
+    def _check_episode_is_active(self, *args, action, episode, action_args=None, **kwargs) -> bool:
         return self.is_valid and self.answer is None
 
 
@@ -191,9 +172,7 @@ class AnswerAction(Action):
         task.is_valid = True
         return
 
-    def step(
-        self, *args: Any, answer_id: int, task: EQATask, **kwargs: Any
-    ) -> Dict[str, Observations]:
+    def step(self, *args: Any, answer_id: int, task: EQATask, **kwargs: Any) -> Dict[str, Observations]:
         if task.answer is not None:
             task.is_valid = False
             task.invalid_reason = "Agent answered question twice."
@@ -204,10 +183,4 @@ class AnswerAction(Action):
     @property
     def action_space(self) -> spaces.Dict:
         """Answer expected to be single token."""
-        return spaces.Dict(
-            {
-                "answer_id": spaces.Discrete(
-                    self._dataset.answer_vocab.get_size()
-                )
-            }
-        )
+        return spaces.Dict({"answer_id": spaces.Discrete(self._dataset.answer_vocab.get_size())})

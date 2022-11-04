@@ -24,9 +24,7 @@ from habitat.utils.visualizations import maps
 class Benchmark:
     r"""Benchmark for evaluating agents in environments."""
 
-    def __init__(
-        self, config_paths: Optional[str] = None, eval_remote: bool = False
-    ) -> None:
+    def __init__(self, config_paths: Optional[str] = None, eval_remote: bool = False) -> None:
         r"""..
 
         :param config_paths: file to be used for creating the environment
@@ -40,9 +38,7 @@ class Benchmark:
         else:
             self._env = Env(config=config_env)
 
-    def remote_evaluate(
-        self, agent: "Agent", num_episodes: Optional[int] = None
-    ):
+    def remote_evaluate(self, agent: "Agent", num_episodes: Optional[int] = None):
         # The modules imported below are specific to habitat-challenge remote evaluation.
         # These modules are not part of the habitat-lab repository.
         import pickle
@@ -62,18 +58,14 @@ class Benchmark:
             return pickle.loads(entity)
 
         def remote_ep_over(stub):
-            res_env = unpack_for_grpc(
-                stub.episode_over(evaluation_pb2.Package()).SerializedEntity
-            )
+            res_env = unpack_for_grpc(stub.episode_over(evaluation_pb2.Package()).SerializedEntity)
             return res_env["episode_over"]
 
         env_address_port = os.environ.get("EVALENV_ADDPORT", "localhost:8085")
         channel = grpc.insecure_channel(env_address_port)
         stub = evaluation_pb2_grpc.EnvironmentStub(channel)
 
-        base_num_episodes = unpack_for_grpc(
-            stub.num_episodes(evaluation_pb2.Package()).SerializedEntity
-        )
+        base_num_episodes = unpack_for_grpc(stub.num_episodes(evaluation_pb2.Package()).SerializedEntity)
         num_episodes = base_num_episodes["num_episodes"]
 
         agg_metrics: Dict = defaultdict(float)
@@ -82,9 +74,7 @@ class Benchmark:
 
         while count_episodes < num_episodes:
             agent.reset()
-            res_env = unpack_for_grpc(
-                stub.reset(evaluation_pb2.Package()).SerializedEntity
-            )
+            res_env = unpack_for_grpc(stub.reset(evaluation_pb2.Package()).SerializedEntity)
 
             while not remote_ep_over(stub):
                 obs = res_env["observations"]
@@ -92,18 +82,12 @@ class Benchmark:
 
                 res_env = unpack_for_grpc(
                     stub.act_on_environment(
-                        evaluation_pb2.Package(
-                            SerializedEntity=pack_for_grpc(action)
-                        )
+                        evaluation_pb2.Package(SerializedEntity=pack_for_grpc(action))
                     ).SerializedEntity
                 )
 
             metrics = unpack_for_grpc(
-                stub.get_metrics(
-                    evaluation_pb2.Package(
-                        SerializedEntity=pack_for_grpc(action)
-                    )
-                ).SerializedEntity
+                stub.get_metrics(evaluation_pb2.Package(SerializedEntity=pack_for_grpc(action))).SerializedEntity
             )
 
             for m, v in metrics["metrics"].items():
@@ -116,17 +100,14 @@ class Benchmark:
 
         return avg_metrics
 
-    def local_evaluate(
-        self, agent: "Agent", num_episodes: Optional[int] = None
-    ) -> Dict[str, float]:
+    def local_evaluate(self, agent: "Agent", num_episodes: Optional[int] = None) -> Dict[str, float]:
         if num_episodes is None:
             num_episodes = len(self._env.episodes)
         else:
-            assert num_episodes <= len(self._env.episodes), (
-                "num_episodes({}) is larger than number of episodes "
-                "in environment ({})".format(
-                    num_episodes, len(self._env.episodes)
-                )
+            assert num_episodes <= len(
+                self._env.episodes
+            ), "num_episodes({}) is larger than number of episodes " "in environment ({})".format(
+                num_episodes, len(self._env.episodes)
             )
 
         assert num_episodes > 0, "num_episodes should be greater than 0"
@@ -150,20 +131,18 @@ class Benchmark:
                 else:
                     agg_metrics[m] += v
 
-            top_down_map = maps.get_topdown_map_from_sim(
-                self._env.sim, map_resolution=1024
-            )
-            import pdb; pdb.set_trace()
-            
+            top_down_map = maps.get_topdown_map_from_sim(self._env.sim, map_resolution=1024)
+            import pdb
+
+            pdb.set_trace()
+
             count_episodes += 1
 
         avg_metrics = {k: v / count_episodes for k, v in agg_metrics.items()}
 
         return avg_metrics
 
-    def evaluate(
-        self, agent: "Agent", num_episodes: Optional[int] = None
-    ) -> Dict[str, float]:
+    def evaluate(self, agent: "Agent", num_episodes: Optional[int] = None) -> Dict[str, float]:
         r"""..
 
         :param agent: agent to be evaluated in environment.

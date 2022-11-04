@@ -39,9 +39,7 @@ class BaselineRegistry(Registry):
         """
         from habitat_baselines.common.base_trainer import BaseTrainer
 
-        return cls._register_impl(
-            "trainer", to_register, name, assert_type=BaseTrainer
-        )
+        return cls._register_impl("trainer", to_register, name, assert_type=BaseTrainer)
 
     @classmethod
     def get_trainer(cls, name):
@@ -93,9 +91,7 @@ class BaselineRegistry(Registry):
         """
         from habitat_baselines.rl.ppo.policy import Policy
 
-        return cls._register_impl(
-            "policy", to_register, name, assert_type=Policy
-        )
+        return cls._register_impl("policy", to_register, name, assert_type=Policy)
 
     @classmethod
     def get_policy(cls, name: str):
@@ -103,9 +99,7 @@ class BaselineRegistry(Registry):
         return cls._get_impl("policy", name)
 
     @classmethod
-    def register_obs_transformer(
-        cls, to_register=None, *, name: Optional[str] = None
-    ):
+    def register_obs_transformer(cls, to_register=None, *, name: Optional[str] = None):
         r"""Register a Observation Transformer with :p:`name`.
 
         :param name: Key with which the policy will be registered.

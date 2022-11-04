@@ -59,9 +59,7 @@ class RearrangeEpisodeGenerator:
 
         # debug visualization settings
         self._render_debug_obs = self._make_debug_video = debug_visualization
-        self.vdb: DebugVisualizer = (
-            None  # visual debugger initialized with sim
-        )
+        self.vdb: DebugVisualizer = None  # visual debugger initialized with sim
 
         # hold a habitat Simulator object for efficient re-use
         self.sim: habitat_sim.Simulator = None
@@ -75,9 +73,7 @@ class RearrangeEpisodeGenerator:
         self._get_ao_state_samplers()
 
         # cache objects sampled by this generator for the most recent episode
-        self.ep_sampled_objects: List[
-            habitat_sim.physics.ManagedRigidObject
-        ] = []
+        self.ep_sampled_objects: List[habitat_sim.physics.ManagedRigidObject] = []
         self.num_ep_generated = 0
 
     def _get_resource_sets(self) -> None:
@@ -92,9 +88,7 @@ class RearrangeEpisodeGenerator:
         self._obj_sets: Dict[str, List[str]] = {}
 
         # {receptacle set name -> ([included object handles], [excluded object handles], [included receptacle name substrings], [excluded receptacle name substrings])}
-        self._receptacle_sets: Dict[
-            str, Tuple[List[str], List[str], List[str], List[str]]
-        ] = {}
+        self._receptacle_sets: Dict[str, Tuple[List[str], List[str], List[str], List[str]]] = {}
 
         expected_list_keys = ["included_substrings", "excluded_substrings"]
         # scene sets
@@ -104,15 +98,11 @@ class RearrangeEpisodeGenerator:
                 scene_set["name"] not in self._scene_sets
             ), f"cfg.scene_sets - Duplicate name ('{scene_set['name']}') detected."
             for list_key in expected_list_keys:
-                assert (
-                    list_key in scene_set
-                ), f"Expected list key '{list_key}'."
+                assert list_key in scene_set, f"Expected list key '{list_key}'."
                 assert (
                     type(scene_set[list_key]) is list
                 ), f"cfg.scene_sets - '{scene_set['name']}' '{list_key}' must be a list of strings."
-            self._scene_sets[
-                scene_set["name"]
-            ] = cull_string_list_by_substrings(
+            self._scene_sets[scene_set["name"]] = cull_string_list_by_substrings(
                 self.sim.metadata_mediator.get_scene_handles(),
                 scene_set["included_substrings"],
                 scene_set["excluded_substrings"],
@@ -125,15 +115,11 @@ class RearrangeEpisodeGenerator:
                 object_set["name"] not in self._obj_sets
             ), f"cfg.object_sets - Duplicate name ('{object_set['name']}') detected."
             for list_key in expected_list_keys:
-                assert (
-                    list_key in object_set
-                ), f"Expected list key '{list_key}'."
+                assert list_key in object_set, f"Expected list key '{list_key}'."
                 assert (
                     type(object_set[list_key]) is list
                 ), f"cfg.object_sets - '{object_set['name']}' '{list_key}' must be a list of strings."
-            self._obj_sets[
-                object_set["name"]
-            ] = cull_string_list_by_substrings(
+            self._obj_sets[object_set["name"]] = cull_string_list_by_substrings(
                 self.sim.get_object_template_manager().get_template_handles(),
                 object_set["included_substrings"],
                 object_set["excluded_substrings"],
@@ -152,9 +138,7 @@ class RearrangeEpisodeGenerator:
                 receptacle_set["name"] not in self._receptacle_sets
             ), f"cfg.receptacle_sets - Duplicate name ('{receptacle_set['name']}') detected."
             for list_key in expected_list_keys:
-                assert (
-                    list_key in receptacle_set
-                ), f"Expected list key '{list_key}'."
+                assert list_key in receptacle_set, f"Expected list key '{list_key}'."
                 assert (
                     type(receptacle_set[list_key]) is list
                 ), f"cfg.receptacle_sets - '{receptacle_set['name']}' '{list_key}' must be a list of strings."
@@ -186,20 +170,11 @@ class RearrangeEpisodeGenerator:
                 assert "num_samples" in obj_sampler_info["params"]
                 assert "orientation_sampling" in obj_sampler_info["params"]
                 # merge and flatten object and receptacle sets
-                object_handles = [
-                    x
-                    for y in obj_sampler_info["params"]["object_sets"]
-                    for x in self._obj_sets[y]
-                ]
+                object_handles = [x for y in obj_sampler_info["params"]["object_sets"] for x in self._obj_sets[y]]
                 object_handles = list(set(object_handles))
-                receptacle_info = [
-                    self._receptacle_sets[y]
-                    for y in obj_sampler_info["params"]["receptacle_sets"]
-                ]
+                receptacle_info = [self._receptacle_sets[y] for y in obj_sampler_info["params"]["receptacle_sets"]]
 
-                self._obj_samplers[
-                    obj_sampler_info["name"]
-                ] = samplers.ObjectSampler(
+                self._obj_samplers[obj_sampler_info["name"]] = samplers.ObjectSampler(
                     object_handles,
                     receptacle_info,
                     (
@@ -210,9 +185,7 @@ class RearrangeEpisodeGenerator:
                     obj_sampler_info["params"].get("sample_region_ratio", 1.0),
                 )
             else:
-                logger.info(
-                    f"Requested object sampler '{obj_sampler_info['type']}' is not implemented."
-                )
+                logger.info(f"Requested object sampler '{obj_sampler_info['type']}' is not implemented.")
                 raise (NotImplementedError)
 
     def _get_object_target_samplers(self) -> None:
@@ -234,14 +207,9 @@ class RearrangeEpisodeGenerator:
                     for y in target_sampler_info["params"]["object_samplers"]
                     for x in self.episode_data["sampled_objects"][y]
                 ]
-                receptacle_info = [
-                    self._receptacle_sets[y]
-                    for y in target_sampler_info["params"]["receptacle_sets"]
-                ]
+                receptacle_info = [self._receptacle_sets[y] for y in target_sampler_info["params"]["receptacle_sets"]]
 
-                self._target_samplers[
-                    target_sampler_info["name"]
-                ] = samplers.ObjectTargetSampler(
+                self._target_samplers[target_sampler_info["name"]] = samplers.ObjectTargetSampler(
                     object_instances,
                     receptacle_info,
                     (
@@ -251,9 +219,7 @@ class RearrangeEpisodeGenerator:
                     target_sampler_info["params"]["orientation_sampling"],
                 )
             else:
-                logger.info(
-                    f"Requested target sampler '{target_sampler_info['type']}' is not implemented."
-                )
+                logger.info(f"Requested target sampler '{target_sampler_info['type']}' is not implemented.")
                 raise (NotImplementedError)
 
     def _get_scene_sampler(self) -> None:
@@ -262,9 +228,7 @@ class RearrangeEpisodeGenerator:
         """
         self._scene_sampler: Optional[samplers.SceneSampler] = None
         if self.cfg.scene_sampler.type == "single":
-            self._scene_sampler = samplers.SingleSceneSampler(
-                self.cfg.scene_sampler.params.scene
-            )
+            self._scene_sampler = samplers.SingleSceneSampler(self.cfg.scene_sampler.params.scene)
         elif self.cfg.scene_sampler.type == "subset":
             unified_scene_set: List[str] = []
             # concatenate all requested scene sets
@@ -278,18 +242,14 @@ class RearrangeEpisodeGenerator:
             unified_scene_set = list(set(unified_scene_set))
             self._scene_sampler = samplers.MultiSceneSampler(unified_scene_set)
         else:
-            logger.error(
-                f"Requested scene sampler '{self.cfg.scene_sampler.type}' is not implemented."
-            )
+            logger.error(f"Requested scene sampler '{self.cfg.scene_sampler.type}' is not implemented.")
             raise (NotImplementedError)
 
     def _get_ao_state_samplers(self) -> None:
         """
         Initialize and cache all ArticulatedObject state samplers from configuration.
         """
-        self._ao_state_samplers: Dict[
-            str, samplers.ArticulatedObjectStateSampler
-        ] = {}
+        self._ao_state_samplers: Dict[str, samplers.ArticulatedObjectStateSampler] = {}
         for ao_info in self.cfg.ao_state_samplers:
             assert "name" in ao_info
             assert "type" in ao_info
@@ -299,17 +259,13 @@ class RearrangeEpisodeGenerator:
             ), f"Duplicate AO state sampler name {ao_info['name']} in config."
 
             if ao_info["type"] == "uniform":
-                self._ao_state_samplers[
-                    ao_info["name"]
-                ] = samplers.ArticulatedObjectStateSampler(
+                self._ao_state_samplers[ao_info["name"]] = samplers.ArticulatedObjectStateSampler(
                     ao_info["params"][0],
                     ao_info["params"][1],
                     (ao_info["params"][2], ao_info["params"][3]),
                 )
             elif ao_info["type"] == "composite":
-                composite_ao_sampler_params: Dict[
-                    str, Dict[str, Tuple[float, float]]
-                ] = {}
+                composite_ao_sampler_params: Dict[str, Dict[str, Tuple[float, float]]] = {}
                 for entry in ao_info["params"]:
                     ao_handle = entry["ao_handle"]
                     link_sample_params = entry["joint_states"]
@@ -320,22 +276,17 @@ class RearrangeEpisodeGenerator:
                     for link_params in link_sample_params:
                         link_name = link_params[0]
                         assert (
-                            link_name
-                            not in composite_ao_sampler_params[ao_handle]
+                            link_name not in composite_ao_sampler_params[ao_handle]
                         ), f"Duplicate link name '{link_name}' for handle '{ao_handle} in composite AO sampler config."
                         composite_ao_sampler_params[ao_handle][link_name] = (
                             link_params[1],
                             link_params[2],
                         )
-                self._ao_state_samplers[
-                    ao_info["name"]
-                ] = samplers.CompositeArticulatedObjectStateSampler(
+                self._ao_state_samplers[ao_info["name"]] = samplers.CompositeArticulatedObjectStateSampler(
                     composite_ao_sampler_params
                 )
             else:
-                logger.error(
-                    f"Requested AO state sampler type '{ao_info['type']}' not implemented."
-                )
+                logger.error(f"Requested AO state sampler type '{ao_info['type']}' not implemented.")
                 raise (NotImplementedError)
 
     def _reset_samplers(self) -> None:
@@ -374,18 +325,14 @@ class RearrangeEpisodeGenerator:
 
             if viz_objects:
                 # point the camera at the 1st viz_object for the Receptacle
-                self.vdb.look_at(
-                    viz_objects[0].root_scene_node.absolute_translation
-                )
+                self.vdb.look_at(viz_objects[0].root_scene_node.absolute_translation)
                 self.vdb.get_observation()
             else:
                 logger.warning(
                     f"visualize_scene_receptacles: no visualization object generated for Receptacle '{receptacle.name}'."
                 )
 
-    def generate_episodes(
-        self, num_episodes: int = 1, verbose: bool = False
-    ) -> List[RearrangeEpisode]:
+    def generate_episodes(self, num_episodes: int = 1, verbose: bool = False) -> List[RearrangeEpisode]:
         """
         Generate a fixed number of episodes.
         """
@@ -404,9 +351,7 @@ class RearrangeEpisodeGenerator:
         if verbose:
             pbar.close()
 
-        logger.info(
-            f"Generated {num_episodes} episodes in {num_episodes+failed_episodes} tries."
-        )
+        logger.info(f"Generated {num_episodes} episodes in {num_episodes+failed_episodes} tries.")
 
         return generated_episodes
 
@@ -428,9 +373,7 @@ class RearrangeEpisodeGenerator:
         ao_states: Dict[str, Dict[int, float]] = {}
         for sampler_name, ao_state_sampler in self._ao_state_samplers.items():
             sampler_states = ao_state_sampler.sample(self.sim)
-            assert (
-                sampler_states is not None
-            ), f"AO sampler '{sampler_name}' failed"
+            assert sampler_states is not None, f"AO sampler '{sampler_name}' failed"
             for sampled_instance, link_states in sampler_states.items():
                 if sampled_instance.handle not in ao_states:
                     ao_states[sampled_instance.handle] = {}
@@ -450,18 +393,12 @@ class RearrangeEpisodeGenerator:
                 vdb=(self.vdb if self._render_debug_obs else None),
             )
             if sampler_name not in self.episode_data["sampled_objects"]:
-                self.episode_data["sampled_objects"][
-                    sampler_name
-                ] = new_objects
+                self.episode_data["sampled_objects"][sampler_name] = new_objects
             else:
                 # handle duplicate sampler names
-                self.episode_data["sampled_objects"][
-                    sampler_name
-                ] += new_objects
+                self.episode_data["sampled_objects"][sampler_name] += new_objects
             self.ep_sampled_objects += new_objects
-            logger.info(
-                f"Sampler {sampler_name} generated {len(new_objects)} new object placements."
-            )
+            logger.info(f"Sampler {sampler_name} generated {len(new_objects)} new object placements.")
             # debug visualization showing each newly added object
             if self._render_debug_obs:
                 for new_object in new_objects:
@@ -470,9 +407,7 @@ class RearrangeEpisodeGenerator:
 
         # simulate the world for a few seconds to validate the placements
         if not self.settle_sim():
-            logger.warning(
-                "Aborting episode generation due to unstable state."
-            )
+            logger.warning("Aborting episode generation due to unstable state.")
             return None
 
         # generate the target samplers
@@ -481,25 +416,17 @@ class RearrangeEpisodeGenerator:
         target_refs = {}
 
         # sample targets
-        for target_idx, (sampler_name, target_sampler) in enumerate(
-            self._target_samplers.items()
-        ):
-            new_target_objects = target_sampler.sample(
-                self.sim, snap_down=True, vdb=self.vdb
-            )
+        for target_idx, (sampler_name, target_sampler) in enumerate(self._target_samplers.items()):
+            new_target_objects = target_sampler.sample(self.sim, snap_down=True, vdb=self.vdb)
             # cache transforms and add visualizations
             for instance_handle, target_object in new_target_objects.items():
                 assert (
                     instance_handle not in self.episode_data["sampled_targets"]
                 ), f"Duplicate target for instance '{instance_handle}'."
                 rom = self.sim.get_rigid_object_manager()
-                target_bb_size = (
-                    target_object.root_scene_node.cumulative_bb.size()
-                )
+                target_bb_size = target_object.root_scene_node.cumulative_bb.size()
                 target_transform = target_object.transformation
-                self.episode_data["sampled_targets"][
-                    instance_handle
-                ] = np.array(target_transform)
+                self.episode_data["sampled_targets"][instance_handle] = np.array(target_transform)
                 target_refs[instance_handle] = f"{sampler_name}|{target_idx}"
                 rom.remove_object_by_handle(target_object.handle)
                 if self._render_debug_obs:
@@ -522,9 +449,7 @@ class RearrangeEpisodeGenerator:
         # TODO: creating shortened names should be automated and embedded in the objects to be done in a uniform way
         sampled_rigid_object_states = [
             (
-                x.creation_attributes.handle.split(
-                    x.creation_attributes.file_directory
-                )[-1].split("/")[-1],
+                x.creation_attributes.handle.split(x.creation_attributes.file_directory)[-1].split("/")[-1],
                 np.array(x.transformation),
             )
             for x in self.ep_sampled_objects
@@ -587,9 +512,7 @@ class RearrangeEpisodeGenerator:
             sensor_spec.resolution = sensor_params["resolution"]
             sensor_spec.position = sensor_params["position"]
             sensor_spec.orientation = sensor_params["orientation"]
-            sensor_spec.sensor_subtype = (
-                habitat_sim.SensorSubType.EQUIRECTANGULAR
-            )
+            sensor_spec.sensor_subtype = habitat_sim.SensorSubType.EQUIRECTANGULAR
             sensor_spec.sensor_subtype = habitat_sim.SensorSubType.PINHOLE
             sensor_specs.append(sensor_spec)
 
@@ -613,19 +536,13 @@ class RearrangeEpisodeGenerator:
             self.sim.reconfigure(hab_cfg)
 
         # setup the debug camera state to the center of the scene bounding box
-        scene_bb = (
-            self.sim.get_active_scene_graph().get_root_node().cumulative_bb
-        )
+        scene_bb = self.sim.get_active_scene_graph().get_root_node().cumulative_bb
         self.sim.agents[0].scene_node.translation = scene_bb.center()
 
         # initialize the debug visualizer
-        self.vdb = DebugVisualizer(
-            self.sim, output_path="rearrange_ep_gen_output/"
-        )
+        self.vdb = DebugVisualizer(self.sim, output_path="rearrange_ep_gen_output/")
 
-    def settle_sim(
-        self, duration: float = 5.0, make_video: bool = True
-    ) -> bool:
+    def settle_sim(self, duration: float = 5.0, make_video: bool = True) -> bool:
         """
         Run dynamics for a few seconds to check for stability of newly placed objects and optionally produce a video.
         Returns whether or not the simulation was stable.
@@ -634,9 +551,7 @@ class RearrangeEpisodeGenerator:
             return True
         # assert len(self.ep_sampled_objects) > 0
 
-        scene_bb = (
-            self.sim.get_active_scene_graph().get_root_node().cumulative_bb
-        )
+        scene_bb = self.sim.get_active_scene_graph().get_root_node().cumulative_bb
         new_obj_centroid = mn.Vector3()
         spawn_positions = {}
         for new_object in self.ep_sampled_objects:
@@ -662,27 +577,19 @@ class RearrangeEpisodeGenerator:
         error_eps = 0.1
         unstable_placements = []
         for new_object in self.ep_sampled_objects:
-            error = (
-                spawn_positions[new_object.handle] - new_object.translation
-            ).length()
+            error = (spawn_positions[new_object.handle] - new_object.translation).length()
             max_settle_displacement = max(max_settle_displacement, error)
             if error > error_eps:
                 unstable_placements.append(new_object.handle)
-                logger.info(
-                    f"    Object '{new_object.handle}' unstable. Moved {error} units from placement."
-                )
+                logger.info(f"    Object '{new_object.handle}' unstable. Moved {error} units from placement.")
         logger.info(
             f" : unstable={len(unstable_placements)}|{len(self.ep_sampled_objects)} ({len(unstable_placements)/len(self.ep_sampled_objects)*100}%) : {unstable_placements}."
         )
-        logger.info(
-            f" : Maximum displacement from settling = {max_settle_displacement}"
-        )
+        logger.info(f" : Maximum displacement from settling = {max_settle_displacement}")
         # TODO: maybe draw/display trajectory tubes for the displacements?
 
         if self._render_debug_obs and make_video:
-            self.vdb.make_debug_video(
-                prefix="settle_", fps=30, obs_cache=settle_db_obs
-            )
+            self.vdb.make_debug_video(prefix="settle_", fps=30, obs_cache=settle_db_obs)
 
         # return success or failure
         return len(unstable_placements) == 0
@@ -908,17 +815,13 @@ if __name__ == "__main__":
     cfg = get_config_defaults()
     logger.info(f"\n\nOriginal Config:\n{cfg}")
     if args.config is not None:
-        assert osp.exists(
-            args.config
-        ), f"Provided config, '{args.config}', does not exist."
+        assert osp.exists(args.config), f"Provided config, '{args.config}', does not exist."
         cfg.merge_from_file(args.config)
 
     logger.info(f"\n\nModified Config:\n{cfg}\n\n")
 
     dataset = RearrangeDatasetV0()
-    with RearrangeEpisodeGenerator(
-        cfg=cfg, debug_visualization=args.debug
-    ) as ep_gen:
+    with RearrangeEpisodeGenerator(cfg=cfg, debug_visualization=args.debug) as ep_gen:
         if not osp.isdir(args.db_output):
             os.makedirs(args.db_output)
         ep_gen.vdb.output_path = osp.abspath(args.db_output)
@@ -935,24 +838,15 @@ if __name__ == "__main__":
             logger.info(f" SceneDataset: {mm.active_dataset}\n")
             logger.info("--------")
             logger.info(" Scenes:")
-            logger.info(
-                "--------\n    " + (list_sep.join(mm.get_scene_handles()))
-            )
+            logger.info("--------\n    " + (list_sep.join(mm.get_scene_handles())))
             logger.info("---------------")
             logger.info(" Rigid Objects:")
             logger.info(
-                "---------------\n    "
-                + (
-                    list_sep.join(
-                        mm.object_template_manager.get_template_handles()
-                    )
-                ),
+                "---------------\n    " + (list_sep.join(mm.object_template_manager.get_template_handles())),
             )
             logger.info("---------------------")
             logger.info(" Articulated Objects:")
-            logger.info(
-                "---------------------\n    " + (list_sep.join(mm.urdf_paths))
-            )
+            logger.info("---------------------\n    " + (list_sep.join(mm.urdf_paths)))
 
             logger.info("-------------------------")
             logger.info("Stage Global Receptacles:")
@@ -978,27 +872,20 @@ if __name__ == "__main__":
             import time
 
             start_time = time.time()
-            dataset.episodes += ep_gen.generate_episodes(
-                args.num_episodes, args.verbose
-            )
+            dataset.episodes += ep_gen.generate_episodes(args.num_episodes, args.verbose)
             output_path = args.out
             if output_path is None:
                 # default
                 output_path = "rearrange_ep_dataset.json.gz"
             elif osp.isdir(output_path) or output_path.endswith("/"):
                 # append a default filename
-                output_path = (
-                    osp.abspath(output_path) + "/rearrange_ep_dataset.json.gz"
-                )
+                output_path = osp.abspath(output_path) + "/rearrange_ep_dataset.json.gz"
             else:
                 # filename
                 if not output_path.endswith(".json.gz"):
                     output_path += ".json.gz"
 
-            if (
-                not osp.exists(osp.dirname(output_path))
-                and len(osp.dirname(output_path)) > 0
-            ):
+            if not osp.exists(osp.dirname(output_path)) and len(osp.dirname(output_path)) > 0:
                 os.makedirs(osp.dirname(output_path))
             # serialize the dataset
             import gzip
@@ -1006,15 +893,9 @@ if __name__ == "__main__":
             with gzip.open(output_path, "wt") as f:
                 f.write(dataset.to_json())
 
-            logger.info(
-                "=============================================================="
-            )
+            logger.info("==============================================================")
             logger.info(
                 f"RearrangeEpisodeGenerator generated {args.num_episodes} episodes in {time.time()-start_time} seconds."
             )
-            logger.info(
-                f"RearrangeDatasetV0 saved to '{osp.abspath(output_path)}'"
-            )
-            logger.info(
-                "=============================================================="
-            )
+            logger.info(f"RearrangeDatasetV0 saved to '{osp.abspath(output_path)}'")
+            logger.info("==============================================================")

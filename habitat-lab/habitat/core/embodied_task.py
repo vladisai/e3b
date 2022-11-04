@@ -59,9 +59,7 @@ class SimulatorTaskAction(Action):
     An ``EmbodiedTask`` action that is wrapping simulator action.
     """
 
-    def __init__(
-        self, *args: Any, config: Config, sim: Simulator, **kwargs: Any
-    ) -> None:
+    def __init__(self, *args: Any, config: Config, sim: Simulator, **kwargs: Any) -> None:
         self._config = config
         self._sim = sim
 
@@ -132,9 +130,7 @@ class Metrics(dict):
         :param measures: list of :ref:`Measure` whose metrics are fetched and
             packaged.
         """
-        data = [
-            (uuid, measure.get_metric()) for uuid, measure in measures.items()
-        ]
+        data = [(uuid, measure.get_metric()) for uuid, measure in measures.items()]
         super().__init__(data)
 
 
@@ -153,9 +149,7 @@ class Measurements:
         """
         self.measures = OrderedDict()
         for measure in measures:
-            assert (
-                measure.uuid not in self.measures
-            ), "'{}' is duplicated measure uuid".format(measure.uuid)
+            assert measure.uuid not in self.measures, "'{}' is duplicated measure uuid".format(measure.uuid)
             self.measures[measure.uuid] = measure
 
     def reset_measures(self, *args: Any, **kwargs: Any) -> None:
@@ -175,9 +169,7 @@ class Measurements:
     def _get_measure_index(self, measure_name):
         return list(self.measures.keys()).index(measure_name)
 
-    def check_measure_dependencies(
-        self, measure_name: str, dependencies: List[str]
-    ):
+    def check_measure_dependencies(self, measure_name: str, dependencies: List[str]):
         r"""Checks if dependencies measures are enabled and calculatethat the measure
         :param measure_name: a name of the measure for which has dependencies.
         :param dependencies: a list of a measure names that are required by
@@ -224,9 +216,7 @@ class EmbodiedTask:
     measurements: Measurements
     sensor_suite: SensorSuite
 
-    def __init__(
-        self, config: Config, sim: Simulator, dataset: Optional[Dataset] = None
-    ) -> None:
+    def __init__(self, config: Config, sim: Simulator, dataset: Optional[Dataset] = None) -> None:
         from habitat.core.registry import registry
 
         self._config = config
@@ -256,9 +246,7 @@ class EmbodiedTask:
         )
         self._action_keys = list(self.actions.keys())
 
-    def _init_entities(
-        self, entity_names, register_func, entities_config=None
-    ) -> OrderedDict:
+    def _init_entities(self, entity_names, register_func, entities_config=None) -> OrderedDict:
         if entities_config is None:
             entities_config = self._config
 
@@ -266,9 +254,7 @@ class EmbodiedTask:
         for entity_name in entity_names:
             entity_cfg = getattr(entities_config, entity_name)
             entity_type = register_func(entity_cfg.TYPE)
-            assert (
-                entity_type is not None
-            ), f"invalid {entity_name} type {entity_cfg.TYPE}"
+            assert entity_type is not None, f"invalid {entity_name} type {entity_cfg.TYPE}"
             entities[entity_name] = entity_type(
                 sim=self._sim,
                 config=entity_cfg,
@@ -279,11 +265,7 @@ class EmbodiedTask:
 
     def reset(self, episode: Episode):
         observations = self._sim.reset()
-        observations.update(
-            self.sensor_suite.get_observations(
-                observations=observations, episode=episode, task=self
-            )
-        )
+        observations.update(self.sensor_suite.get_observations(observations=observations, episode=episode, task=self))
 
         for action_instance in self.actions.values():
             action_instance.reset(episode=episode, task=self)
@@ -296,9 +278,7 @@ class EmbodiedTask:
         action_name = action["action"]
         if isinstance(action_name, (int, np.integer)):
             action_name = self.get_action_name(action_name)
-        assert (
-            action_name in self.actions
-        ), f"Can't find '{action_name}' action in {self.actions.keys()}."
+        assert action_name in self.actions, f"Can't find '{action_name}' action in {self.actions.keys()}."
 
         task_action = self.actions[action_name]
         observations = task_action.step(**action["action_args"], task=self)
@@ -325,15 +305,10 @@ class EmbodiedTask:
     @property
     def action_space(self) -> Space:
         return ActionSpace(
-            {
-                action_name: action_instance.action_space
-                for action_name, action_instance in self.actions.items()
-            }
+            {action_name: action_instance.action_space for action_name, action_instance in self.actions.items()}
         )
 
-    def overwrite_sim_config(
-        self, sim_config: Config, episode: Episode
-    ) -> Config:
+    def overwrite_sim_config(self, sim_config: Config, episode: Episode) -> Config:
         r"""Update config merging information from :p:`sim_config` and
         :p:`episode`.
 

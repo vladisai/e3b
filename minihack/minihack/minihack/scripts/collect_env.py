@@ -62,9 +62,7 @@ SystemEnv = namedtuple(
 
 def run(command):
     """Returns (return-code, stdout, stderr)"""
-    p = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-    )
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
     rc = p.returncode
     if PY3:
@@ -112,21 +110,15 @@ def get_gcc_version(run_lambda):
 
 
 def get_cmake_version(run_lambda):
-    return run_and_parse_first_match(
-        run_lambda, "cmake --version", r"cmake (.*)"
-    )
+    return run_and_parse_first_match(run_lambda, "cmake --version", r"cmake (.*)")
 
 
 def get_nvidia_driver_version(run_lambda):
     if get_platform() == "darwin":
         cmd = "kextstat | grep -i cuda"
-        return run_and_parse_first_match(
-            run_lambda, cmd, r"com[.]nvidia[.]CUDA [(](.*?)[)]"
-        )
+        return run_and_parse_first_match(run_lambda, cmd, r"com[.]nvidia[.]CUDA [(](.*?)[)]")
     smi = get_nvidia_smi()
-    return run_and_parse_first_match(
-        run_lambda, smi, r"Driver Version: (.*?) "
-    )
+    return run_and_parse_first_match(run_lambda, smi, r"Driver Version: (.*?) ")
 
 
 def get_gpu_info(run_lambda):
@@ -206,27 +198,19 @@ def get_platform():
 
 
 def get_mac_version(run_lambda):
-    return run_and_parse_first_match(
-        run_lambda, "sw_vers -productVersion", r"(.*)"
-    )
+    return run_and_parse_first_match(run_lambda, "sw_vers -productVersion", r"(.*)")
 
 
 def get_windows_version(run_lambda):
-    return run_and_read_all(
-        run_lambda, "wmic os get Caption | findstr /v Caption"
-    )
+    return run_and_read_all(run_lambda, "wmic os get Caption | findstr /v Caption")
 
 
 def get_lsb_version(run_lambda):
-    return run_and_parse_first_match(
-        run_lambda, "lsb_release -a", r"Description:\t(.*)"
-    )
+    return run_and_parse_first_match(run_lambda, "lsb_release -a", r"Description:\t(.*)")
 
 
 def check_release_file(run_lambda):
-    return run_and_parse_first_match(
-        run_lambda, "cat /etc/*-release", r'PRETTY_NAME="(.*)"'
-    )
+    return run_and_parse_first_match(run_lambda, "cat /etc/*-release", r'PRETTY_NAME="(.*)"')
 
 
 def get_os(run_lambda):
@@ -265,9 +249,7 @@ def get_pip_packages(run_lambda):
             grep_cmd = r'findstr /R "numpy torch"'
         else:
             grep_cmd = r'grep "torch\|numpy"'
-        return run_and_read_all(
-            run_lambda, pip + " list --format=freeze | " + grep_cmd
-        )
+        return run_and_read_all(run_lambda, pip + " list --format=freeze | " + grep_cmd)
 
     if not PY3:
         return "pip", run_with_pip("pip")
@@ -315,9 +297,7 @@ def get_env_info():
         cuda_available_str = torch.cuda.is_available()
         cuda_version_str = torch.version.cuda
     else:
-        torch_version_str = (
-            torch_debug_mode_str
-        ) = cuda_available_str = cuda_version_str = "N/A"
+        torch_version_str = torch_debug_mode_str = cuda_available_str = cuda_version_str = "N/A"
 
     return SystemEnv(
         minihack_version=minihack_version,
@@ -325,9 +305,7 @@ def get_env_info():
         gym_version=gym_version,
         torch_version=torch_version_str,
         is_debug_build=torch_debug_mode_str,
-        python_version="{}.{}".format(
-            sys.version_info[0], sys.version_info[1]
-        ),
+        python_version="{}.{}".format(sys.version_info[0], sys.version_info[1]),
         is_cuda_available=cuda_available_str,
         cuda_compiled_version=cuda_version_str,
         cuda_runtime_version=get_running_cuda_version(run_lambda),
@@ -403,9 +381,7 @@ def pretty_str(envinfo):
     mutable_dict = envinfo._asdict()
 
     # If nvidia_gpu_models is multiline, start on the next line
-    mutable_dict["nvidia_gpu_models"] = maybe_start_on_next_line(
-        envinfo.nvidia_gpu_models
-    )
+    mutable_dict["nvidia_gpu_models"] = maybe_start_on_next_line(envinfo.nvidia_gpu_models)
 
     # If the machine doesn't have CUDA, report some fields as 'No CUDA'
     dynamic_cuda_fields = [
@@ -414,14 +390,8 @@ def pretty_str(envinfo):
         "nvidia_driver_version",
     ]
     all_cuda_fields = dynamic_cuda_fields + ["cudnn_version"]
-    all_dynamic_cuda_fields_missing = all(
-        mutable_dict[field] is None for field in dynamic_cuda_fields
-    )
-    if (
-        TORCH_AVAILABLE
-        and not torch.cuda.is_available()
-        and all_dynamic_cuda_fields_missing
-    ):
+    all_dynamic_cuda_fields_missing = all(mutable_dict[field] is None for field in dynamic_cuda_fields)
+    if TORCH_AVAILABLE and not torch.cuda.is_available() and all_dynamic_cuda_fields_missing:
         for field in all_cuda_fields:
             mutable_dict[field] = "No CUDA"
         if envinfo.cuda_compiled_version is None:
@@ -434,23 +404,15 @@ def pretty_str(envinfo):
     mutable_dict = replace_nones(mutable_dict)
 
     # If either of these are '', replace with 'No relevant packages'
-    mutable_dict["pip_packages"] = replace_if_empty(
-        mutable_dict["pip_packages"]
-    )
-    mutable_dict["conda_packages"] = replace_if_empty(
-        mutable_dict["conda_packages"]
-    )
+    mutable_dict["pip_packages"] = replace_if_empty(mutable_dict["pip_packages"])
+    mutable_dict["conda_packages"] = replace_if_empty(mutable_dict["conda_packages"])
 
     # Tag conda and pip packages with a prefix
     # If they were previously None, they'll show up as ie '[conda] Could not collect'
     if mutable_dict["pip_packages"]:
-        mutable_dict["pip_packages"] = prepend(
-            mutable_dict["pip_packages"], "[{}] ".format(envinfo.pip_version)
-        )
+        mutable_dict["pip_packages"] = prepend(mutable_dict["pip_packages"], "[{}] ".format(envinfo.pip_version))
     if mutable_dict["conda_packages"]:
-        mutable_dict["conda_packages"] = prepend(
-            mutable_dict["conda_packages"], "[conda] "
-        )
+        mutable_dict["conda_packages"] = prepend(mutable_dict["conda_packages"], "[conda] ")
     return env_info_fmt.format(**mutable_dict)
 
 

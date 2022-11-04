@@ -4,7 +4,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-# This code was taken from 
+# This code was taken from
 # https://github.com/openai/baselines/blob/master/baselines/common/atari_wrappers.py
 # and modified.
 
@@ -15,11 +15,13 @@ import numpy as np
 import gym
 from gym import spaces
 import cv2
+
 cv2.ocl.setUseOpenCL(False)
 
 
 class NoNegativeRewardEnv(gym.RewardWrapper):
     """Clip reward in negative direction."""
+
     def __init__(self, env=None, neg_clip=0.0):
         super(NoNegativeRewardEnv, self).__init__(env)
         self.neg_clip = neg_clip
@@ -30,7 +32,6 @@ class NoNegativeRewardEnv(gym.RewardWrapper):
 
 
 class NoopResetEnv(gym.Wrapper):
-
     def __init__(self, env, noop_max=30):
         """Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
@@ -41,12 +42,12 @@ class NoopResetEnv(gym.Wrapper):
         self.noop_action = 0
 
     def reset(self, **kwargs):
-        """ Do no-op action for a number of steps in [1, noop_max]."""
+        """Do no-op action for a number of steps in [1, noop_max]."""
         self.env.reset(**kwargs)
         if self.override_num_noops is not None:
             noops = self.override_num_noops
         else:
-            noops = self.unwrapped.np_random.randint(1, self.noop_max + 1)  
+            noops = self.unwrapped.np_random.randint(1, self.noop_max + 1)
         assert noops > 0
         obs = None
         for _ in range(noops):
@@ -60,7 +61,6 @@ class NoopResetEnv(gym.Wrapper):
 
 
 class FireResetEnv(gym.Wrapper):
-
     def __init__(self, env):
         """Take action on reset for environments that are fixed until firing."""
         gym.Wrapper.__init__(self, env)
@@ -80,7 +80,6 @@ class FireResetEnv(gym.Wrapper):
 
 
 class EpisodicLifeEnv(gym.Wrapper):
-
     def __init__(self, env):
         """Make end-of-life == end-of-episode, but only reset on true game over.
         Done by DeepMind for the DQN and co. since it helps value estimation.
@@ -118,13 +117,11 @@ class EpisodicLifeEnv(gym.Wrapper):
 
 
 class MaxAndSkipEnv(gym.Wrapper):
-
     def __init__(self, env, skip=4):
         """Return only every `skip`-th frame"""
         gym.Wrapper.__init__(self, env)
         # most recent raw observations (for max pooling across time steps)
-        self._obs_buffer = np.zeros(
-            (2,) + env.observation_space.shape, dtype=np.uint8)
+        self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=np.uint8)
         self._skip = skip
 
     def step(self, action):
@@ -133,8 +130,10 @@ class MaxAndSkipEnv(gym.Wrapper):
         done = None
         for i in range(self._skip):
             obs, reward, done, info = self.env.step(action)
-            if i == self._skip - 2: self._obs_buffer[0] = obs
-            if i == self._skip - 1: self._obs_buffer[1] = obs
+            if i == self._skip - 2:
+                self._obs_buffer[0] = obs
+            if i == self._skip - 1:
+                self._obs_buffer[1] = obs
             total_reward += reward
             if done:
                 break
@@ -149,7 +148,6 @@ class MaxAndSkipEnv(gym.Wrapper):
 
 
 class ClipRewardEnv(gym.RewardWrapper):
-
     def __init__(self, env):
         gym.RewardWrapper.__init__(self, env)
 
@@ -159,7 +157,6 @@ class ClipRewardEnv(gym.RewardWrapper):
 
 
 class WarpFrame(gym.ObservationWrapper):
-
     def __init__(self, env, width=84, height=84, grayscale=True):
         """Warp frames to 84x84 as done in the Nature paper and later work."""
         gym.ObservationWrapper.__init__(self, env)
@@ -167,30 +164,20 @@ class WarpFrame(gym.ObservationWrapper):
         self.height = height
         self.grayscale = grayscale
         if self.grayscale:
-            self.observation_space = spaces.Box(
-                low=0,
-                high=255,
-                shape=(self.height, self.width, 1),
-                dtype=np.uint8)
+            self.observation_space = spaces.Box(low=0, high=255, shape=(self.height, self.width, 1), dtype=np.uint8)
         else:
-            self.observation_space = spaces.Box(
-                low=0,
-                high=255,
-                shape=(self.height, self.width, 3),
-                dtype=np.uint8)
+            self.observation_space = spaces.Box(low=0, high=255, shape=(self.height, self.width, 3), dtype=np.uint8)
 
     def observation(self, frame):
         if self.grayscale:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        frame = cv2.resize(
-            frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+        frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
         if self.grayscale:
             frame = np.expand_dims(frame, -1)
         return frame
 
 
 class FrameStack(gym.Wrapper):
-
     def __init__(self, env, k):
         """Stack k last frames.
 
@@ -208,7 +195,8 @@ class FrameStack(gym.Wrapper):
             low=0,
             high=255,
             shape=(shp[:-1] + (shp[-1] * k,)),
-            dtype=env.observation_space.dtype)
+            dtype=env.observation_space.dtype,
+        )
 
     def reset(self):
         ob = self.env.reset()
@@ -227,11 +215,9 @@ class FrameStack(gym.Wrapper):
 
 
 class ScaledFloatFrame(gym.ObservationWrapper):
-
     def __init__(self, env):
         gym.ObservationWrapper.__init__(self, env)
-        self.observation_space = gym.spaces.Box(
-            low=0, high=1, shape=env.observation_space.shape, dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=0, high=1, shape=env.observation_space.shape, dtype=np.float32)
 
     def observation(self, observation):
         # careful! This undoes the memory optimization, use
@@ -240,7 +226,6 @@ class ScaledFloatFrame(gym.ObservationWrapper):
 
 
 class LazyFrames(object):
-
     def __init__(self, frames):
         """This object ensures that common frames between the observations are only stored once.
         It exists purely to optimize memory usage which can be huge for DQN's 1M frames replay
@@ -286,18 +271,19 @@ def make_atari(env_id, timelimit=True, noop=False):
 
 
 # NOTE: this was changed so that episode_life is False by default
-def wrap_deepmind(env,
-                  episode_life=False,
-                  clip_rewards=True,
-                  frame_stack=False,
-                  scale=True, 
-                  fire=False):  # FYI scale=False in openai/baselines
-    """Configure environment for DeepMind-style Atari.
-    """
+def wrap_deepmind(
+    env,
+    episode_life=False,
+    clip_rewards=True,
+    frame_stack=False,
+    scale=True,
+    fire=False,
+):  # FYI scale=False in openai/baselines
+    """Configure environment for DeepMind-style Atari."""
     if episode_life:
         env = EpisodicLifeEnv(env)
     if fire:
-        if 'FIRE' in env.unwrapped.get_action_meanings():
+        if "FIRE" in env.unwrapped.get_action_meanings():
             env = FireResetEnv(env)
     env = WarpFrame(env, width=42, height=42)
     if scale:
@@ -313,7 +299,7 @@ def wrap_deepmind(env,
 def get_env_type(env_id):
     # Re-parse the gym registry, since we could have new envs since last time.
     for env in gym.envs.registry.all():
-        env_type = env._entry_point.split(':')[0].split('.')[-1]
+        env_type = env._entry_point.split(":")[0].split(".")[-1]
         _game_envs[env_type].add(env.id)  # This is a set so add is idempotent
 
     if env_id in _game_envs.keys():
@@ -325,8 +311,7 @@ def get_env_type(env_id):
             if env_id in e:
                 env_type = g
                 break
-        assert env_type is not None, 'env_id {} is not recognized in env types'.format(
-            env_id, _game_envs.keys())
+        assert env_type is not None, "env_id {} is not recognized in env types".format(env_id, _game_envs.keys())
 
     return env_type, env_id
 
@@ -343,7 +328,8 @@ class ImageToPyTorch(gym.ObservationWrapper):
             low=0.0,
             high=1.0,
             shape=(old_shape[-1], old_shape[0], old_shape[1]),
-            dtype=np.uint8)
+            dtype=np.uint8,
+        )
 
     def observation(self, observation):
         return np.swapaxes(observation, 2, 0)
