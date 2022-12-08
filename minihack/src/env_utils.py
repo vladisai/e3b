@@ -29,6 +29,7 @@ def _format_observations_nethack(observation, keys=("glyphs", "blstats", "messag
         entry = torch.from_numpy(entry)
         entry = entry.view((1, 1) + entry.shape)  # (...) -> (T,B,...).
         observations[key] = entry
+    # observations["orig_message"] = observation["message"]
     return observations
 
 

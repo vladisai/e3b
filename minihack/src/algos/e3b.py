@@ -10,6 +10,7 @@ import pprint
 import json
 import pdb
 import contextlib
+import time
 
 import numpy as np
 import random
@@ -17,6 +18,7 @@ import copy
 
 import torch
 from torch import multiprocessing as mp
+from multiprocessing import Manager
 from torch import nn
 from torch.nn import functional as F
 
@@ -35,7 +37,9 @@ from src.utils import (
     create_buffers,
     act,
     create_heatmap_buffers,
+    update_goal_dict,
 )
+from src.algos.goal import GoalLearner, Graph, GoalModel
 
 NetHackStateEmbeddingNet = models.NetHackStateEmbeddingNet
 MinigridInverseDynamicsNet = models.MinigridInverseDynamicsNet
@@ -58,10 +62,12 @@ def learn(
     scheduler,
     flags,
     frames=None,
+    goals_dict=None,
     lock=threading.Lock(),
 ):
     """Performs a learning (optimization) step."""
     with lock:
+
         timings = prof.Timings()
         #        timings.reset()
 
@@ -76,7 +82,7 @@ def learn(
         pred_actions = inverse_dynamics_model(icm_state_emb, icm_next_state_emb)
         inverse_dynamics_loss = losses.compute_inverse_dynamics_loss(pred_actions, batch["action"][1:])
 
-        learner_outputs, unused_state = model(batch, initial_agent_state)
+        learner_outputs, unused_state = model(batch, initial_agent_state, goal=batch["goal"])
         bootstrap_value = learner_outputs["baseline"][-1]
 
         batch = {key: tensor[1:] for key, tensor in batch.items()}
@@ -98,6 +104,8 @@ def learn(
 
         if flags.no_reward:
             total_rewards = intrinsic_rewards * flags.intrinsic_reward_coef
+        elif flags.goal_reward_only:
+            total_rewards = batch["goal_reward"] * flags.goal_reward_coef
         else:
             total_rewards = rewards + intrinsic_rewards * flags.intrinsic_reward_coef
 
@@ -220,6 +228,8 @@ def train(flags):
     else:
         raise Exception("Only MiniHack and Vizdoom are suppported Now!")
 
+    goal_learner = GoalLearner(n_goals=32, batch_size=flags.batch_size)
+
     buffers = create_buffers(env.observation_space, model.num_actions, flags)
     model.share_memory()
     elliptical_encoder.share_memory()
@@ -237,8 +247,12 @@ def train(flags):
     full_queue = ctx.Queue()
 
     episode_state_count_dict = dict()
+    manager = Manager()
+    message_goals = manager.dict()
+    update_goal_dict(message_goals, torch.zeros(1, 256).long())
 
     for i in range(flags.num_actors):
+        # for i in range(1):  # to remove
         actor = ctx.Process(
             target=act,
             args=(
@@ -251,6 +265,8 @@ def train(flags):
                 episode_state_count_dict,
                 initial_agent_state_buffers,
                 flags,
+                message_goals,
+                goal_learner,
             ),
         )
         actor.start()
@@ -306,6 +322,8 @@ def train(flags):
         "mean_rewards",
         "mean_intrinsic_rewards",
         "mean_total_rewards",
+        "n_discovered_goals",
+        "discovered_goals",
     ]
 
     logger.info("# Step\t%s", "\t".join(stat_keys))
@@ -327,6 +345,7 @@ def train(flags):
                 flags,
                 timings,
             )
+
             stats, decoder_logits = learn(
                 model,
                 learner_model,
@@ -343,10 +362,21 @@ def train(flags):
                 frames=frames,
             )
             timings.time("learn")
+
             with lock:
+                goal_learner.graph.add_messages(batch["message"])
+                goal_learner.learn_one_batch()
+                goal_learner.update_stats(batch["message"], batch["goal"])
+
+                stats["discovered_goals"] = ";".join(goal_learner.graph.message_to_id.keys())
+                stats["n_discovered_goals"] = len(goal_learner.graph.message_to_id)
+                stats["goals"] = goal_learner.build_goal_stats()
+
                 to_log = dict(frames=frames)
                 to_log.update({k: stats[k] for k in stat_keys})
                 plogger.log(to_log)
+                with open(os.path.join(flags.savedir, flags.xpid, "stats.json"), "a") as f:
+                    f.write(json.dumps(stats) + "\n")
                 frames += T * B
 
         if i == 0:

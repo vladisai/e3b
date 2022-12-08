@@ -25,6 +25,7 @@ import contextlib
 import termios
 import tty
 import gc
+import random
 
 import nle  # noqa: F401
 from nle import nethack
@@ -35,6 +36,31 @@ from src.env_utils import FrameStack, Environment
 from src import atari_wrappers as atari_wrappers
 
 from gym_minigrid import wrappers as wrappers
+
+
+def translate_message(x):
+    result_string = ""
+    for c in x.flatten():
+        if c == 0:
+            break
+        result_string += chr(c)
+    return result_string
+
+
+def untranslate_message(m):
+    res = torch.zeros(1, 256).long()
+    for i, c in enumerate(m):
+        res[0, i] = ord(c)
+    return res
+
+
+def update_goal_dict(goal_dict, message):
+    message_text = translate_message(message)
+    goal_dict[message_text] = message
+
+
+def sample_goal(goal_dict):
+    return random.choice(list(goal_dict.values()))
 
 
 @contextlib.contextmanager
@@ -183,6 +209,7 @@ def create_buffers(obs_space, num_actions, flags) -> Buffers:
             reward=dict(size=size, dtype=torch.float32),
             bonus_reward=dict(size=size, dtype=torch.float32),
             bonus_reward2=dict(size=size, dtype=torch.float32),
+            goal_reward=dict(size=size, dtype=torch.float32),
             done=dict(size=size, dtype=torch.bool),
             episode_return=dict(size=size, dtype=torch.float32),
             episode_step=dict(size=size, dtype=torch.int32),
@@ -194,6 +221,7 @@ def create_buffers(obs_space, num_actions, flags) -> Buffers:
             action=dict(size=size, dtype=torch.int64),
             state_visits=dict(size=size, dtype=torch.int32),
         )
+        specs["goal"] = specs["message"].copy()
 
     else:
         obs_shape = obs_space.shape
@@ -202,6 +230,7 @@ def create_buffers(obs_space, num_actions, flags) -> Buffers:
             reward=dict(size=(T + 1,), dtype=torch.float32),
             bonus_reward=dict(size=(T + 1,), dtype=torch.float32),
             bonus_reward2=dict(size=(T + 1,), dtype=torch.float32),
+            goal_reward=dict(size=(T + 1,), dtype=torch.float32),
             done=dict(size=(T + 1,), dtype=torch.bool),
             episode_return=dict(size=(T + 1,), dtype=torch.float32),
             episode_step=dict(size=(T + 1,), dtype=torch.int32),
@@ -218,6 +247,7 @@ def create_buffers(obs_space, num_actions, flags) -> Buffers:
             partial_state_count=dict(size=(T + 1,), dtype=torch.float32),
             encoded_state_count=dict(size=(T + 1,), dtype=torch.float32),
         )
+        specs["goal"] = specs["message"].copy()
 
     buffers: Buffers = {key: [] for key in specs}
     for _ in range(flags.num_buffers):
@@ -236,6 +266,8 @@ def act(
     episode_state_count_dict: dict,
     initial_agent_state_buffers,
     flags,
+    message_goals,
+    goal_learner=None,  # optional
 ):
     try:
         log.info("Actor %i started.", i)
@@ -253,7 +285,10 @@ def act(
         env_output = env.initial()
         agent_state = model.initial_state(batch_size=1)
 
-        agent_output, unused_state = model(env_output, agent_state)
+        visited = set()
+        current_goal = goal_learner.sample_goal(visited)
+        agent_output, unused_state = model(env_output, agent_state, goal=current_goal)
+        update_goal_dict(message_goals, env_output["message"][0])
         prev_env_output = None
 
         rank1_update = True
@@ -282,6 +317,9 @@ def act(
                 buffers[key][index][0, ...] = env_output[key]
             for key in agent_output:
                 buffers[key][index][0, ...] = agent_output[key]
+
+            buffers["goal"][index][0, ...] = current_goal
+
             for i, tensor in enumerate(agent_state):
                 initial_agent_state_buffers[index][i][...] = tensor
 
@@ -338,11 +376,14 @@ def act(
                         cov_inverse = torch.eye(flags.hidden_dim) * flags.ridge
 
             # Do new rollout
+            update_goal_dict(message_goals, env_output["message"][0])
+            visited.add(translate_message(env_output["message"][0]))
+
             for t in range(flags.unroll_length):
                 timings.reset()
 
                 with torch.no_grad():
-                    agent_output, agent_state = model(env_output, agent_state)
+                    agent_output, agent_state = model(env_output, agent_state, goal=current_goal)
                     if flags.episodic_bonus_type in [
                         "elliptical-rand",
                         "elliptical-icm",
@@ -354,6 +395,8 @@ def act(
                 timings.time("model")
 
                 env_output = env.step(agent_output["action"])
+                update_goal_dict(message_goals, env_output["message"][0])
+                visited.add(translate_message(env_output["message"][0]))
 
                 timings.time("step")
 
@@ -362,6 +405,8 @@ def act(
 
                 for key in agent_output:
                     buffers[key][index][t + 1, ...] = agent_output[key]
+
+                buffers["goal"][index][t + 1, ...] = current_goal
 
                 if flags.episodic_bonus_type == "elliptical-policy":
                     # run through policy net to get embeddings
@@ -417,6 +462,13 @@ def act(
                 else:
                     assert "counts" in flags.episodic_bonus_type
 
+                if (env_output["message"][0] == current_goal).all():
+                    goal_reward = 1.0
+                    current_goal = goal_learner.sample_goal(visited)
+                else:
+                    goal_reward = 0.0
+                buffers["goal_reward"][index][t + 1, ...] = goal_reward
+
                 step += 1
 
                 if flags.episodic_bonus_type == "counts-obs":
@@ -465,6 +517,8 @@ def act(
                             cov_inverse = torch.eye(flags.hidden_dim) * (1.0 / flags.ridge)
                         else:
                             cov = torch.eye(flags.hidden_dim) * flags.ridge
+                    visited = set()
+                    current_goal = goal_learner.sample_goal(visited)
 
                 timings.time("write")
 

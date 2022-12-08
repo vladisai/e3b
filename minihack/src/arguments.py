@@ -242,3 +242,14 @@ parser.add_argument(
     type=float,
     help="Coefficient for the EMA update of the RND network",
 )
+parser.add_argument(
+    "--goal_reward_only",
+    action="store_true",
+    help="Only reward the agent when it reaches the goal specified by the desired message",
+)
+parser.add_argument(
+    "--goal_reward_coef",
+    default=1.0,
+    type=float,
+    help="Coefficient for the message goal reward.",
+)

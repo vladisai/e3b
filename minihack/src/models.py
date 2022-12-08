@@ -239,6 +239,7 @@ class NetHackPolicyNet(nn.Module):
         crop_dim=9,
         num_layers=5,
         msg_model="lt_cnn",
+        goal_conditioned=True,
     ):
         super(NetHackPolicyNet, self).__init__()
 
@@ -260,6 +261,7 @@ class NetHackPolicyNet(nn.Module):
         self.h_dim = hidden_dim
 
         self.crop_dim = crop_dim
+        self.goal_conditioned = goal_conditioned
 
         self.crop = Crop(self.H, self.W, self.crop_dim, self.crop_dim)
 
@@ -380,6 +382,13 @@ class NetHackPolicyNet(nn.Module):
             )  # final output -- [ B x h_dim x 5 ]
             out_dim += self.msg_hdim
 
+        # self.goal_embedding_dim = goal_embedding_dim
+        # self.known_goals = {}
+        # out_dim += self.goal_embedding_dim
+        if self.goal_conditioned:
+            assert self.msg_model != "none"
+            out_dim += self.msg_hdim
+
         self.fc1 = nn.Sequential(nn.Linear(out_dim, self.h_dim), nn.ReLU())
 
         self.fc2 = nn.Sequential(nn.Linear(self.h_dim, self.h_dim), nn.ReLU())
@@ -422,8 +431,7 @@ class NetHackPolicyNet(nn.Module):
         out = embed.weight.index_select(0, x.reshape(-1))
         return out.reshape(x.shape + (-1,))
 
-    def forward(self, env_outputs, core_state, decode=False):
-
+    def forward(self, env_outputs, core_state, decode=False, goal=None):
         #        env_outputs = env_outputs['frame']
         # -- [T x B x H x W]
         glyphs = env_outputs["glyphs"]
@@ -498,6 +506,15 @@ class NetHackPolicyNet(nn.Module):
         if self.msg_model != "none":
             # [T x B x 256] -> [T * B x 256]
             messages = env_outputs["message"].long().view(T * B, -1)
+            if self.msg_model == "lt_cnn":
+                # [ T * B x E x 256 ]
+                char_emb = self.char_lt(messages).transpose(1, 2)
+                char_rep = self.conv2_6_fc(self.conv1(char_emb))
+            reps.append(char_rep)
+
+        # encoding the goal
+        if self.goal_conditioned:
+            messages = goal.long().view(T * B, -1)
             if self.msg_model == "lt_cnn":
                 # [ T * B x E x 256 ]
                 char_emb = self.char_lt(messages).transpose(1, 2)
