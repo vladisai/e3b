@@ -19,15 +19,11 @@ import numpy as np
 import copy
 import nle
 import minihack
-import pdb
-import time
 import contextlib
 import termios
 import tty
-import gc
 import random
 
-import nle  # noqa: F401
 from nle import nethack
 
 
@@ -169,7 +165,7 @@ def get_batch(
     initial_agent_state_buffers,
     flags,
     timings,
-    lock=threading.Lock(),
+    lock=threading.Lock(),  # noqa
 ):
     with lock:
         timings.time("lock")
@@ -363,7 +359,7 @@ def act(
             # Reset the episode state counts or (inverse) covariance matrix when the episode is over
             if env_output["done"][0][0]:
                 step = 0
-                for episode_state_key in episode_state_count_dict:
+                for _episode_state_key in episode_state_count_dict:
                     episode_state_count_dict = dict()
                 if flags.episodic_bonus_type in [
                     "elliptical-policy",
@@ -534,3 +530,63 @@ def act(
         traceback.print_exc()
         print()
         raise e
+
+
+def unroll_with_goal(flags, model, env, goal_target_str, goal_init_str):
+    """
+    Unrolls the model in the environment to test goal reaching success rate.
+    Goal target is the target we're trying to reach
+    Goal init str is the goal we give to the model
+    """
+
+    env_output = env.initial()
+    agent_state = model.initial_state(batch_size=1)
+
+    current_goal = untranslate_message(goal_init_str)
+    reach_goal = untranslate_message(goal_target_str)
+    agent_output, unused_state = model(env_output, agent_state, goal=current_goal)
+
+    ctr = 0
+    outputs = []
+    renders = []
+    goal_reached = False
+    while not (env_output["done"][0][0] and ctr > 0):
+        env_output = env.step(agent_output["action"])
+        outputs.append(env_output)
+        renders.append(env.gym_env.render(mode="ansi"))
+        agent_output, agent_state = model(env_output, agent_state, goal=current_goal)
+        ctr += 1
+        if (env_output["message"] == reach_goal).all():
+            goal_reached = True
+
+    return outputs, renders, goal_reached
+
+
+def test_one_goal(flags, model, env, goal_target_str, goal_init_str, evals=10):
+    s = 0
+    for _ in range(evals):
+        _, _, g = unroll_with_goal(flags, model, env, goal_target_str, goal_init_str)
+        if g:
+            s += 1
+    return s / evals
+
+
+def run_goal_reaching_eval(flags, model, goal_learner):
+    env = create_env(flags)
+    if flags.num_input_frames > 1:
+        env = FrameStack(env, flags.num_input_frames)
+    env = Environment(env)
+
+    results = {}
+    goals = goal_learner.graph.managed_message_to_id.keys()
+
+    evals_per_goal = flags.evals_per_goal
+
+    for goal in goals:
+        other_goals = set(goals) - set([goal])
+        other_goal = random.choice(list(other_goals))
+        wrong = test_one_goal(flags, model, env, goal, other_goal, evals_per_goal)
+        correct = test_one_goal(flags, model, env, goal, goal, evals_per_goal)
+        results[goal] = (correct, wrong)
+
+    return results

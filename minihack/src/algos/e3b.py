@@ -38,6 +38,7 @@ from src.utils import (
     act,
     create_heatmap_buffers,
     update_goal_dict,
+    run_goal_reaching_eval,
 )
 from src.algos.goal import GoalLearner, Graph, GoalModel
 
@@ -67,7 +68,6 @@ def learn(
 ):
     """Performs a learning (optimization) step."""
     with lock:
-
         timings = prof.Timings()
         #        timings.reset()
 
@@ -329,10 +329,11 @@ def train(flags):
     logger.info("# Step\t%s", "\t".join(stat_keys))
 
     frames, stats = 0, {}
+    model_updates = 0
 
     def batch_and_learn(i, lock=threading.Lock()):
         """Thread target for the learning process."""
-        nonlocal frames, stats
+        nonlocal frames, stats, model_updates
         timings = prof.Timings()
 
         while frames < flags.total_frames:
@@ -365,12 +366,13 @@ def train(flags):
 
             with lock:
                 goal_learner.graph.add_messages(batch["message"])
-                goal_learner.learn_one_batch()
-                goal_learner.update_stats(batch["message"], batch["goal"])
+                goal_learn_stats = goal_learner.learn_one_batch()
+                goal_stats = goal_learner.build_goal_stats(batch["message"], batch["goal"])
 
                 stats["discovered_goals"] = ";".join(goal_learner.graph.message_to_id.keys())
                 stats["n_discovered_goals"] = len(goal_learner.graph.message_to_id)
-                stats["goals"] = goal_learner.build_goal_stats()
+                stats["goal_stats"] = goal_stats
+                stats["goal_learn_stats"] = goal_learn_stats
 
                 to_log = dict(frames=frames)
                 to_log.update({k: stats[k] for k in stat_keys})
@@ -378,6 +380,35 @@ def train(flags):
                 with open(os.path.join(flags.savedir, flags.xpid, "stats.json"), "a") as f:
                     f.write(json.dumps(stats) + "\n")
                 frames += T * B
+
+                if model_updates % flags.model_save_interval == 0:
+                    torch.save(
+                        learner_model.state_dict(),
+                        os.path.join(flags.savedir, flags.xpid, f"model-{model_updates}.pt"),
+                    )
+                    torch.save(
+                        elliptical_learner_encoder.state_dict(),
+                        os.path.join(flags.savedir, flags.xpid, f"elliptical_encoder-{model_updates}.pt"),
+                    )
+                    torch.save(
+                        inverse_dynamics_model.state_dict(),
+                        os.path.join(flags.savedir, flags.xpid, f"inverse_dynamics_model-{model_updates}.pt"),
+                    )
+                    goal_learner.save(os.path.join(flags.savedir, flags.xpid, f"goal_learner-{model_updates}.pt"))
+
+                    eval_results = run_goal_reaching_eval(flags, model, goal_learner)
+                    with open(os.path.join(flags.savedir, flags.xpid, "eval_results.json"), "a") as f:
+                        f.write(
+                            json.dumps(
+                                {
+                                    "model_updates": model_updates,
+                                    "eval_results": eval_results,
+                                }
+                            )
+                            + "\n"
+                        )
+
+                model_updates += 1
 
         if i == 0:
             log.info("Batch and learn: %s", timings.summary())

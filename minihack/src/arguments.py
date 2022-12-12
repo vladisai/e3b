@@ -253,3 +253,17 @@ parser.add_argument(
     type=float,
     help="Coefficient for the message goal reward.",
 )
+
+parser.add_argument(
+    "--model_save_interval",
+    default=5000,
+    type=int,
+    help="Number of model udpates between saves.",
+)
+
+parser.add_argument(
+    "--evals_per_goal",
+    default=10,
+    type=int,
+    help="Number of evaluations to measure goal reaching success rate.",
+)
